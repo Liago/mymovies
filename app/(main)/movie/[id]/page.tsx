@@ -92,7 +92,7 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 						<section>
 							<h3 className="text-xl text-gray-500 mb-6 font-light">The Cast</h3>
 							<div className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide">
-								{movie.actors.map((actor, index) => (
+								{movie.actors.map((actor: string, index: number) => (
 									<PersonCard key={index} name={actor} role="Actor" />
 								))}
 							</div>
