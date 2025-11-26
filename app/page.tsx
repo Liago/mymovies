@@ -1,44 +1,29 @@
-import SearchBar from '@/components/SearchBar';
+import Navbar from "@/components/Navbar";
+import HeroSection from "@/components/HeroSection";
+import { fetchDiscoverMovies, fetchTVShows } from "@/app/actions";
 
-export default function Home() {
+export default async function Home() {
+	const [movies, tvShows] = await Promise.all([
+		fetchDiscoverMovies(),
+		fetchTVShows()
+	]);
+
+	// Helper to get random items
+	const getRandomItems = (arr: any[], count: number) => {
+		const shuffled = [...arr].sort(() => 0.5 - Math.random());
+		return shuffled.slice(0, count);
+	};
+
+	const randomMovies = getRandomItems(movies, 2).map((m: any) => ({ ...m, type: 'movie' }));
+	const randomTV = getRandomItems(tvShows, 2).map((t: any) => ({ ...t, type: 'tv' }));
+
+	// Combine and shuffle again to mix movies and TV shows
+	const heroItems = getRandomItems([...randomMovies, ...randomTV], 4);
+
 	return (
-		<main className="main-container">
-			<div className="content-wrapper">
-				<div className="header-section">
-					<h1 className="main-title">
-						<span className="gradient-text">Movie</span> Search
-					</h1>
-					<p className="subtitle">
-						Discover your next favorite movie or TV series
-					</p>
-				</div>
-
-				<SearchBar />
-
-				<div className="features-grid">
-					<div className="feature-card">
-						<div className="feature-icon">🎬</div>
-						<h3>Movies</h3>
-						<p>Search through thousands of movies</p>
-					</div>
-					<div className="feature-card">
-						<div className="feature-icon">📺</div>
-						<h3>TV Series</h3>
-						<p>Find your favorite shows</p>
-					</div>
-					<div className="feature-card">
-						<div className="feature-icon">⚡</div>
-						<h3>Fast Results</h3>
-						<p>Instant search with relevance scores</p>
-					</div>
-				</div>
-			</div>
-
-			<div className="background-decoration">
-				<div className="gradient-orb orb-1" />
-				<div className="gradient-orb orb-2" />
-				<div className="gradient-orb orb-3" />
-			</div>
+		<main className="min-h-screen bg-[#fdfbf7]">
+			<Navbar />
+			<HeroSection items={heroItems} />
 		</main>
 	);
 }
