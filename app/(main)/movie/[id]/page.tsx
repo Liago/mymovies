@@ -5,6 +5,7 @@ import { Star, Clock, Calendar, DollarSign, Play, Share2, Plus } from 'lucide-re
 import Link from 'next/link';
 import PersonCard from '@/components/PersonCard';
 import Navbar from '@/components/Navbar';
+import TrailerButton from '@/components/TrailerButton';
 
 export default async function MovieDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
@@ -62,15 +63,7 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 
 						<div className="flex flex-wrap gap-4">
 							{trailerUrl && (
-								<a
-									href={trailerUrl}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="flex items-center gap-3 bg-white text-black px-8 py-3 rounded-lg font-bold hover:bg-gray-200 transition-colors"
-								>
-									<Play size={24} fill="currentColor" />
-									Watch Trailer
-								</a>
+								<TrailerButton trailerUrl={trailerUrl} />
 							)}
 							<button className="flex items-center gap-3 bg-gray-800/80 backdrop-blur text-white px-8 py-3 rounded-lg font-bold hover:bg-gray-700 transition-colors">
 								<Plus size={24} />

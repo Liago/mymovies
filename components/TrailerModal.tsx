@@ -1,7 +1,9 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
+import { createPortal } from 'react-dom';
 
 interface TrailerModalProps {
 	isOpen: boolean;
@@ -10,7 +12,10 @@ interface TrailerModalProps {
 }
 
 export default function TrailerModal({ isOpen, onClose, youtubeUrl }: TrailerModalProps) {
+	const [mounted, setMounted] = useState(false);
+
 	useEffect(() => {
+		setMounted(true);
 		if (isOpen) {
 			document.body.style.overflow = 'hidden';
 		} else {
@@ -21,13 +26,13 @@ export default function TrailerModal({ isOpen, onClose, youtubeUrl }: TrailerMod
 		};
 	}, [isOpen]);
 
-	if (!isOpen || !youtubeUrl) return null;
+	if (!mounted || !isOpen || !youtubeUrl) return null;
 
 	// Extract video ID from URL
 	const videoId = youtubeUrl.split('v=')[1];
 	const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
 
-	return (
+	return createPortal(
 		<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
 			<div className="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
 				<button
@@ -47,6 +52,7 @@ export default function TrailerModal({ isOpen, onClose, youtubeUrl }: TrailerMod
 				className="absolute inset-0 -z-10"
 				onClick={onClose}
 			/>
-		</div>
+		</div>,
+		document.body
 	);
 }
