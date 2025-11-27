@@ -1,6 +1,6 @@
 'use server';
 
-import { getPersonDetails, getPersonCredits, getDiscoverMovies, getTVShows } from '@/lib/tmdb';
+import { getPersonDetails, getPersonCredits, getDiscoverMovies, getTVShows, getMovieTrailerTMDb } from '@/lib/tmdb';
 
 
 export async function fetchPersonDetails(name: string) {
@@ -17,4 +17,8 @@ export async function fetchDiscoverMovies() {
 
 export async function fetchTVShows() {
 	return await getTVShows();
+}
+
+export async function fetchMovieTrailer(id: number) {
+	return await getMovieTrailerTMDb(id);
 }
