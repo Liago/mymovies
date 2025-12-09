@@ -1,16 +1,9 @@
-import Sidebar from "@/components/Sidebar";
+import ConditionalLayout from "@/components/ConditionalLayout";
 
 export default function MainLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	return (
-		<div className="min-h-screen bg-[#fdfbf7]">
-			<Sidebar />
-			<div className="pl-20">
-				{children}
-			</div>
-		</div>
-	);
+	return <ConditionalLayout>{children}</ConditionalLayout>;
 }

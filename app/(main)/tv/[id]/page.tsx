@@ -19,7 +19,7 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 		<main className="min-h-screen bg-white">
 			{/* Hero Section - Minimalist */}
 			<section className="relative bg-gray-50">
-				<div className="max-w-4xl mx-auto px-6 md:px-12 py-12">
+				<div className="max-w-3xl mx-auto px-8 md:px-16 py-12">
 					<Link
 						href="/tv"
 						className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-8 transition-colors"
@@ -133,7 +133,7 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 
 			{/* Cast Section */}
 			{tvShow.actors && tvShow.actors.length > 0 && (
-				<section className="max-w-4xl mx-auto px-6 md:px-12 py-16">
+				<section className="max-w-3xl mx-auto px-8 md:px-16 py-16">
 					<h2 className="text-2xl font-bold text-gray-900 mb-8">Cast</h2>
 					<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
 						{tvShow.actors.map((actor: string, index: number) => (
