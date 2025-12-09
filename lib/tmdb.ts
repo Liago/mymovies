@@ -169,3 +169,54 @@ export async function getMovieTrailerTMDb(id: number): Promise<string | null> {
 		return null;
 	}
 }
+
+export async function getTVDetailTMDb(id: number) {
+	if (!TMDB_API_KEY) return null;
+	try {
+		const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits`);
+		const data = await res.json();
+
+		return {
+			title: data.name,
+			description: data.overview,
+			poster: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : null,
+			releaseDate: data.first_air_date,
+			seasons: data.number_of_seasons,
+			episodes: data.number_of_episodes,
+			status: data.status,
+			rating: {
+				imdb: data.vote_average,
+				rottenTomatoes: Math.round(data.vote_average * 10)
+			},
+			actors: data.credits?.cast?.slice(0, 8).map((c: any) => c.name) || [],
+			creators: data.created_by?.map((c: any) => c.name).join(', ') || 'N/A',
+			genres: data.genres?.map((g: any) => g.name) || []
+		};
+	} catch (e) {
+		console.error('Error fetching TMDb TV detail:', e);
+		return null;
+	}
+}
+
+export async function getTVTrailerTMDb(id: number): Promise<string | null> {
+	if (!TMDB_API_KEY) return null;
+	try {
+		const videosResponse = await fetch(
+			`${BASE_URL}/tv/${id}/videos?api_key=${TMDB_API_KEY}`
+		);
+		const videosData = await videosResponse.json();
+
+		const trailer = videosData.results?.find(
+			(v: any) => v.site === 'YouTube' && v.type === 'Trailer'
+		);
+
+		if (trailer) {
+			return `https://www.youtube.com/watch?v=${trailer.key}`;
+		}
+
+		return null;
+	} catch (error) {
+		console.error('Error fetching TMDb TV trailer:', error);
+		return null;
+	}
+}

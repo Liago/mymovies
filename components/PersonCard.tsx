@@ -36,16 +36,16 @@ export default function PersonCard({ name, role }: PersonCardProps) {
 				onClick={handleOpen}
 				className="flex flex-col items-center min-w-[120px] cursor-pointer group"
 			>
-				<div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-3 border-2 border-transparent group-hover:border-purple-500 transition-all shadow-lg bg-gray-800">
+				<div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 border-2 border-gray-200 group-hover:border-purple-400 transition-all shadow-sm bg-gray-100">
 					{person?.image ? (
 						<img src={person.image} alt={name} className="w-full h-full object-cover" />
 					) : (
-						<div className="w-full h-full flex items-center justify-center text-gray-500">
-							<User size={32} />
+						<div className="w-full h-full flex items-center justify-center text-gray-400">
+							<User size={28} />
 						</div>
 					)}
 				</div>
-				<span className="text-sm font-bold text-gray-900 text-center group-hover:text-purple-600 transition-colors line-clamp-2">{name}</span>
+				<span className="text-sm font-semibold text-gray-900 text-center group-hover:text-purple-600 transition-colors line-clamp-2">{name}</span>
 				<span className="text-xs text-gray-500">{role}</span>
 			</div>
 
