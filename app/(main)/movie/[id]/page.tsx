@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation';
 import { Star, Clock, Play, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import PersonCard from '@/components/PersonCard';
-import Navbar from '@/components/Navbar';
 import TrailerButton from '@/components/TrailerButton';
 
 export default async function MovieDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -31,11 +30,9 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 
 	return (
 		<main className="min-h-screen bg-white">
-			<Navbar />
-
 			{/* Hero Section - Minimalist */}
 			<section className="relative bg-gray-50">
-				<div className="max-w-7xl mx-auto px-6 md:px-12 py-12">
+				<div className="max-w-4xl mx-auto px-6 md:px-12 py-12">
 					<Link
 						href="/discovery"
 						className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-8 transition-colors"
@@ -134,7 +131,7 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 
 			{/* Cast Section */}
 			{movie.actors && movie.actors.length > 0 && (
-				<section className="max-w-7xl mx-auto px-6 md:px-12 py-16">
+				<section className="max-w-4xl mx-auto px-6 md:px-12 py-16">
 					<h2 className="text-2xl font-bold text-gray-900 mb-8">Cast</h2>
 					<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
 						{movie.actors.map((actor: string, index: number) => (
