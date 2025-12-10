@@ -11,8 +11,8 @@ export async function fetchPersonCredits(id: number) {
 	return await getPersonCredits(id);
 }
 
-export async function fetchDiscoverMovies() {
-	return await getDiscoverMovies();
+export async function fetchDiscoverMovies(page: number = 1) {
+	return await getDiscoverMovies(page);
 }
 
 export async function fetchTVShows() {

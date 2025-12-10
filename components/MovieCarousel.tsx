@@ -17,9 +17,10 @@ interface Movie {
 interface MovieCarouselProps {
 	title: string;
 	movies: Movie[];
+	viewAllLink?: string;
 }
 
-export default function MovieCarousel({ title, movies }: MovieCarouselProps) {
+export default function MovieCarousel({ title, movies, viewAllLink }: MovieCarouselProps) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const [showControls, setShowControls] = useState(false);
 
@@ -46,12 +47,14 @@ export default function MovieCarousel({ title, movies }: MovieCarouselProps) {
 				<h2 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
 					{title}
 				</h2>
-				<Link
-					href="#"
-					className="text-xs font-semibold text-primary/80 hover:text-primary tracking-widest uppercase transition-colors opacity-0 group-hover:opacity-100 transform -translate-x-2 group-hover:translate-x-0 duration-300"
-				>
-					View All
-				</Link>
+				{viewAllLink && (
+					<Link
+						href={viewAllLink}
+						className="text-xs font-semibold text-primary/80 hover:text-primary tracking-widest uppercase transition-colors opacity-0 group-hover:opacity-100 transform -translate-x-2 group-hover:translate-x-0 duration-300"
+					>
+						View All
+					</Link>
+				)}
 			</div>
 
 			<div className="relative">

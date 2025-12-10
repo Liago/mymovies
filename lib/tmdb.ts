@@ -87,10 +87,10 @@ export async function getPersonCredits(personId: number) {
 	}
 }
 
-export async function getDiscoverMovies() {
+export async function getDiscoverMovies(page: number = 1) {
 	if (!TMDB_API_KEY) return [];
 	try {
-		const res = await fetch(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&sort_by=popularity.desc`);
+		const res = await fetch(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=${page}`);
 		const data = await res.json();
 		return data.results.map((item: any) => ({
 			id: item.id,
