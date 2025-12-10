@@ -105,10 +105,10 @@ export async function getDiscoverMovies(page: number = 1) {
 	}
 }
 
-export async function getTVShows() {
+export async function getTVShows(page: number = 1) {
 	if (!TMDB_API_KEY) return [];
 	try {
-		const res = await fetch(`${BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&sort_by=popularity.desc`);
+		const res = await fetch(`${BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=${page}`);
 		const data = await res.json();
 		return data.results.map((item: any) => ({
 			id: item.id,
@@ -117,6 +117,25 @@ export async function getTVShows() {
 			year: (item.first_air_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'tv'
+		}));
+	} catch (e) {
+		return [];
+	}
+}
+
+export async function getUpcomingMovies(page: number = 1) {
+	if (!TMDB_API_KEY) return [];
+	try {
+		// Using upcoming endpoint for "New Releases" feel, or primary_release_date.desc
+		const res = await fetch(`${BASE_URL}/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`);
+		const data = await res.json();
+		return data.results.map((item: any) => ({
+			id: item.id,
+			title: item.title,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.release_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: 'movie'
 		}));
 	} catch (e) {
 		return [];

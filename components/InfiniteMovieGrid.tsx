@@ -15,9 +15,10 @@ interface Movie {
 
 interface InfiniteMovieGridProps {
 	initialMovies: Movie[];
+	actionType: 'discover' | 'tv' | 'upcoming';
 }
 
-export default function InfiniteMovieGrid({ initialMovies }: InfiniteMovieGridProps) {
+export default function InfiniteMovieGrid({ initialMovies, actionType }: InfiniteMovieGridProps) {
 	const [movies, setMovies] = useState<Movie[]>(initialMovies);
 	const [page, setPage] = useState(1);
 	const [loading, setLoading] = useState(false);
@@ -25,7 +26,16 @@ export default function InfiniteMovieGrid({ initialMovies }: InfiniteMovieGridPr
 	const loadMore = async () => {
 		setLoading(true);
 		const nextPage = page + 1;
-		const newMovies = await fetchDiscoverMovies(nextPage);
+
+		let newMovies: Movie[] = [];
+		if (actionType === 'discover') {
+			newMovies = await fetchDiscoverMovies(nextPage);
+		} else if (actionType === 'tv') {
+			newMovies = await import('@/app/actions').then(mod => mod.fetchTVShows(nextPage));
+		} else if (actionType === 'upcoming') {
+			newMovies = await import('@/app/actions').then(mod => mod.fetchUpcomingMovies(nextPage));
+		}
+
 		setMovies([...movies, ...newMovies]);
 		setPage(nextPage);
 		setLoading(false);

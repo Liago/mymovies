@@ -1,8 +1,8 @@
-import { fetchDiscoverMovies } from '@/app/actions';
+import { fetchUpcomingMovies } from '@/app/actions';
 import InfiniteMovieGrid from '@/components/InfiniteMovieGrid';
 
-export default async function MoviesPage() {
-	const movies = await fetchDiscoverMovies(1);
+export default async function NewReleasesPage() {
+	const movies = await fetchUpcomingMovies(1);
 
 	return (
 		<main className="min-h-screen bg-black text-white pt-24 pb-20">
@@ -10,15 +10,15 @@ export default async function MoviesPage() {
 				{/* Header */}
 				<div className="mb-12">
 					<h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight">
-						Trending Movies
+						New Releases
 						<span className="text-primary">.</span>
 					</h1>
 					<p className="text-zinc-400 text-lg max-w-xl">
-						Discover the most popular movies right now.
+						Fresh from the cinema. Explore the latest blockbusters.
 					</p>
 				</div>
 
-				<InfiniteMovieGrid initialMovies={movies} actionType="discover" />
+				<InfiniteMovieGrid initialMovies={movies} actionType="upcoming" />
 			</div>
 		</main>
 	);

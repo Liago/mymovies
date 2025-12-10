@@ -21,10 +21,10 @@ export default async function Home() {
 			<div className="relative z-10 -mt-32 md:-mt-48 space-y-8">
 				<MovieCarousel title="Trending Movies" movies={trendingMovies} viewAllLink="/movies" />
 
-				<MovieCarousel title="Popular TV Shows" movies={popularTV} />
+				<MovieCarousel title="Popular TV Shows" movies={popularTV} viewAllLink="/tv" />
 
 				{/* Just for demo/filling space */}
-				<MovieCarousel title="New Releases" movies={movies.slice(5, 12)} />
+				<MovieCarousel title="New Releases" movies={movies.slice(5, 12)} viewAllLink="/new-releases" />
 			</div>
 		</main>
 	);
