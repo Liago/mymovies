@@ -36,7 +36,7 @@ export default async function TVPage() {
 							<h2 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">{featured.title}</h2>
 							<p className="text-zinc-300 text-lg line-clamp-3 mb-8 max-w-xl">{featured.description}</p>
 							<Link
-								href={`/movie/${featured.id}`}
+								href={`/tv/${featured.id}`}
 								className="inline-flex items-center gap-2 bg-white text-black px-6 py-3 rounded-xl font-bold hover:bg-zinc-200 transition-colors self-start"
 							>
 								View Details <ArrowRight size={18} />

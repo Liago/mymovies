@@ -15,7 +15,7 @@ interface MovieCardProps {
 export default function MovieCard({ id, title, poster, rating, year, type = 'movie' }: MovieCardProps) {
 	return (
 		<Link
-			href={`/movie/${id}`}
+			href={`/${type === 'tv' ? 'tv' : 'movie'}/${id}`}
 			className="group relative block w-full outline-none"
 		>
 			<div className="relative aspect-[2/3] overflow-hidden rounded-md bg-zinc-900 transition-all duration-300 md:group-hover:scale-105 md:group-hover:z-10 md:group-hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] border border-transparent md:group-hover:border-primary/50">

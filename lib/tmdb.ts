@@ -97,7 +97,8 @@ export async function getDiscoverMovies() {
 			title: item.title,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.release_date || '').split('-')[0],
-			rating: item.vote_average
+			rating: item.vote_average,
+			type: 'movie'
 		}));
 	} catch (e) {
 		return [];
@@ -114,7 +115,8 @@ export async function getTVShows() {
 			title: item.name,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.first_air_date || '').split('-')[0],
-			rating: item.vote_average
+			rating: item.vote_average,
+			type: 'tv'
 		}));
 	} catch (e) {
 		return [];
