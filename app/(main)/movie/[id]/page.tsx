@@ -76,13 +76,13 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 						<div className="space-y-8">
 							<div>
 								<div className="flex flex-wrap items-center gap-3 mb-4">
-									{movie.year && (
+									{movie.releaseDate && (
 										<span className="px-3 py-1 rounded-full border border-white/20 bg-white/5 text-xs font-semibold text-zinc-300">
-											{movie.year}
+											{movie.releaseDate.split('-')[0]}
 										</span>
 									)}
 									<span className="px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-xs font-semibold text-primary uppercase tracking-wider">
-										{movie.type || 'Movie'}
+										{(movie as any).type || 'Movie'}
 									</span>
 								</div>
 

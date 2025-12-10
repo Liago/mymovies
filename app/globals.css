@@ -31,7 +31,6 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-surface-1: var(--surface-1);
-  font-family: 'Space Grotesk', sans-serif;
 }
 
 body {
