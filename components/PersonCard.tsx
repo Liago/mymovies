@@ -20,14 +20,18 @@ export default function PersonCard({ name, role }: PersonCardProps) {
 		fetchPersonDetails(name).then(setPerson);
 	}, [name]);
 
-	const handleOpen = async () => {
-		setIsOpen(true);
-		if (person?.id && credits.length === 0) {
+	useEffect(() => {
+		if (isOpen && person?.id && credits.length === 0) {
 			setLoading(true);
-			const data = await fetchPersonCredits(person.id);
-			setCredits(data);
-			setLoading(false);
+			fetchPersonCredits(person.id).then((data) => {
+				setCredits(data);
+				setLoading(false);
+			});
 		}
+	}, [isOpen, person, credits.length]);
+
+	const handleOpen = () => {
+		setIsOpen(true);
 	};
 
 	return (
@@ -54,7 +58,7 @@ export default function PersonCard({ name, role }: PersonCardProps) {
 				<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-300">
 					<div className="bg-zinc-950 border border-white/10 w-full max-w-4xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300">
 						<div className="p-6 border-b border-white/10 flex justify-between items-center bg-zinc-900/50">
-							<h2 className="text-2xl font-bold text-white">Known For</h2>
+							<h2 className="text-2xl font-bold text-white">Known for:</h2>
 							<button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white transition-colors">
 								<X size={24} />
 							</button>
