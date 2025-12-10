@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
 	title: "MyMovies - Scopri film e serie TV",
@@ -13,7 +14,8 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="it">
-			<body className="antialiased">
+			<body className="antialiased font-inter bg-black text-white selection:bg-primary/30">
+				<Navbar />
 				{children}
 			</body>
 		</html>

@@ -1,76 +1,58 @@
 import { fetchDiscoverMovies } from '@/app/actions';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowRight, Film } from 'lucide-react';
+import MovieCard from '@/components/MovieCard';
 
 export default async function DiscoveryPage() {
 	const movies = await fetchDiscoverMovies();
-	// Take top 4 for the featured section
-	const featuredMovies = movies.slice(0, 4);
+	// Take first one as featured? No, just grid for now.
+
+	const featured = movies[0];
+	const rest = movies.slice(1);
 
 	return (
-		<main className="min-h-screen p-8 lg:p-12 max-w-[1600px] mx-auto">
-			{/* Header */}
-			<div className="flex items-end justify-between mb-12">
-				<div>
-					<h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">
-						FEATURED REVIEWS - <br />
-						<span className="text-gray-500">Editor's Picks</span>
+		<main className="min-h-screen bg-black text-white pt-24 pb-20">
+			<div className="max-w-[1920px] mx-auto px-6 md:px-12">
+				{/* Header */}
+				<div className="mb-12">
+					<h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight">
+						Movies
+						<span className="text-primary">.</span>
 					</h1>
-					<p className="text-gray-600 text-lg">
-						Critically acclaimed movies loved by audiences worldwide.
+					<p className="text-zinc-400 text-lg max-w-xl">
+						Explore our extensive collection of movies from around the world. From blockbusters to indie gems.
 					</p>
 				</div>
 
-				<div className="flex gap-4">
-					<button className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors">
-						<ArrowLeft size={24} />
-					</button>
-					<button className="w-12 h-12 rounded-full bg-[#6d28d9] flex items-center justify-center text-white hover:bg-[#5b21b6] transition-colors shadow-lg shadow-purple-200">
-						<ArrowRight size={24} />
-					</button>
-				</div>
-			</div>
-
-			{/* Cards Grid */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-				{featuredMovies.map((movie: any) => (
-					<div key={movie.id} className="group flex flex-col">
-						<Link href={`/movie/${movie.id}`} className="block relative aspect-[3/4] rounded-3xl overflow-hidden mb-6 shadow-lg">
-							{movie.poster ? (
-								<img
-									src={movie.poster}
-									alt={movie.title}
-									className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-								/>
-							) : (
-								<div className="absolute inset-0 bg-gray-200 flex items-center justify-center text-gray-400">No Poster</div>
-							)}
-							{/* Overlay gradient */}
-							<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-						</Link>
-
-						<div className="flex items-start justify-between mb-2">
-							<h3 className="text-xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors line-clamp-1">
-								{movie.title}
-							</h3>
-							<div className="flex items-center gap-1 text-yellow-500 font-bold">
-								<span>★</span>
-								<span>{movie.rating.toFixed(1)}/10</span>
-							</div>
+				{/* Featured Big Card (Optional, using first movie) */}
+				{featured && (
+					<div className="mb-16 relative rounded-3xl overflow-hidden aspect-[21/9] md:aspect-[24/9] group">
+						<img
+							src={featured.poster?.replace('w500', 'original')}
+							alt={featured.title}
+							className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+						/>
+						<div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
+						<div className="absolute inset-0 p-8 md:p-16 flex flex-col justify-center max-w-3xl">
+							<span className="text-primary font-bold tracking-widest uppercase mb-4 text-sm">Featured Selection</span>
+							<h2 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">{featured.title}</h2>
+							<p className="text-zinc-300 text-lg line-clamp-3 mb-8 max-w-xl">{featured.description}</p>
+							<Link
+								href={`/movie/${featured.id}`}
+								className="inline-flex items-center gap-2 bg-white text-black px-6 py-3 rounded-xl font-bold hover:bg-zinc-200 transition-colors self-start"
+							>
+								View Details <ArrowRight size={18} />
+							</Link>
 						</div>
-
-						<p className="text-gray-500 text-sm mb-4 line-clamp-1">
-							{movie.year} • Movie
-						</p>
-
-						<Link
-							href={`/movie/${movie.id}`}
-							className="text-purple-600 font-medium text-sm hover:text-purple-800 transition-colors inline-flex items-center gap-1"
-						>
-							Read Review <ArrowRight size={14} />
-						</Link>
 					</div>
-				))}
+				)}
+
+				{/* Grid */}
+				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-6 md:gap-8">
+					{rest.map((movie: any) => (
+						<MovieCard key={movie.id} {...movie} />
+					))}
+				</div>
 			</div>
 		</main>
 	);

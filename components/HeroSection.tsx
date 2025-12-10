@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Play, Info } from 'lucide-react';
+import { Play, Info, Plus } from 'lucide-react';
 import { useState } from 'react';
 import TrailerModal from './TrailerModal';
 
@@ -28,63 +28,78 @@ export default function HeroSection({ item }: HeroSectionProps) {
 	const backdropUrl = item.poster?.replace('w500', 'original') || '';
 
 	return (
-		<section className="relative h-[85vh] w-full overflow-hidden">
-			{/* Background Image with Parallax-like feel */}
-			<div className="absolute inset-0">
+		<section className="relative h-screen w-full overflow-hidden">
+			{/* Background Layer */}
+			<div className="absolute inset-0 z-0">
 				<img
 					src={backdropUrl}
 					alt={item.title}
-					className="w-full h-full object-cover object-top"
+					className="w-full h-full object-cover select-none"
 				/>
 
-				{/* Cinematic Gradients */}
-				<div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-transparent" />
-				<div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+				{/* Vignette & Gradients */}
+				<div className="absolute inset-0 bg-gradient-to-r from-black via-black/50 to-transparent" />
+				<div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90" />
+				<div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/20" />
 			</div>
 
-			{/* Content */}
-			<div className="relative h-full max-w-7xl mx-auto px-6 md:px-12 flex flex-col justify-center pt-20">
-				<div className="max-w-3xl animate-fade-in-up">
-					{/* Badge */}
-					<div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/20 mb-6">
-						<span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-						<span className="text-xs font-medium text-white tracking-wider uppercase">Featured Premiere</span>
+			{/* Content Layer */}
+			<div className="relative z-10 h-full max-w-[1920px] mx-auto px-6 md:px-12 flex flex-col justify-center pt-20">
+				<div className="max-w-4xl animate-slide-up">
+					{/* Meta Badge */}
+					<div className="inline-flex items-center gap-3 mb-6 animate-fade-in delay-100">
+						<span className="px-3 py-1 rounded bg-white/10 backdrop-blur-md border border-white/10 text-xs font-bold tracking-widest text-white uppercase">
+							{item.type === 'movie' ? 'Movie' : 'Series'}
+						</span>
+						<span className="px-3 py-1 rounded bg-primary/20 backdrop-blur-md border border-primary/20 text-xs font-bold tracking-widest text-primary uppercase">
+							New Release
+						</span>
 					</div>
 
 					{/* Title */}
-					<h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 leading-[0.9] tracking-tight text-shadow-lg">
+					<h1 className="text-6xl md:text-8xl lg:text-9xl font-black text-white mb-6 leading-[0.85] tracking-tight drop-shadow-2xl">
 						{item.title}
 					</h1>
 
-					{/* Meta */}
-					<div className="flex items-center gap-4 mb-8 text-gray-300 font-medium">
-						<span className="text-green-400">{item.rating.toFixed(1)} Match</span>
-						<span>{item.year}</span>
-						<span className="border border-gray-500 px-1 rounded text-xs uppercase">{item.type}</span>
-						<span>4K Ultra HD</span>
+					{/* Ratings & Info */}
+					<div className="flex items-center gap-6 mb-8 text-lg font-medium animate-fade-in delay-200">
+						<div className="flex items-center gap-2 text-green-400">
+							<span className="font-bold">{(item.rating * 10).toFixed(0)}%</span>
+							<span className="text-sm text-green-400/80">Match</span>
+						</div>
+						<span className="text-gray-400">{item.year}</span>
+						<span className="text-gray-400">4K Ultra HD</span>
+						<span className="text-gray-400">5.1</span>
 					</div>
 
 					{/* Description */}
-					<p className="text-lg md:text-xl text-gray-300 mb-10 line-clamp-3 max-w-2xl leading-relaxed text-shadow-sm">
+					<p className="text-lg md:text-2xl text-gray-300 mb-10 line-clamp-3 max-w-2xl leading-relaxed animate-fade-in delay-300">
 						{item.description}
 					</p>
 
-					{/* Buttons */}
-					<div className="flex flex-wrap gap-4">
+					{/* Actions */}
+					<div className="flex flex-wrap gap-4 animate-fade-in delay-300">
 						<button
 							onClick={() => setIsTrailerOpen(true)}
-							className="flex items-center gap-3 bg-white text-black px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-200 transition-colors cursor-pointer"
+							className="group flex items-center gap-3 bg-white text-black px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-200 transition-all duration-300 transform hover:scale-105"
 						>
-							<Play size={24} fill="currentColor" />
+							<div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center group-hover:scale-110 transition-transform">
+								<Play size={14} fill="currentColor" className="ml-0.5" />
+							</div>
 							Watch Trailer
 						</button>
+
 						<Link
 							href={`/movie/${item.id}`}
-							className="flex items-center gap-3 bg-gray-600/80 backdrop-blur text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-600 transition-colors"
+							className="group flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/10 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white/20 transition-all duration-300 transform hover:scale-105"
 						>
 							<Info size={24} />
 							More Info
 						</Link>
+
+						<button className="flex items-center justify-center w-14 h-14 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-white hover:bg-white/10 transition-all duration-300">
+							<Plus size={24} />
+						</button>
 					</div>
 				</div>
 			</div>
