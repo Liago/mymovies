@@ -1,14 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { Menu, X, Search, Bell } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { Menu, X, Search, Bell, LogIn, LogOut, User } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import SearchOverlay from './SearchOverlay';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Navbar() {
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
+	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+	const userMenuRef = useRef<HTMLDivElement>(null);
+
+	const { isLoggedIn, user, avatarUrl, isLoading, hasMounted, login, logout } = useAuth();
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -18,12 +24,32 @@ export default function Navbar() {
 		return () => window.removeEventListener('scroll', handleScroll);
 	}, []);
 
+	// Close user menu when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+				setIsUserMenuOpen(false);
+			}
+		};
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => document.removeEventListener('mousedown', handleClickOutside);
+	}, []);
+
 	const navLinks = [
 		{ name: 'Home', href: '/' },
 		{ name: 'Movies', href: '/movies' },
 		{ name: 'TV Shows', href: '/tv' },
 		{ name: 'New Releases', href: '/new-releases' },
 	];
+
+	const handleLogin = async () => {
+		await login();
+	};
+
+	const handleLogout = async () => {
+		await logout();
+		setIsUserMenuOpen(false);
+	};
 
 	return (
 		<>
@@ -75,10 +101,66 @@ export default function Navbar() {
 							<span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
 						</button>
 
-						{/* User Avatar */}
-						<div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border border-white/10 flex items-center justify-center text-xs font-bold text-white hover:border-primary/50 transition-colors cursor-pointer shadow-lg shadow-black/50">
-							AZ
-						</div>
+						{/* User Avatar / Login Button */}
+						{!hasMounted || isLoading ? (
+							<div className="w-9 h-9 rounded-full bg-gray-800 animate-pulse" />
+						) : isLoggedIn && user ? (
+							<div className="relative" ref={userMenuRef}>
+								<button
+									onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+									className="flex items-center gap-2 group"
+								>
+									{avatarUrl ? (
+										<Image
+											src={avatarUrl}
+											alt={user.username}
+											width={36}
+											height={36}
+											className="rounded-full border-2 border-white/10 hover:border-primary/50 transition-colors"
+										/>
+									) : (
+										<div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-purple-600 border border-white/10 flex items-center justify-center text-xs font-bold text-white hover:border-primary/50 transition-colors cursor-pointer shadow-lg shadow-black/50">
+											{user.username.slice(0, 2).toUpperCase()}
+										</div>
+									)}
+								</button>
+
+								{/* Dropdown Menu */}
+								{isUserMenuOpen && (
+									<div className="absolute right-0 mt-2 w-56 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl shadow-black/50 overflow-hidden">
+										<div className="px-4 py-3 border-b border-white/10">
+											<p className="text-sm font-medium text-white">{user.name || user.username}</p>
+											<p className="text-xs text-gray-400">@{user.username}</p>
+										</div>
+										<div className="py-1">
+											<Link
+												href="/profile"
+												className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+												onClick={() => setIsUserMenuOpen(false)}
+											>
+												<User size={16} />
+												Il mio profilo
+											</Link>
+											<button
+												onClick={handleLogout}
+												className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-white/5 hover:text-red-300 transition-colors"
+											>
+												<LogOut size={16} />
+												Esci
+											</button>
+										</div>
+									</div>
+								)}
+							</div>
+						) : (
+							<button
+								onClick={handleLogin}
+								className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-lg shadow-primary/25"
+							>
+								<LogIn size={16} />
+								Accedi
+							</button>
+						)}
 					</div>
 
 					{/* Mobile Menu Button */}
@@ -110,6 +192,40 @@ export default function Navbar() {
 								{link.name}
 							</Link>
 						))}
+
+						{/* Mobile Login/Logout */}
+						<div className="mt-8 pt-8 border-t border-white/10 w-48 text-center">
+							{!hasMounted ? (
+								<div className="w-36 h-12 rounded-full bg-gray-800 animate-pulse mx-auto" />
+							) : isLoggedIn && user ? (
+								<div className="flex flex-col items-center gap-4">
+									<div className="text-gray-400 text-sm">
+										Ciao, <span className="text-white">{user.username}</span>
+									</div>
+									<button
+										onClick={() => {
+											handleLogout();
+											setIsMobileMenuOpen(false);
+										}}
+										className="flex items-center gap-2 px-6 py-3 rounded-full border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors"
+									>
+										<LogOut size={18} />
+										Esci
+									</button>
+								</div>
+							) : (
+								<button
+									onClick={() => {
+										handleLogin();
+										setIsMobileMenuOpen(false);
+									}}
+									className="flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white font-medium hover:opacity-90 transition-opacity mx-auto"
+								>
+									<LogIn size={18} />
+									Accedi con TMDB
+								</button>
+							)}
+						</div>
 					</div>
 				</div>
 			</nav>
@@ -119,3 +235,4 @@ export default function Navbar() {
 		</>
 	);
 }
+
