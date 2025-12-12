@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Check, Lock, Globe } from 'lucide-react';
 import { actionGetUserLists, actionCreateList, actionAddToList } from '@/app/actions';
-import { TMDBList } from '@/lib/tmdb-user';
+import type { TMDBList } from '@/lib/tmdb-user';
 
 interface ListManagerModalProps {
 	isOpen: boolean;
