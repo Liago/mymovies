@@ -63,6 +63,29 @@ async function getAccountId() {
 	}
 }
 
+export async function actionGetUserLists() {
+	const sessionId = await getSessionId();
+	const accountId = await getAccountId();
+	if (!sessionId || !accountId) return [];
+
+	return await getUserLists(accountId, sessionId);
+}
+
+export async function actionCreateList(name: string, description: string) {
+	const sessionId = await getSessionId();
+	if (!sessionId) return null;
+
+	return await createList(sessionId, name, description);
+}
+
+export async function actionAddToList(listId: number, mediaId: number) {
+	const sessionId = await getSessionId();
+	if (!sessionId) return false;
+
+	return await addToList(sessionId, listId, mediaId);
+}
+
+
 
 export async function actionAddToWatchlist(mediaType: 'movie' | 'tv', mediaId: number, watchlist: boolean) {
 	const sessionId = await getSessionId();
