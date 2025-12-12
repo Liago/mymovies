@@ -47,8 +47,8 @@ export default async function FavoritesPage({ searchParams }: { searchParams: Pr
 						<Link
 							href="/profile/favorites?tab=movies"
 							className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'movies'
-									? 'bg-primary text-white shadow-lg'
-									: 'text-gray-400 hover:text-white hover:bg-white/5'
+								? 'bg-primary text-white shadow-lg'
+								: 'text-gray-400 hover:text-white hover:bg-white/5'
 								}`}
 						>
 							<Film size={16} />
@@ -57,8 +57,8 @@ export default async function FavoritesPage({ searchParams }: { searchParams: Pr
 						<Link
 							href="/profile/favorites?tab=tv"
 							className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'tv'
-									? 'bg-primary text-white shadow-lg'
-									: 'text-gray-400 hover:text-white hover:bg-white/5'
+								? 'bg-primary text-white shadow-lg'
+								: 'text-gray-400 hover:text-white hover:bg-white/5'
 								}`}
 						>
 							<Tv size={16} />
@@ -70,7 +70,7 @@ export default async function FavoritesPage({ searchParams }: { searchParams: Pr
 				{results.length > 0 ? (
 					<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
 						{results.map((item: any) => (
-							<MovieCard key={item.id} movie={item} />
+							<MovieCard key={item.id} {...item} />
 						))}
 					</div>
 				) : (
