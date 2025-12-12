@@ -6,12 +6,15 @@ import PersonCard from '@/components/PersonCard';
 import TrailerButton from '@/components/TrailerButton';
 import ActionButtons from '@/components/ActionButtons';
 import { fetchAccountStates } from '@/app/actions';
+import { cookies } from 'next/headers';
 
 export default async function TVDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
+	const cookieStore = await cookies();
+	const lang = cookieStore.get('app_language')?.value || 'en-US';
 
-	const tvShow = await getTVDetailTMDb(parseInt(id));
-	const trailerUrl = await getTVTrailerTMDb(parseInt(id));
+	const tvShow = await getTVDetailTMDb(parseInt(id), lang);
+	const trailerUrl = await getTVTrailerTMDb(parseInt(id), lang);
 	const accountStates = await fetchAccountStates('tv', parseInt(id));
 
 	if (!tvShow) {

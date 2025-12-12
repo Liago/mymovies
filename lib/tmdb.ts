@@ -8,7 +8,7 @@ export async function getMovieTrailer(imdbId: string): Promise<string | null> {
 	}
 
 	try {
-		// 1. Find TMDb ID from IMDb ID
+		// Find is external ID search, usually language independent or fixed
 		const findResponse = await fetch(
 			`${BASE_URL}/find/${imdbId}?api_key=${TMDB_API_KEY}&external_source=imdb_id`
 		);
@@ -23,9 +23,8 @@ export async function getMovieTrailer(imdbId: string): Promise<string | null> {
 		const type = movie ? 'movie' : 'tv';
 		const tmdbId = item.id;
 
-		// 2. Get Videos
 		const videosResponse = await fetch(
-			`${BASE_URL}/${type}/${tmdbId}/videos?api_key=${TMDB_API_KEY}`
+			`${BASE_URL}/${type}/${tmdbId}/videos?api_key=${TMDB_API_KEY}` // Videos often have iso_639_1 but default is usually fine for trailers
 		);
 		const videosData = await videosResponse.json();
 
@@ -44,10 +43,10 @@ export async function getMovieTrailer(imdbId: string): Promise<string | null> {
 	}
 }
 
-export async function getPersonDetails(name: string) {
+export async function getPersonDetails(name: string, language: string = 'en-US') {
 	if (!TMDB_API_KEY) return null;
 	try {
-		const searchRes = await fetch(`${BASE_URL}/search/person?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(name)}`);
+		const searchRes = await fetch(`${BASE_URL}/search/person?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(name)}&language=${language}`);
 		const searchData = await searchRes.json();
 		const person = searchData.results?.[0];
 
@@ -64,13 +63,12 @@ export async function getPersonDetails(name: string) {
 	}
 }
 
-export async function getPersonCredits(personId: number) {
+export async function getPersonCredits(personId: number, language: string = 'en-US') {
 	if (!TMDB_API_KEY) return [];
 	try {
-		const creditsRes = await fetch(`${BASE_URL}/person/${personId}/combined_credits?api_key=${TMDB_API_KEY}`);
+		const creditsRes = await fetch(`${BASE_URL}/person/${personId}/combined_credits?api_key=${TMDB_API_KEY}&language=${language}`);
 		const creditsData = await creditsRes.json();
 
-		// Sort by popularity and take top 10
 		return creditsData.cast
 			?.sort((a: any, b: any) => b.popularity - a.popularity)
 			.slice(0, 10)
@@ -87,10 +85,10 @@ export async function getPersonCredits(personId: number) {
 	}
 }
 
-export async function getDiscoverMovies(page: number = 1) {
+export async function getDiscoverMovies(page: number = 1, language: string = 'en-US') {
 	if (!TMDB_API_KEY) return [];
 	try {
-		const res = await fetch(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=${page}`);
+		const res = await fetch(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=${page}&language=${language}`);
 		const data = await res.json();
 		return data.results.map((item: any) => ({
 			id: item.id,
@@ -105,10 +103,10 @@ export async function getDiscoverMovies(page: number = 1) {
 	}
 }
 
-export async function getTVShows(page: number = 1) {
+export async function getTVShows(page: number = 1, language: string = 'en-US') {
 	if (!TMDB_API_KEY) return [];
 	try {
-		const res = await fetch(`${BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=${page}`);
+		const res = await fetch(`${BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=${page}&language=${language}`);
 		const data = await res.json();
 		return data.results.map((item: any) => ({
 			id: item.id,
@@ -123,11 +121,10 @@ export async function getTVShows(page: number = 1) {
 	}
 }
 
-export async function getUpcomingMovies(page: number = 1) {
+export async function getUpcomingMovies(page: number = 1, language: string = 'en-US') {
 	if (!TMDB_API_KEY) return [];
 	try {
-		// Using upcoming endpoint for "New Releases" feel, or primary_release_date.desc
-		const res = await fetch(`${BASE_URL}/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`);
+		const res = await fetch(`${BASE_URL}/movie/upcoming?api_key=${TMDB_API_KEY}&language=${language}&page=${page}`);
 		const data = await res.json();
 		return data.results.map((item: any) => ({
 			id: item.id,
@@ -142,10 +139,10 @@ export async function getUpcomingMovies(page: number = 1) {
 	}
 }
 
-export async function getMovieDetailTMDb(id: number) {
+export async function getMovieDetailTMDb(id: number, language: string = 'en-US') {
 	if (!TMDB_API_KEY) return null;
 	try {
-		const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits`);
+		const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits&language=${language}`);
 		const data = await res.json();
 
 		return {
@@ -168,13 +165,24 @@ export async function getMovieDetailTMDb(id: number) {
 	}
 }
 
-export async function getMovieTrailerTMDb(id: number): Promise<string | null> {
+export async function getMovieTrailerTMDb(id: number, language: string = 'en-US'): Promise<string | null> {
 	if (!TMDB_API_KEY) return null;
 	try {
-		const videosResponse = await fetch(
-			`${BASE_URL}/movie/${id}/videos?api_key=${TMDB_API_KEY}`
+		// Try to get trailer in specific language, fallback to English if not found?
+		// TMDb usually filters strictly by language if provided.
+		// We might want to try language first, then fallback to no language (defaults to all/en)?
+		let videosResponse = await fetch(
+			`${BASE_URL}/movie/${id}/videos?api_key=${TMDB_API_KEY}&language=${language}`
 		);
-		const videosData = await videosResponse.json();
+		let videosData = await videosResponse.json();
+
+		// If no results and language was specific (e.g. it-IT), try default (en-US usually) or no language param
+		if ((!videosData.results || videosData.results.length === 0) && language !== 'en-US') {
+			videosResponse = await fetch(
+				`${BASE_URL}/movie/${id}/videos?api_key=${TMDB_API_KEY}`
+			);
+			videosData = await videosResponse.json();
+		}
 
 		const trailer = videosData.results?.find(
 			(v: any) => v.site === 'YouTube' && v.type === 'Trailer'
@@ -191,10 +199,10 @@ export async function getMovieTrailerTMDb(id: number): Promise<string | null> {
 	}
 }
 
-export async function getTVDetailTMDb(id: number) {
+export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 	if (!TMDB_API_KEY) return null;
 	try {
-		const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits`);
+		const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits&language=${language}`);
 		const data = await res.json();
 
 		return {
@@ -219,13 +227,20 @@ export async function getTVDetailTMDb(id: number) {
 	}
 }
 
-export async function getTVTrailerTMDb(id: number): Promise<string | null> {
+export async function getTVTrailerTMDb(id: number, language: string = 'en-US'): Promise<string | null> {
 	if (!TMDB_API_KEY) return null;
 	try {
-		const videosResponse = await fetch(
-			`${BASE_URL}/tv/${id}/videos?api_key=${TMDB_API_KEY}`
+		let videosResponse = await fetch(
+			`${BASE_URL}/tv/${id}/videos?api_key=${TMDB_API_KEY}&language=${language}`
 		);
-		const videosData = await videosResponse.json();
+		let videosData = await videosResponse.json();
+
+		if ((!videosData.results || videosData.results.length === 0) && language !== 'en-US') {
+			videosResponse = await fetch(
+				`${BASE_URL}/tv/${id}/videos?api_key=${TMDB_API_KEY}`
+			);
+			videosData = await videosResponse.json();
+		}
 
 		const trailer = videosData.results?.find(
 			(v: any) => v.site === 'YouTube' && v.type === 'Trailer'

@@ -2,19 +2,23 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, Search, Bell, LogIn, LogOut, User } from 'lucide-react';
+import { Menu, X, Search, Bell, LogIn, LogOut, User, Globe, Heart, Bookmark } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import SearchOverlay from './SearchOverlay';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function Navbar() {
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
 	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+	const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
 	const userMenuRef = useRef<HTMLDivElement>(null);
+	const langMenuRef = useRef<HTMLDivElement>(null);
 
 	const { isLoggedIn, user, avatarUrl, isLoading, hasMounted, login, logout } = useAuth();
+	const { language, setLanguage, t } = useLanguage();
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -24,7 +28,7 @@ export default function Navbar() {
 		return () => window.removeEventListener('scroll', handleScroll);
 	}, []);
 
-	// Close user menu when clicking outside
+	// Close menus when clicking outside
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {

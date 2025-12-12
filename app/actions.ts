@@ -1,55 +1,47 @@
 'use server';
 
 import { getPersonDetails, getPersonCredits, getDiscoverMovies, getTVShows, getMovieTrailerTMDb, getUpcomingMovies } from '@/lib/tmdb';
-import { addToWatchlist, markAsFavorite, rateMedia, deleteRating, getAccountStates, getUserLists, createList, addToList } from '@/lib/tmdb-user';
+import { addToWatchlist, markAsFavorite, rateMedia, deleteRating, getAccountStates, getUserLists, createList, addToList, getFavorites, getWatchlist } from '@/lib/tmdb-user';
 import { cookies } from 'next/headers';
 
+// ... imports ...
+
+async function getLanguage() {
+	const cookieStore = await cookies();
+	const lang = cookieStore.get('app_language')?.value;
+	return lang && (lang === 'en-US' || lang === 'it-IT') ? lang : 'en-US';
+}
+
 export async function fetchPersonDetails(name: string) {
-	return await getPersonDetails(name);
+	const lang = await getLanguage();
+	return await getPersonDetails(name, lang);
 }
 
 // ... existing actions ...
 
-export async function actionGetUserLists() {
-	const sessionId = await getSessionId();
-	const accountId = await getAccountId();
-	if (!sessionId || !accountId) return [];
-
-	return await getUserLists(accountId, sessionId);
-}
-
-export async function actionCreateList(name: string, description: string) {
-	const sessionId = await getSessionId();
-	if (!sessionId) return null;
-
-	return await createList(sessionId, name, description);
-}
-
-export async function actionAddToList(listId: number, mediaId: number) {
-	const sessionId = await getSessionId();
-	if (!sessionId) return false;
-
-	return await addToList(sessionId, listId, mediaId);
-}
-
 export async function fetchPersonCredits(id: number) {
-	return await getPersonCredits(id);
+	const lang = await getLanguage();
+	return await getPersonCredits(id, lang);
 }
 
 export async function fetchDiscoverMovies(page: number = 1) {
-	return await getDiscoverMovies(page);
+	const lang = await getLanguage();
+	return await getDiscoverMovies(page, lang);
 }
 
 export async function fetchTVShows(page: number = 1) {
-	return await getTVShows(page);
+	const lang = await getLanguage();
+	return await getTVShows(page, lang);
 }
 
 export async function fetchUpcomingMovies(page: number = 1) {
-	return await getUpcomingMovies(page);
+	const lang = await getLanguage();
+	return await getUpcomingMovies(page, lang);
 }
 
 export async function fetchMovieTrailer(id: number) {
-	return await getMovieTrailerTMDb(id);
+	const lang = await getLanguage();
+	return await getMovieTrailerTMDb(id, lang);
 }
 
 // User Actions
@@ -70,6 +62,7 @@ async function getAccountId() {
 		return null;
 	}
 }
+
 
 export async function actionAddToWatchlist(mediaType: 'movie' | 'tv', mediaId: number, watchlist: boolean) {
 	const sessionId = await getSessionId();
@@ -106,4 +99,22 @@ export async function fetchAccountStates(mediaType: 'movie' | 'tv', mediaId: num
 	if (!sessionId) return null;
 
 	return await getAccountStates(sessionId, mediaType, mediaId);
+}
+
+export async function actionGetFavorites(mediaType: 'movies' | 'tv', page: number = 1) {
+	const sessionId = await getSessionId();
+	const accountId = await getAccountId();
+	if (!sessionId || !accountId) return { results: [], total_pages: 0 };
+
+	const lang = await getLanguage();
+	return await getFavorites(accountId, sessionId, mediaType, page, lang);
+}
+
+export async function actionGetWatchlist(mediaType: 'movies' | 'tv', page: number = 1) {
+	const sessionId = await getSessionId();
+	const accountId = await getAccountId();
+	if (!sessionId || !accountId) return { results: [], total_pages: 0 };
+
+	const lang = await getLanguage();
+	return await getWatchlist(accountId, sessionId, mediaType, page, lang);
 }

@@ -8,9 +8,12 @@ import TrailerButton from '@/components/TrailerButton';
 import Navbar from '@/components/Navbar';
 import ActionButtons from '@/components/ActionButtons';
 import { fetchAccountStates } from '@/app/actions';
+import { cookies } from 'next/headers';
 
 export default async function MovieDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
+	const cookieStore = await cookies();
+	const lang = cookieStore.get('app_language')?.value || 'en-US';
 
 	const isTMDbId = /^\d+$/.test(id);
 
@@ -19,8 +22,8 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 	let accountStates = null;
 
 	if (isTMDbId) {
-		movie = await getMovieDetailTMDb(parseInt(id));
-		trailerUrl = await getMovieTrailerTMDb(parseInt(id));
+		movie = await getMovieDetailTMDb(parseInt(id), lang);
+		trailerUrl = await getMovieTrailerTMDb(parseInt(id), lang);
 		accountStates = await fetchAccountStates('movie', parseInt(id));
 	} else {
 		movie = await getMovieDetail(id);
