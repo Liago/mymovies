@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Star, Play, Plus } from 'lucide-react';
+import { Star, Play } from 'lucide-react';
+import ActionButtons from './ActionButtons';
 
 interface MovieCardProps {
 	id: number;
@@ -35,13 +36,23 @@ export default function MovieCard({ id, title, poster, rating, year, type = 'mov
 				{/* Premium Glass Overlay on Hover */}
 				<div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 md:group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4">
 					<div className="transform translate-y-4 md:group-hover:translate-y-0 transition-transform duration-300">
-						<div className="flex items-center justify-between mb-3">
-							<button className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
+						<div className="flex items-center justify-between mb-3 w-full">
+							<button className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+								onClick={(e) => {
+									e.preventDefault();
+									// Placeholder for play action
+								}}
+							>
 								<Play size={14} fill="currentColor" className="ml-0.5" />
 							</button>
-							<button className="w-8 h-8 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center hover:bg-white hover:text-black transition-colors">
-								<Plus size={16} />
-							</button>
+
+							<ActionButtons
+								mediaType={type}
+								mediaId={id}
+								showText={false}
+								showRating={false}
+								className="scale-75 origin-right"
+							/>
 						</div>
 
 						<h3 className="text-white font-bold text-sm leading-tight line-clamp-2 mb-2">

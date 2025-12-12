@@ -4,12 +4,15 @@ import { Star, ChevronLeft, Tv, Calendar, Layers } from 'lucide-react';
 import Link from 'next/link';
 import PersonCard from '@/components/PersonCard';
 import TrailerButton from '@/components/TrailerButton';
+import ActionButtons from '@/components/ActionButtons';
+import { fetchAccountStates } from '@/app/actions';
 
 export default async function TVDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 
 	const tvShow = await getTVDetailTMDb(parseInt(id));
 	const trailerUrl = await getTVTrailerTMDb(parseInt(id));
+	const accountStates = await fetchAccountStates('tv', parseInt(id));
 
 	if (!tvShow) {
 		notFound();
@@ -106,11 +109,15 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 								</div>
 							)}
 
-							{trailerUrl && (
-								<div className="flex gap-4">
-									<TrailerButton trailerUrl={trailerUrl} />
-								</div>
-							)}
+							<div className="flex flex-wrap gap-4 items-center">
+								{trailerUrl && <TrailerButton trailerUrl={trailerUrl} />}
+								<ActionButtons
+									mediaType="tv"
+									mediaId={parseInt(id)}
+									initialState={accountStates}
+									showText={true}
+								/>
+							</div>
 
 							<div className="border-t border-white/10 pt-8">
 								<h2 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-4">

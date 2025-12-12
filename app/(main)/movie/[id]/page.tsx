@@ -6,6 +6,8 @@ import Link from 'next/link';
 import PersonCard from '@/components/PersonCard';
 import TrailerButton from '@/components/TrailerButton';
 import Navbar from '@/components/Navbar';
+import ActionButtons from '@/components/ActionButtons';
+import { fetchAccountStates } from '@/app/actions';
 
 export default async function MovieDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
@@ -14,10 +16,12 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 
 	let movie;
 	let trailerUrl = null;
+	let accountStates = null;
 
 	if (isTMDbId) {
 		movie = await getMovieDetailTMDb(parseInt(id));
 		trailerUrl = await getMovieTrailerTMDb(parseInt(id));
+		accountStates = await fetchAccountStates('movie', parseInt(id));
 	} else {
 		movie = await getMovieDetail(id);
 		trailerUrl = await getMovieTrailer(id);
@@ -107,11 +111,17 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 								</div>
 							</div>
 
-							{trailerUrl && (
-								<div className="flex gap-4">
-									<TrailerButton trailerUrl={trailerUrl} />
-								</div>
-							)}
+							<div className="flex flex-wrap gap-4 items-center">
+								{trailerUrl && <TrailerButton trailerUrl={trailerUrl} />}
+								{isTMDbId && (
+									<ActionButtons
+										mediaType="movie"
+										mediaId={parseInt(id)}
+										initialState={accountStates}
+										showText={true}
+									/>
+								)}
+							</div>
 
 							<div className="border-t border-white/10 pt-8">
 								<h2 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-4">

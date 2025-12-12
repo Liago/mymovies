@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Play, Info, Plus } from 'lucide-react';
+import { Play, Info } from 'lucide-react';
 import { useState } from 'react';
 import TrailerModal from './TrailerModal';
+import ActionButtons from './ActionButtons';
 
 interface HeroItem {
 	id: number;
@@ -97,9 +98,12 @@ export default function HeroSection({ item }: HeroSectionProps) {
 							More Info
 						</Link>
 
-						<button className="flex items-center justify-center w-14 h-14 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-white hover:bg-white/10 transition-all duration-300">
-							<Plus size={24} />
-						</button>
+						<ActionButtons
+							mediaType={item.type}
+							mediaId={item.id}
+							showText={false}
+							className="scale-110 ml-2"
+						/>
 					</div>
 				</div>
 			</div>
