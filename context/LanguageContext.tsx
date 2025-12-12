@@ -82,8 +82,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 		return translations[language][key] || key;
 	};
 
-	if (!isLoaded) return <>{children}</>;
-
+	// Always provide context, but use default language if not loaded yet to prevent "must be used within Provider" errors
+	// during SSR or initial client render.
 	return (
 		<LanguageContext.Provider value={{ language, setLanguage: changeLanguage, t }}>
 			{children}
