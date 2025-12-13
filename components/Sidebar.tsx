@@ -21,7 +21,7 @@ export default function Sidebar() {
 					<Newspaper size={24} />
 				</Link>
 
-				<Link href="/favorites" className="p-3 text-gray-400 hover:text-gray-900 transition-colors">
+				<Link href="/profile/favorites" className="p-3 text-gray-400 hover:text-gray-900 transition-colors">
 					<Heart size={24} />
 				</Link>
 			</div>
