@@ -7,8 +7,9 @@ import PersonCard from '@/components/PersonCard';
 import TrailerButton from '@/components/TrailerButton';
 import Navbar from '@/components/Navbar';
 import ActionButtons from '@/components/ActionButtons';
-import { fetchAccountStates } from '@/app/actions';
+import { fetchAccountStates, fetchSimilarMovies, fetchMovieRecommendations } from '@/app/actions';
 import { cookies } from 'next/headers';
+import MovieCarousel from '@/components/MovieCarousel';
 
 export default async function MovieDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
@@ -20,11 +21,18 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 	let movie;
 	let trailerUrl = null;
 	let accountStates = null;
+	let similarMovies: any[] = [];
+	let recommendations: any[] = [];
 
 	if (isTMDbId) {
-		movie = await getMovieDetailTMDb(parseInt(id), lang);
-		trailerUrl = await getMovieTrailerTMDb(parseInt(id), lang);
-		accountStates = await fetchAccountStates('movie', parseInt(id));
+		const movieId = parseInt(id);
+		[movie, trailerUrl, accountStates, similarMovies, recommendations] = await Promise.all([
+			getMovieDetailTMDb(movieId, lang),
+			getMovieTrailerTMDb(movieId, lang),
+			fetchAccountStates('movie', movieId),
+			fetchSimilarMovies(movieId),
+			fetchMovieRecommendations(movieId)
+		]);
 	} else {
 		movie = await getMovieDetail(id);
 		trailerUrl = await getMovieTrailer(id);
@@ -186,6 +194,24 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 								<PersonCard key={index} name={actor} role="Actor" />
 							))}
 						</div>
+					</div>
+				</section>
+			)}
+
+			{/* Recommendations Section */}
+			{isTMDbId && recommendations && recommendations.length > 0 && (
+				<section className="relative z-10 bg-black border-t border-white/5">
+					<div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
+						<MovieCarousel title="You May Also Like" movies={recommendations.slice(0, 12)} />
+					</div>
+				</section>
+			)}
+
+			{/* Similar Movies Section */}
+			{isTMDbId && similarMovies && similarMovies.length > 0 && (
+				<section className="relative z-10 bg-zinc-950 border-t border-white/5">
+					<div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
+						<MovieCarousel title="Similar Movies" movies={similarMovies.slice(0, 12)} />
 					</div>
 				</section>
 			)}

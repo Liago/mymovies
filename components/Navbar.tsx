@@ -41,8 +41,11 @@ export default function Navbar() {
 
 	const navLinks = [
 		{ name: 'Home', href: '/' },
+		{ name: 'Trending', href: '/trending' },
 		{ name: 'Movies', href: '/movies' },
 		{ name: 'TV Shows', href: '/tv' },
+		{ name: 'Top Rated', href: '/top-rated' },
+		{ name: 'Now Playing', href: '/now-playing' },
 		{ name: 'New Releases', href: '/new-releases' },
 	];
 

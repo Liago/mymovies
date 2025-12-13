@@ -15,7 +15,7 @@ interface Movie {
 
 interface InfiniteMovieGridProps {
 	initialMovies: Movie[];
-	actionType: 'discover' | 'tv' | 'upcoming';
+	actionType: 'discover' | 'tv' | 'upcoming' | 'trending' | 'topRatedMovies' | 'topRatedTV' | 'nowPlaying' | 'popular' | 'popularTV';
 }
 
 export default function InfiniteMovieGrid({ initialMovies, actionType }: InfiniteMovieGridProps) {
@@ -34,6 +34,18 @@ export default function InfiniteMovieGrid({ initialMovies, actionType }: Infinit
 			newMovies = await import('@/app/actions').then(mod => mod.fetchTVShows(nextPage));
 		} else if (actionType === 'upcoming') {
 			newMovies = await import('@/app/actions').then(mod => mod.fetchUpcomingMovies(nextPage));
+		} else if (actionType === 'trending') {
+			newMovies = await import('@/app/actions').then(mod => mod.fetchTrending('all', 'week'));
+		} else if (actionType === 'topRatedMovies') {
+			newMovies = await import('@/app/actions').then(mod => mod.fetchTopRatedMovies(nextPage));
+		} else if (actionType === 'topRatedTV') {
+			newMovies = await import('@/app/actions').then(mod => mod.fetchTopRatedTV(nextPage));
+		} else if (actionType === 'nowPlaying') {
+			newMovies = await import('@/app/actions').then(mod => mod.fetchNowPlayingMovies(nextPage));
+		} else if (actionType === 'popular') {
+			newMovies = await import('@/app/actions').then(mod => mod.fetchPopularMovies(nextPage));
+		} else if (actionType === 'popularTV') {
+			newMovies = await import('@/app/actions').then(mod => mod.fetchPopularTV(nextPage));
 		}
 
 		setMovies([...movies, ...newMovies]);
