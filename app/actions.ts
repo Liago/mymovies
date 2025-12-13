@@ -1,6 +1,28 @@
 'use server';
 
-import { getPersonDetails, getPersonCredits, getDiscoverMovies, getTVShows, getMovieTrailerTMDb, getUpcomingMovies } from '@/lib/tmdb';
+import {
+	getPersonDetails,
+	getPersonCredits,
+	getDiscoverMovies,
+	getTVShows,
+	getMovieTrailerTMDb,
+	getUpcomingMovies,
+	searchMulti,
+	getTrending,
+	getTopRatedMovies,
+	getTopRatedTV,
+	getNowPlayingMovies,
+	getPopularMovies,
+	getPopularTV,
+	getMovieGenres,
+	getTVGenres,
+	getDiscoverMoviesByGenre,
+	getDiscoverTVByGenre,
+	getSimilarMovies,
+	getSimilarTV,
+	getMovieRecommendations,
+	getTVRecommendations
+} from '@/lib/tmdb';
 import { addToWatchlist, markAsFavorite, rateMedia, deleteRating, getAccountStates, getUserLists, createList, addToList, getListDetails, deleteList, removeFromList, getFavorites, getWatchlist } from '@/lib/tmdb-user';
 import { cookies } from 'next/headers';
 
@@ -159,4 +181,81 @@ export async function actionRemoveFromList(listId: number, mediaId: number) {
 	if (!sessionId) return false;
 
 	return await removeFromList(sessionId, listId, mediaId);
+}
+
+// New TMDB API Actions
+
+export async function fetchSearchMulti(query: string, page: number = 1) {
+	const lang = await getLanguage();
+	return await searchMulti(query, page, lang);
+}
+
+export async function fetchTrending(mediaType: 'all' | 'movie' | 'tv' | 'person' = 'all', timeWindow: 'day' | 'week' = 'week') {
+	const lang = await getLanguage();
+	return await getTrending(mediaType, timeWindow, lang);
+}
+
+export async function fetchTopRatedMovies(page: number = 1) {
+	const lang = await getLanguage();
+	return await getTopRatedMovies(page, lang);
+}
+
+export async function fetchTopRatedTV(page: number = 1) {
+	const lang = await getLanguage();
+	return await getTopRatedTV(page, lang);
+}
+
+export async function fetchNowPlayingMovies(page: number = 1) {
+	const lang = await getLanguage();
+	return await getNowPlayingMovies(page, lang);
+}
+
+export async function fetchPopularMovies(page: number = 1) {
+	const lang = await getLanguage();
+	return await getPopularMovies(page, lang);
+}
+
+export async function fetchPopularTV(page: number = 1) {
+	const lang = await getLanguage();
+	return await getPopularTV(page, lang);
+}
+
+export async function fetchMovieGenres() {
+	const lang = await getLanguage();
+	return await getMovieGenres(lang);
+}
+
+export async function fetchTVGenres() {
+	const lang = await getLanguage();
+	return await getTVGenres(lang);
+}
+
+export async function fetchDiscoverMoviesByGenre(genreId: number, page: number = 1) {
+	const lang = await getLanguage();
+	return await getDiscoverMoviesByGenre(genreId, page, lang);
+}
+
+export async function fetchDiscoverTVByGenre(genreId: number, page: number = 1) {
+	const lang = await getLanguage();
+	return await getDiscoverTVByGenre(genreId, page, lang);
+}
+
+export async function fetchSimilarMovies(movieId: number, page: number = 1) {
+	const lang = await getLanguage();
+	return await getSimilarMovies(movieId, page, lang);
+}
+
+export async function fetchSimilarTV(tvId: number, page: number = 1) {
+	const lang = await getLanguage();
+	return await getSimilarTV(tvId, page, lang);
+}
+
+export async function fetchMovieRecommendations(movieId: number, page: number = 1) {
+	const lang = await getLanguage();
+	return await getMovieRecommendations(movieId, page, lang);
+}
+
+export async function fetchTVRecommendations(tvId: number, page: number = 1) {
+	const lang = await getLanguage();
+	return await getTVRecommendations(tvId, page, lang);
 }

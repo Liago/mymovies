@@ -1,30 +1,35 @@
-import { fetchDiscoverMovies, fetchTVShows } from "@/app/actions";
+import { fetchTrending, fetchTopRatedMovies, fetchNowPlayingMovies, fetchPopularTV } from "@/app/actions";
 import HeroSection from "@/components/HeroSection";
 import MovieCarousel from "@/components/MovieCarousel";
 
 export default async function Home() {
-	const [movies, tvShows] = await Promise.all([
-		fetchDiscoverMovies(),
-		fetchTVShows()
+	const [trending, topRated, nowPlaying, popularTV] = await Promise.all([
+		fetchTrending('all', 'week'),
+		fetchTopRatedMovies(),
+		fetchNowPlayingMovies(),
+		fetchPopularTV()
 	]);
 
-	const heroMovie = movies[0];
-	const trendingMovies = movies.slice(1, 15);
-	const popularTV = tvShows.slice(0, 15);
+	const heroItem = trending[0];
+	const trendingItems = trending.slice(1, 15);
+	const topRatedMovies = topRated.slice(0, 15);
+	const nowPlayingMovies = nowPlaying.slice(0, 15);
+	const popularTVShows = popularTV.slice(0, 15);
 
 	return (
 		<main className="min-h-screen bg-black text-white pb-20">
 			{/* Hero Section */}
-			<HeroSection item={heroMovie} />
+			<HeroSection item={heroItem} />
 
 			{/* Content Sections */}
 			<div className="relative z-10 -mt-32 md:-mt-48 space-y-8">
-				<MovieCarousel title="Trending Movies" movies={trendingMovies} viewAllLink="/movies" />
+				<MovieCarousel title="Trending This Week" movies={trendingItems} viewAllLink="/trending" />
 
-				<MovieCarousel title="Popular TV Shows" movies={popularTV} viewAllLink="/tv" />
+				<MovieCarousel title="Now Playing in Theaters" movies={nowPlayingMovies} viewAllLink="/now-playing" />
 
-				{/* Just for demo/filling space */}
-				<MovieCarousel title="New Releases" movies={movies.slice(5, 12)} viewAllLink="/new-releases" />
+				<MovieCarousel title="Top Rated Movies" movies={topRatedMovies} viewAllLink="/top-rated" />
+
+				<MovieCarousel title="Popular TV Shows" movies={popularTVShows} viewAllLink="/tv" />
 			</div>
 		</main>
 	);

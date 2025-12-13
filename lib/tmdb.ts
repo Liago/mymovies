@@ -256,3 +256,362 @@ export async function getTVTrailerTMDb(id: number, language: string = 'en-US'): 
 		return null;
 	}
 }
+
+// Search multi-type (movies, TV shows, people)
+export async function searchMulti(query: string, page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => {
+			const mediaType = item.media_type;
+
+			if (mediaType === 'person') {
+				return {
+					id: item.id,
+					title: item.name,
+					type: 'person',
+					poster: item.profile_path ? `https://image.tmdb.org/t/p/w500${item.profile_path}` : null,
+					knownFor: item.known_for_department || 'Acting'
+				};
+			}
+
+			return {
+				id: item.id,
+				title: item.title || item.name,
+				poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+				year: (item.release_date || item.first_air_date || '').split('-')[0],
+				rating: item.vote_average,
+				type: mediaType === 'movie' ? 'movie' : 'tv'
+			};
+		});
+	} catch (e) {
+		console.error('Error in searchMulti:', e);
+		return [];
+	}
+}
+
+// Trending content (all, movie, tv, person) with time window (day, week)
+export async function getTrending(mediaType: 'all' | 'movie' | 'tv' | 'person' = 'all', timeWindow: 'day' | 'week' = 'week', language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/trending/${mediaType}/${timeWindow}?api_key=${TMDB_API_KEY}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => {
+			const type = item.media_type || mediaType;
+
+			if (type === 'person') {
+				return {
+					id: item.id,
+					title: item.name,
+					type: 'person',
+					poster: item.profile_path ? `https://image.tmdb.org/t/p/w500${item.profile_path}` : null,
+					knownFor: item.known_for_department || 'Acting'
+				};
+			}
+
+			return {
+				id: item.id,
+				title: item.title || item.name,
+				poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+				year: (item.release_date || item.first_air_date || '').split('-')[0],
+				rating: item.vote_average,
+				type: type === 'movie' ? 'movie' : 'tv'
+			};
+		});
+	} catch (e) {
+		console.error('Error in getTrending:', e);
+		return [];
+	}
+}
+
+// Top Rated Movies
+export async function getTopRatedMovies(page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => ({
+			id: item.id,
+			title: item.title,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.release_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: 'movie'
+		}));
+	} catch (e) {
+		console.error('Error in getTopRatedMovies:', e);
+		return [];
+	}
+}
+
+// Top Rated TV Shows
+export async function getTopRatedTV(page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/tv/top_rated?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => ({
+			id: item.id,
+			title: item.name,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.first_air_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: 'tv'
+		}));
+	} catch (e) {
+		console.error('Error in getTopRatedTV:', e);
+		return [];
+	}
+}
+
+// Now Playing Movies (currently in theaters)
+export async function getNowPlayingMovies(page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => ({
+			id: item.id,
+			title: item.title,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.release_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: 'movie'
+		}));
+	} catch (e) {
+		console.error('Error in getNowPlayingMovies:', e);
+		return [];
+	}
+}
+
+// Popular Movies
+export async function getPopularMovies(page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => ({
+			id: item.id,
+			title: item.title,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.release_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: 'movie'
+		}));
+	} catch (e) {
+		console.error('Error in getPopularMovies:', e);
+		return [];
+	}
+}
+
+// Popular TV Shows
+export async function getPopularTV(page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => ({
+			id: item.id,
+			title: item.name,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.first_air_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: 'tv'
+		}));
+	} catch (e) {
+		console.error('Error in getPopularTV:', e);
+		return [];
+	}
+}
+
+// Get Movie Genres
+export async function getMovieGenres(language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/genre/movie/list?api_key=${TMDB_API_KEY}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.genres || [];
+	} catch (e) {
+		console.error('Error in getMovieGenres:', e);
+		return [];
+	}
+}
+
+// Get TV Genres
+export async function getTVGenres(language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/genre/tv/list?api_key=${TMDB_API_KEY}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.genres || [];
+	} catch (e) {
+		console.error('Error in getTVGenres:', e);
+		return [];
+	}
+}
+
+// Discover Movies with genre filter
+export async function getDiscoverMoviesByGenre(genreId: number, page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => ({
+			id: item.id,
+			title: item.title,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.release_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: 'movie'
+		}));
+	} catch (e) {
+		console.error('Error in getDiscoverMoviesByGenre:', e);
+		return [];
+	}
+}
+
+// Discover TV Shows with genre filter
+export async function getDiscoverTVByGenre(genreId: number, page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => ({
+			id: item.id,
+			title: item.name,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.first_air_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: 'tv'
+		}));
+	} catch (e) {
+		console.error('Error in getDiscoverTVByGenre:', e);
+		return [];
+	}
+}
+
+// Similar Movies
+export async function getSimilarMovies(movieId: number, page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/movie/${movieId}/similar?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => ({
+			id: item.id,
+			title: item.title,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.release_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: 'movie'
+		}));
+	} catch (e) {
+		console.error('Error in getSimilarMovies:', e);
+		return [];
+	}
+}
+
+// Similar TV Shows
+export async function getSimilarTV(tvId: number, page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/tv/${tvId}/similar?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => ({
+			id: item.id,
+			title: item.name,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.first_air_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: 'tv'
+		}));
+	} catch (e) {
+		console.error('Error in getSimilarTV:', e);
+		return [];
+	}
+}
+
+// Movie Recommendations
+export async function getMovieRecommendations(movieId: number, page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/movie/${movieId}/recommendations?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => ({
+			id: item.id,
+			title: item.title,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.release_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: 'movie'
+		}));
+	} catch (e) {
+		console.error('Error in getMovieRecommendations:', e);
+		return [];
+	}
+}
+
+// TV Recommendations
+export async function getTVRecommendations(tvId: number, page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return [];
+	try {
+		const res = await fetch(
+			`${BASE_URL}/tv/${tvId}/recommendations?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return data.results.map((item: any) => ({
+			id: item.id,
+			title: item.name,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.first_air_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: 'tv'
+		}));
+	} catch (e) {
+		console.error('Error in getTVRecommendations:', e);
+		return [];
+	}
+}

@@ -5,17 +5,23 @@ import Link from 'next/link';
 import PersonCard from '@/components/PersonCard';
 import TrailerButton from '@/components/TrailerButton';
 import ActionButtons from '@/components/ActionButtons';
-import { fetchAccountStates } from '@/app/actions';
+import { fetchAccountStates, fetchSimilarTV, fetchTVRecommendations } from '@/app/actions';
 import { cookies } from 'next/headers';
+import MovieCarousel from '@/components/MovieCarousel';
 
 export default async function TVDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 	const cookieStore = await cookies();
 	const lang = cookieStore.get('app_language')?.value || 'en-US';
 
-	const tvShow = await getTVDetailTMDb(parseInt(id), lang);
-	const trailerUrl = await getTVTrailerTMDb(parseInt(id), lang);
-	const accountStates = await fetchAccountStates('tv', parseInt(id));
+	const tvId = parseInt(id);
+	const [tvShow, trailerUrl, accountStates, similarShows, recommendations] = await Promise.all([
+		getTVDetailTMDb(tvId, lang),
+		getTVTrailerTMDb(tvId, lang),
+		fetchAccountStates('tv', tvId),
+		fetchSimilarTV(tvId),
+		fetchTVRecommendations(tvId)
+	]);
 
 	if (!tvShow) {
 		notFound();
@@ -182,6 +188,24 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 								<PersonCard key={index} name={actor} role="Actor" />
 							))}
 						</div>
+					</div>
+				</section>
+			)}
+
+			{/* Recommendations Section */}
+			{recommendations && recommendations.length > 0 && (
+				<section className="relative z-10 bg-black border-t border-white/5">
+					<div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
+						<MovieCarousel title="You May Also Like" movies={recommendations.slice(0, 12)} />
+					</div>
+				</section>
+			)}
+
+			{/* Similar TV Shows Section */}
+			{similarShows && similarShows.length > 0 && (
+				<section className="relative z-10 bg-zinc-950 border-t border-white/5">
+					<div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
+						<MovieCarousel title="Similar TV Shows" movies={similarShows.slice(0, 12)} />
 					</div>
 				</section>
 			)}
