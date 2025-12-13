@@ -252,6 +252,88 @@ export async function addToList(
 		return false;
 	}
 }
+
+/**
+ * Get list details with items
+ */
+export async function getListDetails(listId: number, language: string = 'en-US') {
+	if (!TMDB_BEARER_TOKEN) return null;
+
+	try {
+		const response = await fetch(`${BASE_URL}/list/${listId}?language=${language}`, {
+			method: 'GET',
+			headers: getHeaders()
+		});
+
+		if (!response.ok) return null;
+
+		const data = await response.json();
+		const items = (data.items || []).map((item: any) => ({
+			id: item.id,
+			title: item.title || item.name,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.release_date || item.first_air_date || '').split('-')[0],
+			rating: item.vote_average,
+			type: item.media_type || (item.title ? 'movie' : 'tv')
+		}));
+
+		return {
+			id: data.id,
+			name: data.name,
+			description: data.description,
+			item_count: data.item_count,
+			items
+		};
+	} catch (error) {
+		console.error('Error getting list details:', error);
+		return null;
+	}
+}
+
+/**
+ * Delete a custom list
+ */
+export async function deleteList(sessionId: string, listId: number): Promise<boolean> {
+	if (!TMDB_BEARER_TOKEN) return false;
+
+	try {
+		const response = await fetch(`${BASE_URL}/list/${listId}?session_id=${sessionId}`, {
+			method: 'DELETE',
+			headers: getHeaders()
+		});
+
+		return response.ok;
+	} catch (error) {
+		console.error('Error deleting list:', error);
+		return false;
+	}
+}
+
+/**
+ * Remove media from a custom list
+ */
+export async function removeFromList(
+	sessionId: string,
+	listId: number,
+	mediaId: number
+): Promise<boolean> {
+	if (!TMDB_BEARER_TOKEN) return false;
+
+	try {
+		const response = await fetch(`${BASE_URL}/list/${listId}/remove_item?session_id=${sessionId}`, {
+			method: 'POST',
+			headers: getHeaders(),
+			body: JSON.stringify({
+				media_id: mediaId
+			})
+		});
+
+		return response.ok;
+	} catch (error) {
+		console.error('Error removing from list:', error);
+		return false;
+	}
+}
 // ... imports
 
 /**

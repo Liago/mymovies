@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, Search, Bell, LogIn, LogOut, User, Globe, Heart, Bookmark } from 'lucide-react';
+import { Menu, X, Search, Bell, LogIn, LogOut, User, Globe, Heart, Bookmark, List } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import SearchOverlay from './SearchOverlay';
 import { useAuth } from '@/context/AuthContext';
@@ -144,6 +144,30 @@ export default function Navbar() {
 											>
 												<User size={16} />
 												Il mio profilo
+											</Link>
+											<Link
+												href="/profile/favorites"
+												className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+												onClick={() => setIsUserMenuOpen(false)}
+											>
+												<Heart size={16} />
+												Preferiti
+											</Link>
+											<Link
+												href="/profile/watchlist"
+												className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+												onClick={() => setIsUserMenuOpen(false)}
+											>
+												<Bookmark size={16} />
+												Watchlist
+											</Link>
+											<Link
+												href="/profile/lists"
+												className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/10"
+												onClick={() => setIsUserMenuOpen(false)}
+											>
+												<List size={16} />
+												Le Mie Liste
 											</Link>
 											<button
 												onClick={handleLogout}

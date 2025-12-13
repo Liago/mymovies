@@ -1,7 +1,7 @@
 'use server';
 
 import { getPersonDetails, getPersonCredits, getDiscoverMovies, getTVShows, getMovieTrailerTMDb, getUpcomingMovies } from '@/lib/tmdb';
-import { addToWatchlist, markAsFavorite, rateMedia, deleteRating, getAccountStates, getUserLists, createList, addToList, getFavorites, getWatchlist } from '@/lib/tmdb-user';
+import { addToWatchlist, markAsFavorite, rateMedia, deleteRating, getAccountStates, getUserLists, createList, addToList, getListDetails, deleteList, removeFromList, getFavorites, getWatchlist } from '@/lib/tmdb-user';
 import { cookies } from 'next/headers';
 
 // ... imports ...
@@ -140,4 +140,23 @@ export async function actionGetWatchlist(mediaType: 'movies' | 'tv', page: numbe
 
 	const lang = await getLanguage();
 	return await getWatchlist(accountId, sessionId, mediaType, page, lang);
+}
+
+export async function actionGetListDetails(listId: number) {
+	const lang = await getLanguage();
+	return await getListDetails(listId, lang);
+}
+
+export async function actionDeleteList(listId: number) {
+	const sessionId = await getSessionId();
+	if (!sessionId) return false;
+
+	return await deleteList(sessionId, listId);
+}
+
+export async function actionRemoveFromList(listId: number, mediaId: number) {
+	const sessionId = await getSessionId();
+	if (!sessionId) return false;
+
+	return await removeFromList(sessionId, listId, mediaId);
 }
