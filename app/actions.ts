@@ -3,6 +3,7 @@
 import {
 	getPersonDetails,
 	getPersonCredits,
+	getPersonDetailsById,
 	getDiscoverMovies,
 	getTVShows,
 	getMovieTrailerTMDb,
@@ -44,6 +45,11 @@ export async function fetchPersonDetails(name: string) {
 export async function fetchPersonCredits(id: number) {
 	const lang = await getLanguage();
 	return await getPersonCredits(id, lang);
+}
+
+export async function fetchPersonDetailsById(id: number) {
+	const lang = await getLanguage();
+	return await getPersonDetailsById(id, lang);
 }
 
 export async function fetchDiscoverMovies(page: number = 1) {

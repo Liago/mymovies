@@ -184,8 +184,14 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 							<div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
 						</h2>
 						<div className="flex gap-8 overflow-x-auto pb-8 scrollbar-hide">
-							{tvShow.actors.map((actor: string, index: number) => (
-								<PersonCard key={index} name={actor} role="Actor" />
+							{tvShow.actors.map((actor: any, index: number) => (
+								<PersonCard
+									key={index}
+									personId={actor.id}
+									name={actor.name || actor}
+									role={actor.character || 'Actor'}
+									profilePath={actor.profilePath}
+								/>
 							))}
 						</div>
 					</div>
