@@ -66,19 +66,19 @@ export default function Navbar() {
 					: 'bg-transparent border-transparent py-6'
 					}`}
 			>
-				<div className="max-w-[1920px] mx-auto px-6 md:px-12 flex items-center justify-between">
+				<div className="max-w-[1920px] mx-auto px-6 lg:px-12 flex items-center justify-between">
 					{/* Logo */}
 					<Link href="/" className="flex items-center gap-1 z-50 group">
 						<div className="relative">
 							<div className="absolute -inset-2 bg-gradient-to-r from-primary to-purple-600 rounded-full opacity-20 group-hover:opacity-40 blur-lg transition-opacity duration-500" />
-							<span className="relative text-2xl md:text-3xl font-bold tracking-tighter text-white">
+							<span className="relative text-2xl lg:text-3xl font-bold tracking-tighter text-white">
 								CINE<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">SCOPE</span>
 							</span>
 						</div>
 					</Link>
 
 					{/* Desktop Navigation */}
-					<div className="hidden md:flex items-center gap-10">
+					<div className="hidden lg:flex items-center gap-10">
 						{navLinks.map((link) => (
 							<Link
 								key={link.name}
@@ -92,7 +92,7 @@ export default function Navbar() {
 					</div>
 
 					{/* Actions */}
-					<div className="hidden md:flex items-center gap-5">
+					<div className="hidden lg:flex items-center gap-5">
 						{/* Search Button */}
 						<button
 							onClick={() => setIsSearchOpen(true)}
@@ -195,7 +195,7 @@ export default function Navbar() {
 					</div>
 
 					{/* Mobile Menu Button */}
-					<div className="md:hidden flex items-center gap-3">
+					<div className="lg:hidden flex items-center gap-3">
 						<button
 							onClick={() => setIsSearchOpen(true)}
 							className="p-2 text-white"
@@ -212,7 +212,7 @@ export default function Navbar() {
 					</div>
 
 					{/* Mobile Menu Overlay */}
-					<div className={`fixed inset-0 bg-black/95 z-40 flex flex-col items-center justify-center gap-8 md:hidden transition-all duration-500 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+					<div className={`fixed inset-0 bg-black/95 z-40 flex flex-col items-center justify-center gap-8 lg:hidden transition-all duration-500 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
 						{navLinks.map((link) => (
 							<Link
 								key={link.name}
