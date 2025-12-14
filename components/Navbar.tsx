@@ -225,20 +225,55 @@ export default function Navbar() {
 						))}
 
 						{/* Mobile Login/Logout */}
-						<div className="mt-8 pt-8 border-t border-white/10 w-48 text-center">
+						<div className="mt-8 pt-8 border-t border-white/10 w-64 text-center">
 							{!hasMounted ? (
 								<div className="w-36 h-12 rounded-full bg-gray-800 animate-pulse mx-auto" />
 							) : isLoggedIn && user ? (
-								<div className="flex flex-col items-center gap-4">
-									<div className="text-gray-400 text-sm">
+								<div className="flex flex-col items-center gap-3">
+									<div className="text-gray-400 text-sm mb-2">
 										Ciao, <span className="text-white">{user.username}</span>
 									</div>
+
+									{/* Profile Links */}
+									<Link
+										href="/profile"
+										className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full"
+										onClick={() => setIsMobileMenuOpen(false)}
+									>
+										<User size={18} />
+										Il mio profilo
+									</Link>
+									<Link
+										href="/profile/favorites"
+										className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full"
+										onClick={() => setIsMobileMenuOpen(false)}
+									>
+										<Heart size={18} />
+										Preferiti
+									</Link>
+									<Link
+										href="/profile/watchlist"
+										className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full"
+										onClick={() => setIsMobileMenuOpen(false)}
+									>
+										<Bookmark size={18} />
+										Watchlist
+									</Link>
+									<Link
+										href="/profile/lists"
+										className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full mb-2"
+										onClick={() => setIsMobileMenuOpen(false)}
+									>
+										<List size={18} />
+										Le Mie Liste
+									</Link>
+
 									<button
 										onClick={() => {
 											handleLogout();
 											setIsMobileMenuOpen(false);
 										}}
-										className="flex items-center gap-2 px-6 py-3 rounded-full border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors"
+										className="flex items-center gap-2 px-6 py-3 rounded-full border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors mt-2"
 									>
 										<LogOut size={18} />
 										Esci
