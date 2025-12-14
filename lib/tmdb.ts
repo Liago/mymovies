@@ -669,3 +669,67 @@ export async function getTVRecommendations(tvId: number, page: number = 1, langu
 		return [];
 	}
 }
+
+// Movie Reviews
+export async function getMovieReviews(movieId: number, page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return { results: [], totalResults: 0 };
+	try {
+		const res = await fetch(
+			`${BASE_URL}/movie/${movieId}/reviews?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return {
+			results: data.results?.map((review: any) => ({
+				id: review.id,
+				author: review.author,
+				authorDetails: {
+					name: review.author_details?.name || review.author,
+					username: review.author_details?.username,
+					avatarPath: review.author_details?.avatar_path,
+					rating: review.author_details?.rating
+				},
+				content: review.content,
+				createdAt: review.created_at,
+				updatedAt: review.updated_at,
+				url: review.url
+			})) || [],
+			totalResults: data.total_results || 0
+		};
+	} catch (e) {
+		console.error('Error in getMovieReviews:', e);
+		return { results: [], totalResults: 0 };
+	}
+}
+
+// TV Reviews
+export async function getTVReviews(tvId: number, page: number = 1, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return { results: [], totalResults: 0 };
+	try {
+		const res = await fetch(
+			`${BASE_URL}/tv/${tvId}/reviews?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+		);
+		const data = await res.json();
+
+		return {
+			results: data.results?.map((review: any) => ({
+				id: review.id,
+				author: review.author,
+				authorDetails: {
+					name: review.author_details?.name || review.author,
+					username: review.author_details?.username,
+					avatarPath: review.author_details?.avatar_path,
+					rating: review.author_details?.rating
+				},
+				content: review.content,
+				createdAt: review.created_at,
+				updatedAt: review.updated_at,
+				url: review.url
+			})) || [],
+			totalResults: data.total_results || 0
+		};
+	} catch (e) {
+		console.error('Error in getTVReviews:', e);
+		return { results: [], totalResults: 0 };
+	}
+}
