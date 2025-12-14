@@ -85,6 +85,50 @@ export async function getPersonCredits(personId: number, language: string = 'en-
 	}
 }
 
+export async function getPersonDetailsById(personId: number, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return null;
+	try {
+		const res = await fetch(
+			`${BASE_URL}/person/${personId}?api_key=${TMDB_API_KEY}&append_to_response=combined_credits,external_ids&language=${language}`
+		);
+		const data = await res.json();
+
+		// Process combined credits
+		const knownFor = data.combined_credits?.cast
+			?.sort((a: any, b: any) => b.popularity - a.popularity)
+			.slice(0, 20)
+			.map((item: any) => ({
+				id: item.id,
+				title: item.title || item.name,
+				poster: item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : null,
+				year: (item.release_date || item.first_air_date || '').split('-')[0],
+				type: item.media_type,
+				character: item.character || item.job || 'N/A',
+				voteAverage: item.vote_average
+			})) || [];
+
+		return {
+			id: data.id,
+			name: data.name,
+			biography: data.biography || 'Biography not available.',
+			birthday: data.birthday,
+			deathday: data.deathday,
+			placeOfBirth: data.place_of_birth,
+			profilePath: data.profile_path ? `https://image.tmdb.org/t/p/w500${data.profile_path}` : null,
+			knownForDepartment: data.known_for_department,
+			gender: data.gender, // 0: not set, 1: female, 2: male, 3: non-binary
+			popularity: data.popularity,
+			imdbId: data.external_ids?.imdb_id,
+			homepage: data.homepage,
+			alsoKnownAs: data.also_known_as || [],
+			knownFor
+		};
+	} catch (e) {
+		console.error('Error fetching person details by ID:', e);
+		return null;
+	}
+}
+
 export async function getDiscoverMovies(page: number = 1, language: string = 'en-US') {
 	if (!TMDB_API_KEY) return [];
 	try {
@@ -155,7 +199,12 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 				imdb: data.vote_average,
 				rottenTomatoes: Math.round(data.vote_average * 10)
 			},
-			actors: data.credits?.cast?.slice(0, 5).map((c: any) => c.name) || [],
+			actors: data.credits?.cast?.slice(0, 8).map((c: any) => ({
+				id: c.id,
+				name: c.name,
+				character: c.character,
+				profilePath: c.profile_path
+			})) || [],
 			director: data.credits?.crew?.find((c: any) => c.job === 'Director')?.name || 'N/A',
 			boxOffice: 'N/A'
 		};
@@ -217,7 +266,12 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 				imdb: data.vote_average,
 				rottenTomatoes: Math.round(data.vote_average * 10)
 			},
-			actors: data.credits?.cast?.slice(0, 8).map((c: any) => c.name) || [],
+			actors: data.credits?.cast?.slice(0, 8).map((c: any) => ({
+				id: c.id,
+				name: c.name,
+				character: c.character,
+				profilePath: c.profile_path
+			})) || [],
 			creators: data.created_by?.map((c: any) => c.name).join(', ') || 'N/A',
 			genres: data.genres?.map((g: any) => g.name) || []
 		};
