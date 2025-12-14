@@ -93,9 +93,10 @@ export async function getPersonDetailsById(personId: number, language: string = 
 		);
 		const data = await res.json();
 
-		// Process combined credits
+		// Process combined credits - filter only movies and TV shows
 		const knownFor = data.combined_credits?.cast
-			?.sort((a: any, b: any) => b.popularity - a.popularity)
+			?.filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv')
+			.sort((a: any, b: any) => b.popularity - a.popularity)
 			.slice(0, 20)
 			.map((item: any) => ({
 				id: item.id,
