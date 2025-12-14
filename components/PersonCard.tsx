@@ -104,7 +104,7 @@ export default function PersonCard({ personId, name, role, profilePath }: Person
 								<div className="overflow-y-auto bg-zinc-950/50 custom-scrollbar">
 									{/* Profile Section */}
 									<div className="p-6 md:p-8">
-										<div className="grid md:grid-cols-[200px,1fr] gap-8">
+										<div className="grid md:grid-cols-[150px,1fr] gap-8">
 											{/* Left Column - Profile Image & Basic Info */}
 											<div className="space-y-6">
 												<div
