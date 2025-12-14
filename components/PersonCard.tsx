@@ -16,6 +16,7 @@ export default function PersonCard({ personId, name, role, profilePath }: Person
 	const [personDetails, setPersonDetails] = useState<any>(null);
 	const [isOpen, setIsOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
+	const [isImageEnlarged, setIsImageEnlarged] = useState(false);
 
 	useEffect(() => {
 		if (isOpen && personId && !personDetails) {
@@ -103,15 +104,19 @@ export default function PersonCard({ personId, name, role, profilePath }: Person
 								<div className="overflow-y-auto bg-zinc-950/50 custom-scrollbar">
 									{/* Profile Section */}
 									<div className="p-6 md:p-8">
-										<div className="grid md:grid-cols-[300px,1fr] gap-8">
+										<div className="grid md:grid-cols-[200px,1fr] gap-8">
 											{/* Left Column - Profile Image & Basic Info */}
 											<div className="space-y-6">
-												<div className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-zinc-900 border border-white/10">
+												<div
+													className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-zinc-900 border border-white/10 cursor-pointer hover:border-primary/50 transition-all group"
+													onClick={() => personDetails.profilePath && setIsImageEnlarged(true)}
+													title="Click to enlarge"
+												>
 													{personDetails.profilePath ? (
 														<img
 															src={personDetails.profilePath}
 															alt={personDetails.name}
-															className="w-full h-full object-cover"
+															className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
 														/>
 													) : (
 														<div className="w-full h-full flex items-center justify-center text-zinc-700">
@@ -289,6 +294,33 @@ export default function PersonCard({ personId, name, role, profilePath }: Person
 						)}
 					</div>
 					<div className="absolute inset-0 -z-10" onClick={() => setIsOpen(false)} />
+				</div>
+			)}
+
+			{/* Image Enlargement Modal */}
+			{isImageEnlarged && personDetails?.profilePath && (
+				<div
+					className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-in fade-in duration-300"
+					onClick={() => setIsImageEnlarged(false)}
+				>
+					<div className="relative max-w-4xl max-h-[90vh] animate-in zoom-in-95 duration-300">
+						<button
+							onClick={(e) => {
+								e.stopPropagation();
+								setIsImageEnlarged(false);
+							}}
+							className="absolute -top-12 right-0 p-2 hover:bg-white/10 rounded-full text-white hover:text-primary transition-colors"
+							title="Close"
+						>
+							<X size={32} />
+						</button>
+						<img
+							src={personDetails.profilePath}
+							alt={personDetails.name}
+							className="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain"
+							onClick={(e) => e.stopPropagation()}
+						/>
+					</div>
 				</div>
 			)}
 		</>
