@@ -1,10 +1,11 @@
 import { getMovieDetail } from '@/lib/omdb';
-import { getMovieDetailTMDb, getMovieTrailerTMDb, getMovieTrailer } from '@/lib/tmdb';
+import { getMovieDetailTMDb, getMovieTrailerTMDb, getMovieTrailer, getMovieReviews } from '@/lib/tmdb';
 import { notFound } from 'next/navigation';
 import { Play, ChevronLeft, Calendar, Clock, Film } from 'lucide-react';
 import Link from 'next/link';
 import PersonCard from '@/components/PersonCard';
 import TrailerButton from '@/components/TrailerButton';
+import ReviewsButton from '@/components/ReviewsButton';
 import Navbar from '@/components/Navbar';
 import ActionButtons from '@/components/ActionButtons';
 import { fetchAccountStates, fetchSimilarMovies, fetchMovieRecommendations } from '@/app/actions';
@@ -23,15 +24,17 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 	let accountStates = null;
 	let similarMovies: any[] = [];
 	let recommendations: any[] = [];
+	let reviews: any = { results: [], totalResults: 0 };
 
 	if (isTMDbId) {
 		const movieId = parseInt(id);
-		[movie, trailerUrl, accountStates, similarMovies, recommendations] = await Promise.all([
+		[movie, trailerUrl, accountStates, similarMovies, recommendations, reviews] = await Promise.all([
 			getMovieDetailTMDb(movieId, lang),
 			getMovieTrailerTMDb(movieId, lang),
 			fetchAccountStates('movie', movieId),
 			fetchSimilarMovies(movieId),
-			fetchMovieRecommendations(movieId)
+			fetchMovieRecommendations(movieId),
+			getMovieReviews(movieId, 1, lang)
 		]);
 	} else {
 		movie = await getMovieDetail(id);
@@ -140,12 +143,19 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 							<div className="flex flex-wrap gap-4 items-center">
 								{trailerUrl && <TrailerButton trailerUrl={trailerUrl} />}
 								{isTMDbId && (
-									<ActionButtons
-										mediaType="movie"
-										mediaId={parseInt(id)}
-										initialState={accountStates}
-										showText={true}
-									/>
+									<>
+										<ReviewsButton
+											reviews={reviews.results}
+											title={movie.title}
+											count={reviews.totalResults}
+										/>
+										<ActionButtons
+											mediaType="movie"
+											mediaId={parseInt(id)}
+											initialState={accountStates}
+											showText={true}
+										/>
+									</>
 								)}
 							</div>
 

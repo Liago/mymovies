@@ -1,9 +1,10 @@
-import { getTVDetailTMDb, getTVTrailerTMDb } from '@/lib/tmdb';
+import { getTVDetailTMDb, getTVTrailerTMDb, getTVReviews } from '@/lib/tmdb';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Tv, Calendar, Layers } from 'lucide-react';
 import Link from 'next/link';
 import PersonCard from '@/components/PersonCard';
 import TrailerButton from '@/components/TrailerButton';
+import ReviewsButton from '@/components/ReviewsButton';
 import ActionButtons from '@/components/ActionButtons';
 import { fetchAccountStates, fetchSimilarTV, fetchTVRecommendations } from '@/app/actions';
 import { cookies } from 'next/headers';
@@ -15,12 +16,13 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 	const lang = cookieStore.get('app_language')?.value || 'en-US';
 
 	const tvId = parseInt(id);
-	const [tvShow, trailerUrl, accountStates, similarShows, recommendations] = await Promise.all([
+	const [tvShow, trailerUrl, accountStates, similarShows, recommendations, reviews] = await Promise.all([
 		getTVDetailTMDb(tvId, lang),
 		getTVTrailerTMDb(tvId, lang),
 		fetchAccountStates('tv', tvId),
 		fetchSimilarTV(tvId),
-		fetchTVRecommendations(tvId)
+		fetchTVRecommendations(tvId),
+		getTVReviews(tvId, 1, lang)
 	]);
 
 	if (!tvShow) {
@@ -135,6 +137,11 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 
 							<div className="flex flex-wrap gap-4 items-center">
 								{trailerUrl && <TrailerButton trailerUrl={trailerUrl} />}
+								<ReviewsButton
+									reviews={reviews.results}
+									title={tvShow.title}
+									count={reviews.totalResults}
+								/>
 								<ActionButtons
 									mediaType="tv"
 									mediaId={parseInt(id)}
