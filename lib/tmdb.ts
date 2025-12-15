@@ -194,6 +194,7 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 			title: data.title,
 			description: data.overview,
 			poster: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : null,
+			backdrop: data.backdrop_path ? `https://image.tmdb.org/t/p/original${data.backdrop_path}` : null,
 			releaseDate: data.release_date,
 			duration: `${data.runtime} min`,
 			rating: {
@@ -259,6 +260,7 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 			title: data.name,
 			description: data.overview,
 			poster: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : null,
+			backdrop: data.backdrop_path ? `https://image.tmdb.org/t/p/original${data.backdrop_path}` : null,
 			releaseDate: data.first_air_date,
 			seasons: data.number_of_seasons,
 			episodes: data.number_of_episodes,

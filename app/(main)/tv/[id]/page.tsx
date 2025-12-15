@@ -29,7 +29,7 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 		notFound();
 	}
 
-	const backdropUrl = tvShow.poster?.replace('w500', 'original') || '';
+	const backdropUrl = (tvShow as any).backdrop || tvShow.poster?.replace('w500', 'original') || '';
 
 	return (
 		<main className="min-h-screen bg-black text-white">
@@ -38,9 +38,10 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 				<img
 					src={backdropUrl}
 					alt={tvShow.title}
-					className="w-full h-full object-cover opacity-30 blur-3xl scale-110"
+					className="w-full h-full object-cover opacity-50 blur-xl scale-105"
 				/>
-				<div className="absolute inset-0 bg-black/80" />
+				<div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
+				<div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black" />
 			</div>
 
 			<div className="relative z-10">
@@ -94,7 +95,7 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 									{/* IMDb Rating */}
 									<div className="flex items-center gap-2">
 										<svg width="40" height="20" viewBox="0 0 64 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<rect width="64" height="32" rx="4" fill="#F5C518"/>
+											<rect width="64" height="32" rx="4" fill="#F5C518" />
 											<text x="32" y="22" fontSize="16" fontWeight="bold" fontFamily="Arial, sans-serif" fill="#000" textAnchor="middle">IMDb</text>
 										</svg>
 										<span className="text-lg font-bold text-white">{tvShow.rating.imdb.toFixed(1)}</span>
@@ -104,8 +105,8 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 									{tvShow.rating.rottenTomatoes && (
 										<div className="flex items-center gap-2">
 											<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-												<path d="M12 2C12 2 10.5 0.5 9 1C7.5 1.5 8 3 8 3C5 3 3 5.5 3 8.5C3 12.5 6 16 9 18.5C10 19.5 11 21 12 22C13 21 14 19.5 15 18.5C18 16 21 12.5 21 8.5C21 5.5 19 3 16 3C16 3 16.5 1.5 15 1C13.5 0.5 12 2 12 2Z" fill="#FA320A"/>
-												<ellipse cx="12" cy="7" rx="2" ry="1.5" fill="#8BC34A" transform="rotate(-15 12 7)"/>
+												<path d="M12 2C12 2 10.5 0.5 9 1C7.5 1.5 8 3 8 3C5 3 3 5.5 3 8.5C3 12.5 6 16 9 18.5C10 19.5 11 21 12 22C13 21 14 19.5 15 18.5C18 16 21 12.5 21 8.5C21 5.5 19 3 16 3C16 3 16.5 1.5 15 1C13.5 0.5 12 2 12 2Z" fill="#FA320A" />
+												<ellipse cx="12" cy="7" rx="2" ry="1.5" fill="#8BC34A" transform="rotate(-15 12 7)" />
 											</svg>
 											<span className="text-lg font-bold text-white">{tvShow.rating.rottenTomatoes}%</span>
 										</div>
