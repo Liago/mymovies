@@ -37,7 +37,7 @@ export default function MovieCard({ id, title, poster, rating, year, type = 'mov
 				<div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 md:group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4">
 					<div className="transform translate-y-4 md:group-hover:translate-y-0 transition-transform duration-300">
 						<div className="flex items-center justify-between mb-3 w-full">
-							<button className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+							<button className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:bg-primary hover:text-white transition-colors flex-shrink-0"
 								onClick={(e) => {
 									e.preventDefault();
 									// Placeholder for play action
