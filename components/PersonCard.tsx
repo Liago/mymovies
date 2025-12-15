@@ -112,10 +112,10 @@ export default function PersonCard({ personId, name, role, profilePath }: Person
 											{/* Left Column - Profile Image & Person Info */}
 											<div className="space-y-6">
 												{/* FLEX LAYOUT: Image (Left) - Personal Info (Right) */}
-												<div className="flex gap-6 items-start">
+												<div className="flex gap-6">
 													{/* Profile Image */}
 													<div
-														className="w-[150px] flex-shrink-0 aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-zinc-900 border border-white/10 cursor-pointer hover:border-primary/50 transition-all group h-fit"
+														className="w-[150px] flex-shrink-0 rounded-xl overflow-hidden shadow-2xl bg-zinc-900 border border-white/10 cursor-pointer hover:border-primary/50 transition-all group relative"
 														onClick={() => personDetails.profilePath && setIsImageEnlarged(true)}
 														title="Click to enlarge"
 													>
@@ -123,17 +123,17 @@ export default function PersonCard({ personId, name, role, profilePath }: Person
 															<img
 																src={personDetails.profilePath}
 																alt={personDetails.name}
-																className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+																className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 absolute inset-0"
 															/>
 														) : (
-															<div className="w-full h-full flex items-center justify-center text-zinc-700">
+															<div className="w-full h-full flex items-center justify-center text-zinc-700 absolute inset-0">
 																<User size={60} />
 															</div>
 														)}
 													</div>
 
 													{/* Personal Information */}
-													<div className="space-y-4 bg-zinc-900/50 rounded-xl p-5 border border-white/10 h-fit flex-1">
+													<div className="space-y-4 bg-zinc-900/50 rounded-xl p-5 border border-white/10 flex-1 flex flex-col justify-center">
 														<h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-4">Personal Info</h3>
 
 														{personDetails.knownForDepartment && (
