@@ -107,12 +107,13 @@ export default function PersonCard({ personId, name, role, profilePath }: Person
 										<div className="grid lg:grid-cols-[380px,1fr] gap-8">
 											{/* Left Column - Profile Image & Basic Info */}
 											{/* Left Column - Profile Image & Person Info */}
+											{/* Left Column - Profile Image & Person Info */}
 											<div className="space-y-6">
-												{/* GRID LAYOUT: Image (Left) - Personal Info (Right) */}
-												<div className="grid grid-cols-[150px,1fr] gap-6">
+												{/* FLEX LAYOUT: Image (Left) - Personal Info (Right) */}
+												<div className="flex gap-6 items-start">
 													{/* Profile Image */}
 													<div
-														className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-zinc-900 border border-white/10 cursor-pointer hover:border-primary/50 transition-all group h-fit"
+														className="w-[150px] flex-shrink-0 aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-zinc-900 border border-white/10 cursor-pointer hover:border-primary/50 transition-all group h-fit"
 														onClick={() => personDetails.profilePath && setIsImageEnlarged(true)}
 														title="Click to enlarge"
 													>
@@ -124,13 +125,13 @@ export default function PersonCard({ personId, name, role, profilePath }: Person
 															/>
 														) : (
 															<div className="w-full h-full flex items-center justify-center text-zinc-700">
-																<User size={80} />
+																<User size={60} />
 															</div>
 														)}
 													</div>
 
 													{/* Personal Information */}
-													<div className="space-y-4 bg-zinc-900/50 rounded-xl p-5 border border-white/10 h-fit">
+													<div className="space-y-4 bg-zinc-900/50 rounded-xl p-5 border border-white/10 h-fit flex-1">
 														<h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-4">Personal Info</h3>
 
 														{personDetails.knownForDepartment && (
