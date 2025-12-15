@@ -13,6 +13,10 @@ interface PersonCardProps {
 }
 
 export default function PersonCard({ personId, name, role, profilePath }: PersonCardProps) {
+	const [personDetails, setPersonDetails] = useState<any>(null);
+	const [isOpen, setIsOpen] = useState(false);
+	const [loading, setLoading] = useState(false);
+	const [isImageEnlarged, setIsImageEnlarged] = useState(false);
 	const [visibleCredits, setVisibleCredits] = useState(10);
 
 	useEffect(() => {
