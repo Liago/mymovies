@@ -104,108 +104,113 @@ export default function PersonCard({ personId, name, role, profilePath }: Person
 								<div className="overflow-y-auto bg-zinc-950/50 custom-scrollbar">
 									{/* Profile Section */}
 									<div className="p-6 md:p-8">
-										<div className="grid md:grid-cols-[150px,1fr] gap-8">
+										<div className="grid lg:grid-cols-[380px,1fr] gap-8">
 											{/* Left Column - Profile Image & Basic Info */}
+											{/* Left Column - Profile Image & Person Info */}
 											<div className="space-y-6">
-												<div
-													className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-zinc-900 border border-white/10 cursor-pointer hover:border-primary/50 transition-all group"
-													onClick={() => personDetails.profilePath && setIsImageEnlarged(true)}
-													title="Click to enlarge"
-												>
-													{personDetails.profilePath ? (
-														<img
-															src={personDetails.profilePath}
-															alt={personDetails.name}
-															className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-														/>
-													) : (
-														<div className="w-full h-full flex items-center justify-center text-zinc-700">
-															<User size={80} />
-														</div>
-													)}
-												</div>
-
-												{/* Personal Information */}
-												<div className="space-y-4 bg-zinc-900/50 rounded-xl p-5 border border-white/10">
-													<h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-4">Personal Info</h3>
-
-													{personDetails.knownForDepartment && (
-														<div className="flex items-start gap-3">
-															<Briefcase size={18} className="text-primary mt-0.5 flex-shrink-0" />
-															<div>
-																<p className="text-xs text-zinc-500">Known For</p>
-																<p className="text-sm text-white font-medium">{personDetails.knownForDepartment}</p>
+												{/* GRID LAYOUT: Image (Left) - Personal Info (Right) */}
+												<div className="grid grid-cols-[150px,1fr] gap-6">
+													{/* Profile Image */}
+													<div
+														className="aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-zinc-900 border border-white/10 cursor-pointer hover:border-primary/50 transition-all group h-fit"
+														onClick={() => personDetails.profilePath && setIsImageEnlarged(true)}
+														title="Click to enlarge"
+													>
+														{personDetails.profilePath ? (
+															<img
+																src={personDetails.profilePath}
+																alt={personDetails.name}
+																className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+															/>
+														) : (
+															<div className="w-full h-full flex items-center justify-center text-zinc-700">
+																<User size={80} />
 															</div>
-														</div>
-													)}
+														)}
+													</div>
 
-													{personDetails.gender > 0 && (
-														<div className="flex items-start gap-3">
-															<User size={18} className="text-primary mt-0.5 flex-shrink-0" />
-															<div>
-																<p className="text-xs text-zinc-500">Gender</p>
-																<p className="text-sm text-white font-medium">{getGenderLabel(personDetails.gender)}</p>
+													{/* Personal Information */}
+													<div className="space-y-4 bg-zinc-900/50 rounded-xl p-5 border border-white/10 h-fit">
+														<h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-4">Personal Info</h3>
+
+														{personDetails.knownForDepartment && (
+															<div className="flex items-start gap-3">
+																<Briefcase size={18} className="text-primary mt-0.5 flex-shrink-0" />
+																<div>
+																	<p className="text-xs text-zinc-500">Known For</p>
+																	<p className="text-sm text-white font-medium">{personDetails.knownForDepartment}</p>
+																</div>
 															</div>
-														</div>
-													)}
+														)}
 
-													{personDetails.birthday && (
-														<div className="flex items-start gap-3">
-															<Calendar size={18} className="text-primary mt-0.5 flex-shrink-0" />
-															<div>
-																<p className="text-xs text-zinc-500">Birthday</p>
-																<p className="text-sm text-white font-medium">
-																	{formatDate(personDetails.birthday)}
-																	{personDetails.birthday && !personDetails.deathday && (
-																		<span className="text-zinc-500 ml-2">
-																			({calculateAge(personDetails.birthday)} years old)
-																		</span>
-																	)}
-																</p>
+														{personDetails.gender > 0 && (
+															<div className="flex items-start gap-3">
+																<User size={18} className="text-primary mt-0.5 flex-shrink-0" />
+																<div>
+																	<p className="text-xs text-zinc-500">Gender</p>
+																	<p className="text-sm text-white font-medium">{getGenderLabel(personDetails.gender)}</p>
+																</div>
 															</div>
-														</div>
-													)}
+														)}
 
-													{personDetails.deathday && (
-														<div className="flex items-start gap-3">
-															<Calendar size={18} className="text-red-400 mt-0.5 flex-shrink-0" />
-															<div>
-																<p className="text-xs text-zinc-500">Died</p>
-																<p className="text-sm text-white font-medium">
-																	{formatDate(personDetails.deathday)}
-																	{personDetails.birthday && (
-																		<span className="text-zinc-500 ml-2">
-																			(Aged {calculateAge(personDetails.birthday, personDetails.deathday)})
-																		</span>
-																	)}
-																</p>
+														{personDetails.birthday && (
+															<div className="flex items-start gap-3">
+																<Calendar size={18} className="text-primary mt-0.5 flex-shrink-0" />
+																<div>
+																	<p className="text-xs text-zinc-500">Birthday</p>
+																	<p className="text-sm text-white font-medium">
+																		{formatDate(personDetails.birthday)}
+																		{personDetails.birthday && !personDetails.deathday && (
+																			<span className="text-zinc-500 ml-2">
+																				({calculateAge(personDetails.birthday)} years old)
+																			</span>
+																		)}
+																	</p>
+																</div>
 															</div>
-														</div>
-													)}
+														)}
 
-													{personDetails.placeOfBirth && (
-														<div className="flex items-start gap-3">
-															<MapPin size={18} className="text-primary mt-0.5 flex-shrink-0" />
-															<div>
-																<p className="text-xs text-zinc-500">Place of Birth</p>
-																<p className="text-sm text-white font-medium">{personDetails.placeOfBirth}</p>
+														{personDetails.deathday && (
+															<div className="flex items-start gap-3">
+																<Calendar size={18} className="text-red-400 mt-0.5 flex-shrink-0" />
+																<div>
+																	<p className="text-xs text-zinc-500">Died</p>
+																	<p className="text-sm text-white font-medium">
+																		{formatDate(personDetails.deathday)}
+																		{personDetails.birthday && (
+																			<span className="text-zinc-500 ml-2">
+																				(Aged {calculateAge(personDetails.birthday, personDetails.deathday)})
+																			</span>
+																		)}
+																	</p>
+																</div>
 															</div>
-														</div>
-													)}
+														)}
 
-													{personDetails.imdbId && (
-														<div className="pt-2 border-t border-white/10">
-															<a
-																href={`https://www.imdb.com/name/${personDetails.imdbId}`}
-																target="_blank"
-																rel="noopener noreferrer"
-																className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm"
-															>
-																<ExternalLink size={16} />
-																View on IMDb
-															</a>
-														</div>
-													)}
+														{personDetails.placeOfBirth && (
+															<div className="flex items-start gap-3">
+																<MapPin size={18} className="text-primary mt-0.5 flex-shrink-0" />
+																<div>
+																	<p className="text-xs text-zinc-500">Place of Birth</p>
+																	<p className="text-sm text-white font-medium">{personDetails.placeOfBirth}</p>
+																</div>
+															</div>
+														)}
+
+														{personDetails.imdbId && (
+															<div className="pt-2 border-t border-white/10">
+																<a
+																	href={`https://www.imdb.com/name/${personDetails.imdbId}`}
+																	target="_blank"
+																	rel="noopener noreferrer"
+																	className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm"
+																>
+																	<ExternalLink size={16} />
+																	View on IMDb
+																</a>
+															</div>
+														)}
+													</div>
 												</div>
 
 												{/* Also Known As */}
