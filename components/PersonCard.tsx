@@ -13,20 +13,22 @@ interface PersonCardProps {
 }
 
 export default function PersonCard({ personId, name, role, profilePath }: PersonCardProps) {
-	const [personDetails, setPersonDetails] = useState<any>(null);
-	const [isOpen, setIsOpen] = useState(false);
-	const [loading, setLoading] = useState(false);
-	const [isImageEnlarged, setIsImageEnlarged] = useState(false);
+	const [visibleCredits, setVisibleCredits] = useState(10);
 
 	useEffect(() => {
 		if (isOpen && personId && !personDetails) {
 			setLoading(true);
 			fetchPersonDetailsById(personId).then((data) => {
 				setPersonDetails(data);
+				setVisibleCredits(10); // Reset pagination
 				setLoading(false);
 			});
 		}
 	}, [isOpen, personId, personDetails]);
+
+	const loadMoreCredits = () => {
+		setVisibleCredits((prev) => prev + 10);
+	};
 
 	const handleOpen = () => {
 		if (personId) {
@@ -251,7 +253,7 @@ export default function PersonCard({ personId, name, role, profilePath }: Person
 															<div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
 														</h3>
 														<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-															{personDetails.knownFor.map((item: any) => (
+															{personDetails.knownFor.slice(0, visibleCredits).map((item: any) => (
 																<Link
 																	href={`/${item.type}/${item.id}`}
 																	key={item.id}
@@ -286,6 +288,17 @@ export default function PersonCard({ personId, name, role, profilePath }: Person
 																</Link>
 															))}
 														</div>
+
+														{personDetails.knownFor.length > visibleCredits && (
+															<div className="mt-8 flex justify-center">
+																<button
+																	onClick={loadMoreCredits}
+																	className="px-6 py-2 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white rounded-full border border-white/10 transition-colors text-sm font-medium"
+																>
+																	Load More ({personDetails.knownFor.length - visibleCredits} remaining)
+																</button>
+															</div>
+														)}
 													</div>
 												)}
 											</div>

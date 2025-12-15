@@ -97,7 +97,7 @@ export async function getPersonDetailsById(personId: number, language: string = 
 		const knownFor = data.combined_credits?.cast
 			?.filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv')
 			.sort((a: any, b: any) => b.popularity - a.popularity)
-			.slice(0, 20)
+			.slice(0, 100)
 			.map((item: any) => ({
 				id: item.id,
 				title: item.title || item.name,
