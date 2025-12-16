@@ -2,6 +2,7 @@ import { getTrending, getUpcomingMovies, getNowPlayingMovies, getPopularTV } fro
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { Calendar, TrendingUp, Film, Tv, Star } from 'lucide-react';
+import RSSNewsSection from '@/components/RSSNewsSection';
 
 export default async function NewsPage() {
 	const cookieStore = await cookies();
@@ -31,6 +32,9 @@ export default async function NewsPage() {
 						Stay up to date with the latest releases, trending content, and what's hot in entertainment
 					</p>
 				</div>
+
+				{/* RSS Feeds Section */}
+				<RSSNewsSection />
 
 				{/* Trending This Week - Movies */}
 				<section className="mb-16">

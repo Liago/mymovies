@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Heart, Bookmark, List, Film, Tv, User } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { actionGetFavorites, actionGetWatchlist, actionGetUserLists } from '@/app/actions';
+import RSSFeedsCard from '@/components/RSSFeedsCard';
 
 async function getT(key: string) {
 	const cookieStore = await cookies();
@@ -79,7 +80,7 @@ export default async function ProfilePage() {
 				</div>
 
 				{/* Stats Cards */}
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 					{/* Favorites Card */}
 					<Link
 						href="/profile/favorites"
@@ -149,6 +150,9 @@ export default async function ProfilePage() {
 							<span className="text-gray-500">{await getT('profile.items_count')}</span>
 						</div>
 					</Link>
+
+					{/* RSS Feeds Card */}
+					<RSSFeedsCard />
 				</div>
 			</div>
 		</main>
