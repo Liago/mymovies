@@ -39,15 +39,15 @@
 
 ## Funzionalità Mancanti
 
-### 1. Pagina News - NON IMPLEMENTATA
+### 1. Pagina News - ✅ IMPLEMENTATA
 | Aspetto | Dettaglio |
 |---------|-----------|
 | **File** | `app/(main)/news/page.tsx` |
-| **Stato** | Placeholder "Coming Soon" |
+| **Stato** | ✅ Completata |
 | **Priorità** | 🟡 Media |
 | **Importanza** | 🟡 Media |
-| **Descrizione** | La pagina mostra solo un messaggio statico. Mancano: feed notizie cinema, integrazione API news, aggregazione contenuti |
-| **Suggerimento** | Integrare API come NewsAPI, TMDB Changes, o feed RSS di siti cinema |
+| **Descrizione** | La pagina ora mostra contenuti dinamici da TMDB: trending movies/TV della settimana, upcoming movies, now playing movies, e popular TV shows |
+| **Implementazione** | Integrata con TMDB API usando getTrending, getUpcomingMovies, getNowPlayingMovies, e getPopularTV. Include card interattive con poster, rating e link ai dettagli |
 
 ---
 
@@ -139,14 +139,15 @@
 
 ---
 
-### 10. Stagioni/Episodi per Serie TV
+### 10. Stagioni/Episodi per Serie TV - ✅ IMPLEMENTATA
 | Aspetto | Dettaglio |
 |---------|-----------|
-| **File** | `app/(main)/tv/[id]/page.tsx` |
+| **File** | `app/(main)/tv/[id]/page.tsx`, `components/TVSeasons.tsx` |
+| **Stato** | ✅ Completata |
 | **Priorità** | 🔴 Alta |
 | **Importanza** | 🔴 Alta |
-| **Descrizione** | Le pagine TV mostrano solo info generali. Manca visualizzazione stagioni, lista episodi, tracking episodi visti |
-| **Suggerimento** | Implementare accordion stagioni con `GET /tv/{id}/season/{season_number}` |
+| **Descrizione** | Le pagine TV ora mostrano stagioni ed episodi in formato accordion interattivo |
+| **Implementazione** | Aggiunta funzione `getTVSeasonDetails` in `lib/tmdb.ts` che usa `GET /tv/{id}/season/{season_number}`. Creato componente `TVSeasons` che mostra accordion con stagioni, episodi con thumbnail, overview, rating, runtime, guest stars. Caricamento lazy dei dati delle stagioni |
 
 ---
 
@@ -372,7 +373,7 @@
 | # | Task | Priorità | Importanza |
 |---|------|----------|------------|
 | 6 | Implementare filtri Discovery | 🔴 Alta | 🔴 Alta |
-| 7 | Creare pagina stagioni/episodi TV | 🔴 Alta | 🔴 Alta |
+| 7 | ✅ Creare pagina stagioni/episodi TV | 🔴 Alta | 🔴 Alta |
 | 8 | Migliorare accessibilità (ARIA, focus) | 🔴 Alta | 🔴 Alta |
 | 9 | Aggiungere caching API | 🔴 Alta | 🟡 Media |
 | 10 | Correggere sicurezza cookie | 🟡 Media | 🔴 Alta |
@@ -389,7 +390,7 @@
 ### Fase 4 - Nice to Have (Lungo Termine)
 | # | Task | Priorità | Importanza |
 |---|------|----------|------------|
-| 16 | Implementare pagina News | 🟡 Media | 🟡 Media |
+| 16 | ✅ Implementare pagina News | 🟡 Media | 🟡 Media |
 | 17 | Configurare PWA | 🟢 Bassa | 🟢 Bassa |
 | 18 | Aggiungere condivisione social | 🟢 Bassa | 🟢 Bassa |
 | 19 | Implementare notifiche | 🟢 Bassa | 🟡 Media |

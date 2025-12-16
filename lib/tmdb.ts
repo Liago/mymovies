@@ -736,3 +736,45 @@ export async function getTVReviews(tvId: number, page: number = 1, language: str
 		return { results: [], totalResults: 0 };
 	}
 }
+
+// TV Season Details
+export async function getTVSeasonDetails(tvId: number, seasonNumber: number, language: string = 'en-US') {
+	if (!TMDB_API_KEY) return null;
+	try {
+		const res = await fetch(
+			`${BASE_URL}/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}&language=${language}`
+		);
+		const data = await res.json();
+
+		return {
+			id: data.id,
+			name: data.name,
+			overview: data.overview,
+			airDate: data.air_date,
+			posterPath: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : null,
+			seasonNumber: data.season_number,
+			voteAverage: data.vote_average,
+			episodes: data.episodes?.map((episode: any) => ({
+				id: episode.id,
+				name: episode.name,
+				overview: episode.overview,
+				episodeNumber: episode.episode_number,
+				seasonNumber: episode.season_number,
+				airDate: episode.air_date,
+				stillPath: episode.still_path ? `https://image.tmdb.org/t/p/w500${episode.still_path}` : null,
+				voteAverage: episode.vote_average,
+				runtime: episode.runtime,
+				crew: episode.crew,
+				guestStars: episode.guest_stars?.map((guest: any) => ({
+					id: guest.id,
+					name: guest.name,
+					character: guest.character,
+					profilePath: guest.profile_path ? `https://image.tmdb.org/t/p/w185${guest.profile_path}` : null
+				})) || []
+			})) || []
+		};
+	} catch (e) {
+		console.error('Error in getTVSeasonDetails:', e);
+		return null;
+	}
+}
