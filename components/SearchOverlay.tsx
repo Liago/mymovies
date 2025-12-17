@@ -138,7 +138,7 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 							{results.map((result) => (
 								<Link
 									key={result.id}
-									href={`/movie/${result.id}`}
+									href={`/${result.type === 'tv' ? 'tv' : 'movie'}/${result.id}`}
 									onClick={onClose}
 									className="group flex gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-primary/30 transition-all"
 								>

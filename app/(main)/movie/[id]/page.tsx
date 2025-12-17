@@ -11,6 +11,57 @@ import ActionButtons from '@/components/ActionButtons';
 import { fetchAccountStates, fetchSimilarMovies, fetchMovieRecommendations } from '@/app/actions';
 import { cookies } from 'next/headers';
 import MovieCarousel from '@/components/MovieCarousel';
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+	const { id } = await params;
+	const isTMDbId = /^\d+$/.test(id);
+	const cookieStore = await cookies();
+	const lang = cookieStore.get('app_language')?.value || 'en-US';
+
+	let movie;
+	if (isTMDbId) {
+		movie = await getMovieDetailTMDb(parseInt(id), lang);
+	} else {
+		movie = await getMovieDetail(id);
+	}
+
+	if (!movie) {
+		return {
+			title: 'Movie Not Found',
+			description: 'The requested movie could not be found.'
+		};
+	}
+
+	const title = `${movie.title} - CineScope`;
+	const description = movie.description || `Read reviews and watch trailers for ${movie.title} on CineScope.`;
+	const poster = movie.poster ? (movie.poster.startsWith('http') ? movie.poster : `https://image.tmdb.org/t/p/w500${movie.poster}`) : '/placeholder-movie.jpg';
+
+	return {
+		title,
+		description,
+		openGraph: {
+			title,
+			description,
+			images: [
+				{
+					url: poster,
+					width: 500,
+					height: 750,
+					alt: movie.title,
+				},
+			],
+			type: 'website',
+		},
+		twitter: {
+			card: 'summary_large_image',
+			title,
+			description,
+			images: [poster],
+		},
+	};
+}
+
 
 export default async function MovieDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;

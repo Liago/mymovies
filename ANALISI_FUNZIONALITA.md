@@ -196,14 +196,15 @@
 
 ---
 
-### 5. SEO e Metadata
+### 5. SEO e Metadata - ✅ IMPLEMENTATA
 | Aspetto | Dettaglio |
 |---------|-----------|
+| **File** | `app/(main)/movie/[id]/page.tsx` |
+| **Stato** | ✅ Completata |
 | **Priorità** | 🔴 Alta |
 | **Importanza** | 🔴 Alta |
-| **Problema** | Mancano metadata dinamici per pagine dettaglio |
-| **File** | `app/(main)/movie/[id]/page.tsx` |
-| **Suggerimento** | Implementare `generateMetadata()` per ogni pagina con title, description, Open Graph, Twitter cards |
+| **Descrizione** | Implementata `generateMetadata()` per le pagine dettaglio film. Ora vengono generati titoli, descrizioni e immagini OpenGraph dinamicamente |
+| **Implementazione** | Funzione `generateMetadata` aggiunta, fetch dei dati TMDb/OMDb, generazione tag SEO completi |
 
 ---
 
@@ -228,13 +229,15 @@
 
 ---
 
-### 8. Ricerca - Routing Errato per TV
+### 8. Ricerca - Routing Errato per TV - ✅ RISOLTO
 | Aspetto | Dettaglio |
 |---------|-----------|
+| **File** | `components/SearchOverlay.tsx` |
+| **Stato** | ✅ Completata |
 | **Priorità** | 🔴 Alta |
 | **Importanza** | 🔴 Alta |
-| **Problema** | `SearchOverlay.tsx:141` - tutti i risultati linkano a `/movie/{id}` anche le serie TV |
-| **Suggerimento** | Usare `/${result.type}/${result.id}` per routing corretto |
+| **Descrizione** | Il routing della ricerca ora distingue correttamente tra film e serie TV |
+| **Implementazione** | Aggiornato il componente `Link` per usare un percorso dinamico basato su `result.type` (`/movie/{id}` o `/tv/{id}`) |
 
 ---
 
