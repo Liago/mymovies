@@ -135,14 +135,14 @@ export async function getDiscoverMovies(page: number = 1, language: string = 'en
 	try {
 		const res = await fetch(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=${page}&language=${language}`);
 		const data = await res.json();
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.title,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.release_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'movie'
-		}));
+		})) || [];
 	} catch (e) {
 		return [];
 	}
@@ -153,14 +153,14 @@ export async function getTVShows(page: number = 1, language: string = 'en-US') {
 	try {
 		const res = await fetch(`${BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=${page}&language=${language}`);
 		const data = await res.json();
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.name,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.first_air_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'tv'
-		}));
+		})) || [];
 	} catch (e) {
 		return [];
 	}
@@ -171,14 +171,14 @@ export async function getUpcomingMovies(page: number = 1, language: string = 'en
 	try {
 		const res = await fetch(`${BASE_URL}/movie/upcoming?api_key=${TMDB_API_KEY}&language=${language}&page=${page}`);
 		const data = await res.json();
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.title,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.release_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'movie'
-		}));
+		})) || [];
 	} catch (e) {
 		return [];
 	}
@@ -323,7 +323,7 @@ export async function searchMulti(query: string, page: number = 1, language: str
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => {
+		return data.results?.map((item: any) => {
 			const mediaType = item.media_type;
 
 			if (mediaType === 'person') {
@@ -344,7 +344,7 @@ export async function searchMulti(query: string, page: number = 1, language: str
 				rating: item.vote_average,
 				type: mediaType === 'movie' ? 'movie' : 'tv'
 			};
-		});
+		}) || [];
 	} catch (e) {
 		console.error('Error in searchMulti:', e);
 		return [];
@@ -360,7 +360,7 @@ export async function getTrending(mediaType: 'all' | 'movie' | 'tv' | 'person' =
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => {
+		return data.results?.map((item: any) => {
 			const type = item.media_type || mediaType;
 
 			if (type === 'person') {
@@ -381,7 +381,7 @@ export async function getTrending(mediaType: 'all' | 'movie' | 'tv' | 'person' =
 				rating: item.vote_average,
 				type: type === 'movie' ? 'movie' : 'tv'
 			};
-		});
+		}) || [];
 	} catch (e) {
 		console.error('Error in getTrending:', e);
 		return [];
@@ -397,14 +397,14 @@ export async function getTopRatedMovies(page: number = 1, language: string = 'en
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.title,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.release_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'movie'
-		}));
+		})) || [];
 	} catch (e) {
 		console.error('Error in getTopRatedMovies:', e);
 		return [];
@@ -420,14 +420,14 @@ export async function getTopRatedTV(page: number = 1, language: string = 'en-US'
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.name,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.first_air_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'tv'
-		}));
+		})) || [];
 	} catch (e) {
 		console.error('Error in getTopRatedTV:', e);
 		return [];
@@ -443,14 +443,14 @@ export async function getNowPlayingMovies(page: number = 1, language: string = '
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.title,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.release_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'movie'
-		}));
+		})) || [];
 	} catch (e) {
 		console.error('Error in getNowPlayingMovies:', e);
 		return [];
@@ -466,14 +466,14 @@ export async function getPopularMovies(page: number = 1, language: string = 'en-
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.title,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.release_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'movie'
-		}));
+		})) || [];
 	} catch (e) {
 		console.error('Error in getPopularMovies:', e);
 		return [];
@@ -489,14 +489,14 @@ export async function getPopularTV(page: number = 1, language: string = 'en-US')
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.name,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.first_air_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'tv'
-		}));
+		})) || [];
 	} catch (e) {
 		console.error('Error in getPopularTV:', e);
 		return [];
@@ -544,14 +544,14 @@ export async function getDiscoverMoviesByGenre(genreId: number, page: number = 1
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.title,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.release_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'movie'
-		}));
+		})) || [];
 	} catch (e) {
 		console.error('Error in getDiscoverMoviesByGenre:', e);
 		return [];
@@ -567,14 +567,14 @@ export async function getDiscoverTVByGenre(genreId: number, page: number = 1, la
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.name,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.first_air_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'tv'
-		}));
+		})) || [];
 	} catch (e) {
 		console.error('Error in getDiscoverTVByGenre:', e);
 		return [];
@@ -590,14 +590,14 @@ export async function getSimilarMovies(movieId: number, page: number = 1, langua
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.title,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.release_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'movie'
-		}));
+		})) || [];
 	} catch (e) {
 		console.error('Error in getSimilarMovies:', e);
 		return [];
@@ -613,14 +613,14 @@ export async function getSimilarTV(tvId: number, page: number = 1, language: str
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.name,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.first_air_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'tv'
-		}));
+		})) || [];
 	} catch (e) {
 		console.error('Error in getSimilarTV:', e);
 		return [];
@@ -636,14 +636,14 @@ export async function getMovieRecommendations(movieId: number, page: number = 1,
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.title,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.release_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'movie'
-		}));
+		})) || [];
 	} catch (e) {
 		console.error('Error in getMovieRecommendations:', e);
 		return [];
@@ -659,14 +659,14 @@ export async function getTVRecommendations(tvId: number, page: number = 1, langu
 		);
 		const data = await res.json();
 
-		return data.results.map((item: any) => ({
+		return data.results?.map((item: any) => ({
 			id: item.id,
 			title: item.name,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 			year: (item.first_air_date || '').split('-')[0],
 			rating: item.vote_average,
 			type: 'tv'
-		}));
+		})) || [];
 	} catch (e) {
 		console.error('Error in getTVRecommendations:', e);
 		return [];
