@@ -21,7 +21,7 @@ import {
 	getDiscoverTVByGenre,
 	getSimilarMovies,
 	getSimilarTV,
-
+	getMovieRecommendations,
 	getTVRecommendations,
 	getTVSeasonDetails
 } from '@/lib/tmdb';
