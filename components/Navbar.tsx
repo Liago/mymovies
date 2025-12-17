@@ -47,6 +47,7 @@ export default function Navbar() {
 		{ name: 'Top Rated', href: '/top-rated' },
 		{ name: 'Now Playing', href: '/now-playing' },
 		{ name: 'New Releases', href: '/new-releases' },
+		{ name: 'News', href: '/news' },
 	];
 
 	const handleLogin = async () => {
