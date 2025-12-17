@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronDown, Calendar, Clock, Star, User, X, Layers } from 'lucide-react';
-import { getTVSeasonDetails } from '@/lib/tmdb';
+import { fetchTVSeasonDetails } from '@/app/actions';
 import { createPortal } from 'react-dom';
 
 interface TVSeasonsModalProps {
@@ -74,7 +74,7 @@ export default function TVSeasonsModal({ isOpen, onClose, tvId, numberOfSeasons,
 			if (!seasonData.has(seasonNumber)) {
 				setLoadingSeasons(prev => new Set(prev).add(seasonNumber));
 				try {
-					const data = await getTVSeasonDetails(tvId, seasonNumber, language);
+					const data = await fetchTVSeasonDetails(tvId, seasonNumber);
 					if (data) {
 						setSeasonData(prev => new Map(prev).set(seasonNumber, data));
 					}
@@ -142,8 +142,8 @@ export default function TVSeasonsModal({ isOpen, onClose, tvId, numberOfSeasons,
 								>
 									<div className="flex items-center gap-4">
 										<div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg transition-colors ${isExpanded
-												? 'bg-primary text-white'
-												: 'bg-white/10 text-zinc-400 group-hover:bg-white/20 group-hover:text-white'
+											? 'bg-primary text-white'
+											: 'bg-white/10 text-zinc-400 group-hover:bg-white/20 group-hover:text-white'
 											}`}>
 											{seasonNumber}
 										</div>

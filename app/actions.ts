@@ -21,8 +21,9 @@ import {
 	getDiscoverTVByGenre,
 	getSimilarMovies,
 	getSimilarTV,
-	getMovieRecommendations,
-	getTVRecommendations
+
+	getTVRecommendations,
+	getTVSeasonDetails
 } from '@/lib/tmdb';
 import { addToWatchlist, markAsFavorite, rateMedia, deleteRating, getAccountStates, getUserLists, createList, addToList, getListDetails, deleteList, removeFromList, getFavorites, getWatchlist } from '@/lib/tmdb-user';
 import { cookies } from 'next/headers';
@@ -264,4 +265,9 @@ export async function fetchMovieRecommendations(movieId: number, page: number = 
 export async function fetchTVRecommendations(tvId: number, page: number = 1) {
 	const lang = await getLanguage();
 	return await getTVRecommendations(tvId, page, lang);
+}
+
+export async function fetchTVSeasonDetails(tvId: number, seasonNumber: number) {
+	const lang = await getLanguage();
+	return await getTVSeasonDetails(tvId, seasonNumber, lang);
 }
