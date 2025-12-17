@@ -9,8 +9,8 @@ import ActionButtons from '@/components/ActionButtons';
 import { fetchAccountStates, fetchSimilarTV, fetchTVRecommendations } from '@/app/actions';
 import { cookies } from 'next/headers';
 import MovieCarousel from '@/components/MovieCarousel';
-import TVSeasons from '@/components/TVSeasons';
 import HistoryTracker from '@/components/HistoryTracker';
+import TVSeasonsButton from '@/components/TVSeasonsButton';
 
 export default async function TVDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
@@ -121,10 +121,12 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 										</div>
 									)}
 
-									<div className="flex items-center gap-2">
-										<Layers size={18} />
-										<span>{tvShow.seasons} Seasons</span>
-									</div>
+									<TVSeasonsButton
+										tvId={tvId}
+										numberOfSeasons={tvShow.seasons}
+										title={tvShow.title}
+										language={lang}
+									/>
 									<div className="flex items-center gap-2">
 										<Calendar size={18} />
 										<span>{tvShow.releaseDate?.split('-')[0] || 'N/A'}</span>
@@ -192,19 +194,7 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 				</div>
 			</div>
 
-			{/* Seasons & Episodes Section */}
-			{tvShow.seasons > 0 && (
-				<section className="relative z-10 bg-zinc-950 border-t border-white/5">
-					<div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
-						<h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
-							<Layers className="text-primary" />
-							<span>Seasons & Episodes</span>
-							<div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-						</h2>
-						<TVSeasons tvId={tvId} numberOfSeasons={tvShow.seasons} language={lang} />
-					</div>
-				</section>
-			)}
+
 
 			{/* Cast Section */}
 			{tvShow.actors && tvShow.actors.length > 0 && (

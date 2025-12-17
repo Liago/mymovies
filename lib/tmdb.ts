@@ -744,6 +744,12 @@ export async function getTVSeasonDetails(tvId: number, seasonNumber: number, lan
 		const res = await fetch(
 			`${BASE_URL}/tv/${tvId}/season/${seasonNumber}?api_key=${TMDB_API_KEY}&language=${language}`
 		);
+
+		if (!res.ok) {
+			console.error(`Failed to fetch season details: ${res.status} ${res.statusText}`);
+			return null;
+		}
+
 		const data = await res.json();
 
 		return {
