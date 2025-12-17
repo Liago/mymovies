@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { HistoryProvider } from "@/context/HistoryContext";
 
 export const metadata: Metadata = {
 	title: "MyMovies - Scopri film e serie TV",
@@ -18,10 +19,12 @@ export default function RootLayout({
 		<html lang="it">
 			<body className="antialiased font-inter bg-black text-white selection:bg-primary/30">
 				<LanguageProvider>
-					<AuthProvider>
-						<Navbar />
-						{children}
-					</AuthProvider>
+					<HistoryProvider>
+						<AuthProvider>
+							<Navbar />
+							{children}
+						</AuthProvider>
+					</HistoryProvider>
 				</LanguageProvider>
 			</body>
 		</html>

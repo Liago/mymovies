@@ -1,5 +1,6 @@
 import { actionGetFavorites } from '@/app/actions';
 import MovieCard from '@/components/MovieCard';
+import PaginationControls from '@/components/PaginationControls';
 import Link from 'next/link';
 import { Heart, Film, Tv } from 'lucide-react';
 import { cookies } from 'next/headers';
@@ -27,12 +28,13 @@ async function getT(key: string) {
 	return translations[lang]?.[key] || key;
 }
 
-export default async function FavoritesPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-	const { tab } = await searchParams;
+export default async function FavoritesPage({ searchParams }: { searchParams: Promise<{ tab?: string; page?: string }> }) {
+	const { tab, page } = await searchParams;
 	const activeTab = tab === 'tv' ? 'tv' : 'movies';
+	const currentPage = page ? parseInt(page) : 1;
 	const t = await getT;
 
-	const { results } = await actionGetFavorites(activeTab as 'movies' | 'tv');
+	const { results, total_pages } = await actionGetFavorites(activeTab as 'movies' | 'tv', currentPage);
 
 	return (
 		<main className="min-h-screen bg-black text-white pt-24 pb-12 px-6">
@@ -68,10 +70,18 @@ export default async function FavoritesPage({ searchParams }: { searchParams: Pr
 				</div>
 
 				{results.length > 0 ? (
-					<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-						{results.map((item: any) => (
-							<MovieCard key={item.id} {...item} />
-						))}
+					<div className="flex flex-col gap-8">
+						<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+							{results.map((item: any) => (
+								<MovieCard key={item.id} {...item} />
+							))}
+						</div>
+						<PaginationControls
+							currentPage={currentPage}
+							totalPages={total_pages}
+							baseUrl="/profile/favorites"
+							searchParams={{ tab: activeTab }}
+						/>
 					</div>
 				) : (
 					<div className="text-center py-20 bg-white/5 rounded-2xl border border-white/10 border-dashed">

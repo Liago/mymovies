@@ -5,7 +5,7 @@ import { Star, Play } from 'lucide-react';
 import ActionButtons from './ActionButtons';
 
 interface MovieCardProps {
-	id: number;
+	id: number | string;
 	title: string;
 	poster: string | null;
 	rating?: number;

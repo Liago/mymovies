@@ -12,6 +12,7 @@ import { fetchAccountStates, fetchSimilarMovies, fetchMovieRecommendations } fro
 import { cookies } from 'next/headers';
 import MovieCarousel from '@/components/MovieCarousel';
 import { Metadata } from 'next';
+import HistoryTracker from '@/components/HistoryTracker';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
 	const { id } = await params;
@@ -159,6 +160,13 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 								<h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight tracking-tight">
 									{movie.title}
 								</h1>
+
+								<HistoryTracker
+									id={isTMDbId ? parseInt(id) : id}
+									title={movie.title}
+									poster={movie.poster || null}
+									type="movie"
+								/>
 
 								<div className="flex flex-wrap items-center gap-6 text-sm text-zinc-400 font-medium">
 									{/* IMDb Rating */}

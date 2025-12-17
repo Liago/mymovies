@@ -10,6 +10,7 @@ import { fetchAccountStates, fetchSimilarTV, fetchTVRecommendations } from '@/ap
 import { cookies } from 'next/headers';
 import MovieCarousel from '@/components/MovieCarousel';
 import TVSeasons from '@/components/TVSeasons';
+import HistoryTracker from '@/components/HistoryTracker';
 
 export default async function TVDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
@@ -91,6 +92,13 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 								<h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight tracking-tight">
 									{tvShow.title}
 								</h1>
+
+								<HistoryTracker
+									id={tvId}
+									title={tvShow.title}
+									poster={tvShow.poster || null}
+									type="tv"
+								/>
 
 								<div className="flex flex-wrap items-center gap-6 text-sm text-zinc-400 font-medium">
 									{/* IMDb Rating */}

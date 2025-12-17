@@ -84,14 +84,15 @@
 
 ---
 
-### 5. Paginazione per Preferiti/Watchlist
+### 5. Paginazione per Preferiti/Watchlist - ✅ IMPLEMENTATA
 | Aspetto | Dettaglio |
 |---------|-----------|
-| **File** | `app/(main)/profile/favorites/page.tsx`, `watchlist/page.tsx` |
+| **File** | `app/(main)/profile/favorites/page.tsx`, `watchlist/page.tsx`, `components/PaginationControls.tsx` |
+| **Stato** | ✅ Completata |
 | **Priorità** | 🟡 Media |
 | **Importanza** | 🟡 Media |
-| **Descrizione** | Non c'è paginazione. Utenti con molti contenuti vedranno performance degradate |
-| **Suggerimento** | Implementare infinite scroll o paginazione classica con `page` param |
+| **Descrizione** | Implementata paginazione classica con controlli Previous/Next per liste utente |
+| **Implementazione** | Creato componente `PaginationControls` riusabile, aggiornate le pagine favorites e watchlist per gestire il parametro `page` |
 
 ---
 
@@ -117,14 +118,15 @@
 
 ---
 
-### 8. Cronologia Visualizzazioni
+### 8. Cronologia Visualizzazioni - ✅ IMPLEMENTATA
 | Aspetto | Dettaglio |
 |---------|-----------|
-| **Stato** | Non implementato |
+| **File** | `app/(main)/history/page.tsx`, `context/HistoryContext.tsx`, `components/HistoryTracker.tsx` |
+| **Stato** | ✅ Completata |
 | **Priorità** | 🟡 Media |
 | **Importanza** | 🟡 Media |
-| **Descrizione** | Non c'è tracciamento di cosa l'utente ha già visto |
-| **Suggerimento** | Salvare history locale (localStorage) o su account TMDB se supportato |
+| **Descrizione** | Implementato tracciamento locale della cronologia visualizzazioni |
+| **Implementazione** | Creato `HistoryContext` che usa `localStorage` per salvare gli ultimi 50 elementi visitati. Aggiunta pagina dedicata `/history` accessibile dal menu e tracking automatico su pagine dettaglio film/serie |
 
 ---
 

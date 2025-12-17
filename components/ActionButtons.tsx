@@ -9,7 +9,7 @@ import ListManagerModal from './ListManagerModal';
 
 interface ActionButtonsProps {
 	mediaType: 'movie' | 'tv';
-	mediaId: number;
+	mediaId: number | string;
 	initialState?: {
 		favorite: boolean;
 		watchlist: boolean;
@@ -23,6 +23,8 @@ interface ActionButtonsProps {
 export default function ActionButtons({ mediaType, mediaId, initialState, className = '', showText = false, showRating = true }: ActionButtonsProps) {
 	const { isLoggedIn, login } = useAuth();
 	const router = useRouter();
+
+	if (typeof mediaId === 'string') return null; // OMDb items cannot be synced to TMDB account yet
 
 	const [isFavorite, setIsFavorite] = useState(initialState?.favorite || false);
 	const [isWatchlist, setIsWatchlist] = useState(initialState?.watchlist || false);
