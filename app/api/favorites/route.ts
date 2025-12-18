@@ -1,28 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET() {
 	try {
-		const cookieStore = cookies();
-		const userCookie = cookieStore.get('tmdb_user');
+		const supabase = await createClient();
 
-		if (!userCookie) {
+		// Get authenticated user
+		const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+		if (authError || !user) {
+			return NextResponse.json([], { status: 200 }); // Return empty for guests
+		}
+
+		// Get user's TMDB ID from profile
+		const { data: profile } = await supabase
+			.from('profiles')
+			.select('tmdb_id')
+			.eq('auth_user_id', user.id)
+			.single();
+
+		if (!profile) {
 			return NextResponse.json([], { status: 200 });
 		}
 
-		const user = JSON.parse(userCookie.value);
-		const supabase = createAdminClient();
-
+		// RLS will automatically filter to only this user's favorites
 		const { data, error } = await supabase
 			.from('favorites')
 			.select('*')
-			.eq('user_id', user.id)
+			.eq('user_id', profile.tmdb_id)
 			.order('added_at', { ascending: false });
 
 		if (error) throw error;
 
-		const favorites = data.map(item => ({
+		const favorites = (data || []).map(item => ({
 			id: item.media_id,
 			media_type: item.media_type,
 			title: item.title,
@@ -38,23 +48,31 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
 	try {
-		const cookieStore = cookies();
-		const userCookie = cookieStore.get('tmdb_user');
+		const supabase = await createClient();
+		const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-		if (!userCookie) {
+		if (authError || !user) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		const user = JSON.parse(userCookie.value);
+		const { data: profile } = await supabase
+			.from('profiles')
+			.select('tmdb_id')
+			.eq('auth_user_id', user.id)
+			.single();
+
+		if (!profile) {
+			return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+		}
+
 		const body = await request.json();
 		const { id, media_type, title, poster } = body;
 
-		const supabase = createAdminClient();
-
+		// RLS will automatically enforce user can only insert their own data
 		const { error } = await supabase
 			.from('favorites')
 			.upsert({
-				user_id: user.id,
+				user_id: profile.tmdb_id,
 				media_id: id,
 				media_type,
 				title,
@@ -72,14 +90,23 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
 	try {
-		const cookieStore = cookies();
-		const userCookie = cookieStore.get('tmdb_user');
+		const supabase = await createClient();
+		const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-		if (!userCookie) {
+		if (authError || !user) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		const user = JSON.parse(userCookie.value);
+		const { data: profile } = await supabase
+			.from('profiles')
+			.select('tmdb_id')
+			.eq('auth_user_id', user.id)
+			.single();
+
+		if (!profile) {
+			return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+		}
+
 		const { searchParams } = new URL(request.url);
 		const id = searchParams.get('id');
 		const type = searchParams.get('type');
@@ -88,12 +115,11 @@ export async function DELETE(request: NextRequest) {
 			return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
 		}
 
-		const supabase = createAdminClient();
-
+		// RLS ensures user can only delete their own data
 		const { error } = await supabase
 			.from('favorites')
 			.delete()
-			.match({ user_id: user.id, media_id: parseInt(id), media_type: type });
+			.match({ user_id: profile.tmdb_id, media_id: parseInt(id), media_type: type });
 
 		if (error) throw error;
 

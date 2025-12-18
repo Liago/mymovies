@@ -57,6 +57,36 @@ export async function GET(request: NextRequest) {
 			path: '/',
 		});
 
+		// *** NEW: Create Supabase auth session ***
+		try {
+			const supabaseAuthResponse = await fetch(new URL('/api/auth/supabase', request.nextUrl.origin), {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					tmdb_user: user,
+					tmdb_session: sessionId
+				})
+			});
+
+			if (supabaseAuthResponse.ok) {
+				const { access_token } = await supabaseAuthResponse.json();
+
+				// Set Supabase auth cookie if we got a token
+				if (access_token) {
+					response.cookies.set('sb-access-token', access_token, {
+						httpOnly: true,
+						secure: process.env.NODE_ENV === 'production',
+						sameSite: 'lax',
+						maxAge: 60 * 60 * 24 * 30,
+						path: '/',
+					});
+				}
+			}
+		} catch (supabaseError) {
+			console.error('Supabase auth failed (non-fatal):', supabaseError);
+			// Continue anyway - user will use TMDB auth
+		}
+
 		return response;
 	} catch (error) {
 		console.error('Error in TMDB callback:', error);
