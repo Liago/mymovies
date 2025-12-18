@@ -5,6 +5,9 @@ import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { HistoryProvider } from "@/context/HistoryContext";
 import { TrackerProvider } from "@/context/TrackerContext";
+import { FavoritesProvider } from "@/context/FavoritesContext";
+import { WatchlistProvider } from "@/context/WatchlistContext";
+import { RatingsProvider } from "@/context/RatingsContext";
 
 export const metadata: Metadata = {
 	title: "MyMovies - Scopri film e serie TV",
@@ -20,14 +23,20 @@ export default function RootLayout({
 		<html lang="it">
 			<body className="antialiased font-inter bg-black text-white selection:bg-primary/30">
 				<LanguageProvider>
-					<HistoryProvider>
-						<TrackerProvider>
-							<AuthProvider>
-								<Navbar />
-								{children}
-							</AuthProvider>
-						</TrackerProvider>
-					</HistoryProvider>
+					<AuthProvider>
+						<HistoryProvider>
+							<TrackerProvider>
+								<FavoritesProvider>
+									<WatchlistProvider>
+										<RatingsProvider>
+											<Navbar />
+											{children}
+										</RatingsProvider>
+									</WatchlistProvider>
+								</FavoritesProvider>
+							</TrackerProvider>
+						</HistoryProvider>
+					</AuthProvider>
 				</LanguageProvider>
 			</body>
 		</html>

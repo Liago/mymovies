@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { syncUserProfile } from '@/app/actions/user-data';
 
 interface TMDBUserData {
 	id: number;
@@ -61,6 +62,81 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 		checkAuth();
 	}, []);
+
+	// Comprehensive sync when user logs in
+	useEffect(() => {
+		if (user) {
+			const performSync = async () => {
+				try {
+					const sessionId = getCookie('tmdb_session');
+					if (!sessionId) return;
+
+					// 1. Sync profile
+					await syncUserProfile({
+						id: user.id,
+						username: user.username,
+						name: user.name,
+						avatar_url: user.avatar.tmdb.avatar_path
+							? `https://image.tmdb.org/t/p/w200${user.avatar.tmdb.avatar_path}`
+							: user.avatar.gravatar.hash
+								? `https://www.gravatar.com/avatar/${user.avatar.gravatar.hash}`
+								: null
+					});
+
+					// 2. Import all sync functions
+					const {
+						syncFavoritesFromTMDB,
+						syncWatchlistFromTMDB,
+						syncRatingsFromTMDB,
+						syncLocalFavorites,
+						syncLocalWatchlist,
+						syncLocalRatings,
+						pushLocalToTMDB
+					} = await import('@/app/actions/user-data');
+
+					// 3. Fetch FROM TMDB and save to Supabase (TMDB is source of truth)
+					await Promise.all([
+						syncFavoritesFromTMDB(user.id, sessionId),
+						syncWatchlistFromTMDB(user.id, sessionId),
+						syncRatingsFromTMDB(user.id, sessionId)
+					]);
+
+					// 4. Merge local guest data to Supabase
+					const localFavorites = localStorage.getItem('cine_favorites');
+					const localWatchlist = localStorage.getItem('cine_watchlist');
+					const localRatings = localStorage.getItem('cine_ratings');
+
+					if (localFavorites) {
+						const parsed = JSON.parse(localFavorites);
+						await syncLocalFavorites(user.id, parsed);
+					}
+
+					if (localWatchlist) {
+						const parsed = JSON.parse(localWatchlist);
+						await syncLocalWatchlist(user.id, parsed);
+					}
+
+					if (localRatings) {
+						const parsed = JSON.parse(localRatings);
+						await syncLocalRatings(user.id, parsed);
+					}
+
+					// 5. Push local+new items TO TMDB (bidirectional sync)
+					await pushLocalToTMDB(user.id, sessionId);
+
+					// 6. Clear guest localStorage
+					localStorage.removeItem('cine_favorites');
+					localStorage.removeItem('cine_watchlist');
+					localStorage.removeItem('cine_ratings');
+
+				} catch (err) {
+					console.error('Sync error:', err);
+				}
+			};
+
+			performSync();
+		}
+	}, [user]);
 
 	const login = useCallback(async () => {
 		try {

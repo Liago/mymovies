@@ -415,3 +415,45 @@ export async function getWatchlist(
 		return { results: [], total_pages: 0 };
 	}
 }
+
+/**
+ * Get user's rated media
+ */
+export async function getRatedMedia(
+	accountId: number,
+	sessionId: string,
+	mediaType: 'movies' | 'tv',
+	page: number = 1,
+	language: string = 'en-US'
+) {
+	if (!TMDB_BEARER_TOKEN) return { results: [], total_pages: 0 };
+
+	try {
+		const response = await fetch(`${BASE_URL}/account/${accountId}/rated/${mediaType}?session_id=${sessionId}&page=${page}&language=${language}&sort_by=created_at.desc`, {
+			method: 'GET',
+			headers: getHeaders()
+		});
+
+		if (!response.ok) return { results: [], total_pages: 0 };
+
+		const data = await response.json();
+		const results = data.results.map((item: any) => ({
+			id: item.id,
+			title: item.title || item.name,
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			year: (item.release_date || item.first_air_date || '').split('-')[0],
+			rating: item.vote_average,
+			userRating: item.rating, // User's rating
+			type: mediaType === 'movies' ? 'movie' : 'tv'
+		}));
+
+		return {
+			results,
+			total_pages: data.total_pages
+		};
+	} catch (error) {
+		console.error('Error getting rated media:', error);
+		return { results: [], total_pages: 0 };
+	}
+}
+

@@ -1,6 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useAuth } from './AuthContext';
+import {
+	syncLocalTracker,
+	getTrackerData,
+	toggleWatchedEpisode,
+	bulkMarkWatched,
+	bulkMarkUnwatched
+} from '@/app/actions/user-data';
 
 // Key format: "tvId:seasonNumber:episodeNumber"
 // Example: "1399:1:1"
@@ -25,53 +33,84 @@ interface TrackerContextType {
 const TrackerContext = createContext<TrackerContextType | undefined>(undefined);
 
 export function TrackerProvider({ children }: { children: React.ReactNode }) {
+	const { user } = useAuth();
 	const [watchedEpisodes, setWatchedEpisodes] = useState<Set<EpisodeKey>>(new Set());
 	const [watchedShows, setWatchedShows] = useState<Map<number, ShowMetadata>>(new Map());
 	const [isInitialized, setIsInitialized] = useState(false);
 
-	// Load from localStorage on mount
+	// Load from localStorage or DB on mount/auth change
 	useEffect(() => {
-		const storedEpisodes = localStorage.getItem('cine_tracker_watched');
-		const storedShows = localStorage.getItem('cine_tracker_shows');
+		const initTracker = async () => {
+			// Always check local storage first for any pending data or guest data
+			const storedEpisodes = localStorage.getItem('cine_tracker_watched');
+			const storedShows = localStorage.getItem('cine_tracker_shows');
 
-		if (storedEpisodes) {
-			try {
-				const parsed = JSON.parse(storedEpisodes);
-				if (Array.isArray(parsed)) {
-					setWatchedEpisodes(new Set(parsed));
+			let localEpisodes = new Set<string>();
+			let localShows = new Map<number, ShowMetadata>();
+
+			if (storedEpisodes) {
+				try {
+					const parsed = JSON.parse(storedEpisodes);
+					if (Array.isArray(parsed)) localEpisodes = new Set(parsed);
+				} catch (e) {
+					console.error('Failed to parse watched episodes', e);
 				}
-			} catch (e) {
-				console.error('Failed to parse watched episodes', e);
 			}
-		}
 
-		if (storedShows) {
-			try {
-				const parsed = JSON.parse(storedShows);
-				if (Array.isArray(parsed)) {
-					// Convert array of entries back to Map
-					setWatchedShows(new Map(parsed.map((item: any) => [item.id, item])));
+			if (storedShows) {
+				try {
+					const parsed = JSON.parse(storedShows);
+					if (Array.isArray(parsed)) {
+						localShows = new Map(parsed.map((item: any) => [item.id, item]));
+					}
+				} catch (e) {
+					console.error('Failed to parse watched shows', e);
 				}
-			} catch (e) {
-				console.error('Failed to parse watched shows', e);
 			}
-		}
 
-		setIsInitialized(true);
-	}, []);
+			if (user) {
+				// Sync local to DB if exists
+				if (localEpisodes.size > 0 || localShows.size > 0) {
+					await syncLocalTracker(
+						user.id,
+						Array.from(localEpisodes),
+						Array.from(localShows.values())
+					);
+					// Clear local after sync
+					localStorage.removeItem('cine_tracker_watched');
+					localStorage.removeItem('cine_tracker_shows');
+				}
+
+				// Fetch from DB
+				const { watchedEpisodes: dbEpisodes, watchedShows: dbShows } = await getTrackerData(user.id);
+
+				setWatchedEpisodes(new Set(dbEpisodes));
+				setWatchedShows(new Map(dbShows.map(s => [s.id, s])));
+			} else {
+				// Guest mode
+				setWatchedEpisodes(localEpisodes);
+				setWatchedShows(localShows);
+			}
+
+			setIsInitialized(true);
+		};
+
+		initTracker();
+	}, [user]);
 
 	// Save to localStorage whenever state changes
+	// Save to localStorage whenever state changes (ONLY IF GUEST)
 	useEffect(() => {
-		if (isInitialized) {
+		if (isInitialized && !user) {
 			localStorage.setItem('cine_tracker_watched', JSON.stringify(Array.from(watchedEpisodes)));
 		}
-	}, [watchedEpisodes, isInitialized]);
+	}, [watchedEpisodes, isInitialized, user]);
 
 	useEffect(() => {
-		if (isInitialized) {
+		if (isInitialized && !user) {
 			localStorage.setItem('cine_tracker_shows', JSON.stringify(Array.from(watchedShows.values())));
 		}
-	}, [watchedShows, isInitialized]);
+	}, [watchedShows, isInitialized, user]);
 
 	const updateShowMetadata = useCallback((tvId: number, meta?: { name: string, poster: string | null }) => {
 		if (meta) {
@@ -90,6 +129,10 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 
 	const toggleWatched = useCallback((tvId: number, seasonNumber: number, episodeNumber: number, showMeta?: { name: string, poster: string | null }) => {
 		const key = `${tvId}:${seasonNumber}:${episodeNumber}`;
+		// Determine intended state based on current state
+		const isPreviouslyWatched = watchedEpisodes.has(key);
+		const isWatched = !isPreviouslyWatched;
+
 		setWatchedEpisodes(prev => {
 			const newSet = new Set(prev);
 			if (newSet.has(key)) {
@@ -101,7 +144,11 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 			}
 			return newSet;
 		});
-	}, [updateShowMetadata]);
+
+		if (user) {
+			toggleWatchedEpisode(user.id, tvId, seasonNumber, episodeNumber, isWatched, showMeta).catch(console.error);
+		}
+	}, [watchedEpisodes, user, updateShowMetadata]);
 
 	const isWatched = useCallback((tvId: number, seasonNumber: number, episodeNumber: number) => {
 		const key = `${tvId}:${seasonNumber}:${episodeNumber}`;
@@ -117,7 +164,15 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 			return newSet;
 		});
 		updateShowMetadata(tvId, showMeta);
-	}, [updateShowMetadata]);
+
+		if (user) {
+			bulkMarkWatched(
+				user.id,
+				episodes.map(e => ({ showId: tvId, season: seasonNumber, episode: e.episodeNumber })),
+				showMeta ? { id: tvId, ...showMeta } : undefined
+			).catch(console.error);
+		}
+	}, [user, updateShowMetadata]);
 
 	const markSeasonUnwatched = useCallback((tvId: number, seasonNumber: number, episodes: { episodeNumber: number }[]) => {
 		setWatchedEpisodes(prev => {
@@ -127,7 +182,14 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 			});
 			return newSet;
 		});
-	}, []);
+
+		if (user) {
+			bulkMarkUnwatched(
+				user.id,
+				episodes.map(e => ({ showId: tvId, season: seasonNumber, episode: e.episodeNumber }))
+			).catch(console.error);
+		}
+	}, [user]);
 
 	return (
 		<TrackerContext.Provider value={{
