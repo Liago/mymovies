@@ -126,6 +126,7 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 										numberOfSeasons={tvShow.seasons}
 										title={tvShow.title}
 										language={lang}
+										poster={tvShow.poster}
 									/>
 									<div className="flex items-center gap-2">
 										<Calendar size={18} />

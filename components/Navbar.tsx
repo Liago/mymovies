@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, Search, Bell, LogIn, LogOut, User, Globe, Heart, Bookmark, List, History } from 'lucide-react';
+import { Menu, X, Search, Bell, LogIn, LogOut, User, Globe, Heart, Bookmark, List, History, CheckCircle2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import SearchOverlay from './SearchOverlay';
 import { useAuth } from '@/context/AuthContext';
@@ -181,6 +181,14 @@ export default function Navbar() {
 												<History size={16} />
 												Cronologia
 											</Link>
+											<Link
+												href="/tracker"
+												className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/10"
+												onClick={() => setIsUserMenuOpen(false)}
+											>
+												<CheckCircle2 size={16} />
+												Tracker
+											</Link>
 											<button
 												onClick={handleLogout}
 												className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-white/5 hover:text-red-300 transition-colors"
@@ -283,6 +291,14 @@ export default function Navbar() {
 									>
 										<History size={18} />
 										Cronologia
+									</Link>
+									<Link
+										href="/tracker"
+										className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full mb-2"
+										onClick={() => setIsMobileMenuOpen(false)}
+									>
+										<CheckCircle2 size={18} />
+										Tracker
 									</Link>
 
 									<button

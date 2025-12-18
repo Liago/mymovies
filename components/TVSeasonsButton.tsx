@@ -9,9 +9,10 @@ interface TVSeasonsButtonProps {
 	numberOfSeasons: number;
 	title: string;
 	language?: string;
+	poster?: string | null;
 }
 
-export default function TVSeasonsButton({ tvId, numberOfSeasons, title, language }: TVSeasonsButtonProps) {
+export default function TVSeasonsButton({ tvId, numberOfSeasons, title, language, poster }: TVSeasonsButtonProps) {
 	const [isOpen, setIsOpen] = useState(false);
 
 	return (
@@ -31,6 +32,7 @@ export default function TVSeasonsButton({ tvId, numberOfSeasons, title, language
 				numberOfSeasons={numberOfSeasons}
 				title={title}
 				language={language}
+				poster={poster || null}
 			/>
 		</>
 	);

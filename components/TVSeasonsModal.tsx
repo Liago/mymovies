@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronDown, Calendar, Clock, Star, User, X, Layers } from 'lucide-react';
+import { ChevronDown, Calendar, Clock, Star, X, Layers, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { useTracker } from '@/context/TrackerContext';
 import { fetchTVSeasonDetails } from '@/app/actions';
 import { createPortal } from 'react-dom';
 
@@ -12,6 +13,7 @@ interface TVSeasonsModalProps {
 	numberOfSeasons: number;
 	language?: string;
 	title: string;
+	poster: string | null;
 }
 
 interface Episode {
@@ -43,7 +45,8 @@ interface Season {
 	episodes: Episode[];
 }
 
-export default function TVSeasonsModal({ isOpen, onClose, tvId, numberOfSeasons, language = 'en-US', title }: TVSeasonsModalProps) {
+export default function TVSeasonsModal({ isOpen, onClose, tvId, numberOfSeasons, language = 'en-US', title, poster }: TVSeasonsModalProps) {
+	const { isWatched, toggleWatched, markSeasonWatched } = useTracker();
 	const [expandedSeasons, setExpandedSeasons] = useState<Set<number>>(new Set());
 	const [seasonData, setSeasonData] = useState<Map<number, Season>>(new Map());
 	const [loadingSeasons, setLoadingSeasons] = useState<Set<number>>(new Set());
@@ -153,9 +156,21 @@ export default function TVSeasonsModal({ isOpen, onClose, tvId, numberOfSeasons,
 												Season {seasonNumber}
 											</h3>
 											{season && (
-												<p className="text-xs text-zinc-500">
-													{season.episodes.length} Episodes
-												</p>
+												<div className="flex items-center gap-2 text-xs text-zinc-500">
+													<span>{season.episodes.length} Episodes</span>
+													{isExpanded && (
+														<button
+															onClick={(e) => {
+																e.stopPropagation();
+																markSeasonWatched(tvId, seasonNumber, season.episodes, { name: title, poster });
+															}}
+															className="ml-2 hover:text-primary transition-colors flex items-center gap-1 z-10 relative"
+														>
+															<CheckCircle2 size={12} />
+															Mark all seen
+														</button>
+													)}
+												</div>
 											)}
 										</div>
 									</div>
@@ -185,68 +200,94 @@ export default function TVSeasonsModal({ isOpen, onClose, tvId, numberOfSeasons,
 
 												{/* Episodes List */}
 												<div className="space-y-2">
-													{season.episodes.map((episode) => (
-														<div
-															key={episode.id}
-															className="rounded-lg bg-white/5 border border-white/5 p-3 hover:border-white/10 transition-colors group"
-														>
-															<div className="flex gap-3">
-																{/* Episode Still/Thumbnail */}
-																{episode.stillPath && (
-																	<div className="flex-shrink-0 w-32 h-20 rounded-md overflow-hidden bg-zinc-800">
-																		<img
-																			src={episode.stillPath}
-																			alt={episode.name}
-																			className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-																		/>
-																	</div>
-																)}
+													{season.episodes.map((episode) => {
+														const isSeen = isWatched(tvId, season.seasonNumber, episode.episodeNumber);
+														const isAired = episode.airDate && new Date(episode.airDate) < new Date();
 
-																{/* Episode Info */}
-																<div className="flex-1 min-w-0 py-0.5">
-																	<div className="flex items-start justify-between gap-3 mb-1">
-																		<div className="min-w-0">
-																			<div className="flex items-center gap-2 mb-0.5">
-																				<span className="text-xs font-mono text-primary/80">
-																					E{episode.episodeNumber}
-																				</span>
-																				<h4 className="font-medium text-white text-sm truncate pr-2">
-																					{episode.name}
-																				</h4>
-																			</div>
+														return (
+															<div
+																key={episode.id}
+																className={`rounded-lg border p-3 transition-all duration-200 group relative ${isSeen
+																	? 'bg-primary/5 border-primary/20'
+																	: 'bg-white/5 border-white/5 hover:border-white/10'
+																	}`}
+															>
+																<div className="flex gap-3">
+																	{/* Episode Still/Thumbnail */}
+																	{episode.stillPath && (
+																		<div className="flex-shrink-0 w-32 h-20 rounded-md overflow-hidden bg-zinc-800 relative group-hover/image">
+																			<img
+																				src={episode.stillPath}
+																				alt={episode.name}
+																				className={`w-full h-full object-cover transition-all ${isSeen ? 'grayscale opacity-50' : 'opacity-80 group-hover:opacity-100'}`}
+																			/>
+																			{isSeen && (
+																				<div className="absolute inset-0 flex items-center justify-center bg-black/40">
+																					<CheckCircle2 className="text-primary w-8 h-8 drop-shadow-lg" />
+																				</div>
+																			)}
 																		</div>
-																	</div>
-
-																	<div className="flex items-center gap-3 text-[10px] text-zinc-500 mb-2">
-																		{episode.airDate && (
-																			<span className="flex items-center gap-1">
-																				<Calendar size={10} />
-																				{new Date(episode.airDate).getFullYear()}
-																			</span>
-																		)}
-																		{episode.runtime > 0 && (
-																			<span className="flex items-center gap-1">
-																				<Clock size={10} />
-																				{episode.runtime}m
-																			</span>
-																		)}
-																		{episode.voteAverage > 0 && (
-																			<span className="flex items-center gap-1 text-zinc-400">
-																				<Star size={10} className="text-yellow-500/80 fill-yellow-500/80" />
-																				{episode.voteAverage.toFixed(1)}
-																			</span>
-																		)}
-																	</div>
-
-																	{episode.overview && (
-																		<p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
-																			{episode.overview}
-																		</p>
 																	)}
+
+																	{/* Episode Info */}
+																	<div className="flex-1 min-w-0 py-0.5">
+																		<div className="flex items-start justify-between gap-3 mb-1">
+																			<div className="min-w-0">
+																				<div className="flex items-center gap-2 mb-0.5">
+																					<span className={`text-xs font-mono ${isSeen ? 'text-primary' : 'text-primary/80'}`}>
+																						E{episode.episodeNumber}
+																					</span>
+																					<h4 className={`font-medium text-sm truncate pr-2 ${isSeen ? 'text-primary/90' : 'text-white'}`}>
+																						{episode.name}
+																					</h4>
+																				</div>
+																			</div>
+
+																			{/* Action Button */}
+																			<button
+																				onClick={() => toggleWatched(tvId, season.seasonNumber, episode.episodeNumber, { name: title, poster })}
+																				className={`p-1.5 rounded-full transition-colors ${isSeen
+																					? 'text-primary bg-primary/10 hover:bg-primary/20'
+																					: 'text-zinc-400 hover:text-white hover:bg-white/10'
+																					}`}
+																				title={isSeen ? "Mark as unwatched" : "Mark as watched"}
+																			>
+																				{isSeen ? <Eye size={16} /> : <EyeOff size={16} />}
+																			</button>
+																		</div>
+
+																		<div className="flex items-center gap-3 text-[10px] text-zinc-500 mb-2">
+																			{episode.airDate && (
+																				<span className={`flex items-center gap-1 ${!isSeen && isAired ? 'text-yellow-500/80 font-medium' : ''}`}>
+																					<Calendar size={10} />
+																					{episode.airDate}
+																					{!isSeen && isAired && " (Available)"}
+																				</span>
+																			)}
+																			{episode.runtime > 0 && (
+																				<span className="flex items-center gap-1">
+																					<Clock size={10} />
+																					{episode.runtime}m
+																				</span>
+																			)}
+																			{episode.voteAverage > 0 && (
+																				<span className="flex items-center gap-1 text-zinc-400">
+																					<Star size={10} className="text-yellow-500/80 fill-yellow-500/80" />
+																					{episode.voteAverage.toFixed(1)}
+																				</span>
+																			)}
+																		</div>
+
+																		{episode.overview && (
+																			<p className={`text-xs line-clamp-2 leading-relaxed ${isSeen ? 'text-zinc-500' : 'text-zinc-400'}`}>
+																				{episode.overview}
+																			</p>
+																		)}
+																	</div>
 																</div>
 															</div>
-														</div>
-													))}
+														)
+													})}
 												</div>
 											</div>
 										) : (

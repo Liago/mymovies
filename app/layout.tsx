@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { HistoryProvider } from "@/context/HistoryContext";
+import { TrackerProvider } from "@/context/TrackerContext";
 
 export const metadata: Metadata = {
 	title: "MyMovies - Scopri film e serie TV",
@@ -20,10 +21,12 @@ export default function RootLayout({
 			<body className="antialiased font-inter bg-black text-white selection:bg-primary/30">
 				<LanguageProvider>
 					<HistoryProvider>
-						<AuthProvider>
-							<Navbar />
-							{children}
-						</AuthProvider>
+						<TrackerProvider>
+							<AuthProvider>
+								<Navbar />
+								{children}
+							</AuthProvider>
+						</TrackerProvider>
 					</HistoryProvider>
 				</LanguageProvider>
 			</body>
