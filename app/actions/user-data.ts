@@ -70,7 +70,7 @@ export async function getHistory(tmdbId: number): Promise<HistoryItem[]> {
 		return [];
 	}
 
-	return data.map(row => ({
+	return data.map((row: any) => ({
 		id: row.item_id,
 		title: row.title,
 		poster: row.poster_path,
@@ -366,7 +366,7 @@ export async function getTrackerData(tmdbId: number) {
 	const { data: episodes } = await supabase.from('watched_episodes').select('*').eq('user_id', tmdbId);
 
 	const parsedShows = new Map<number, ShowMetadata>();
-	shows?.forEach(s => {
+	shows?.forEach((s: any) => {
 		parsedShows.set(s.show_id, {
 			id: s.show_id,
 			name: s.name,
@@ -376,7 +376,7 @@ export async function getTrackerData(tmdbId: number) {
 	});
 
 	const parsedEpisodes = new Set<string>();
-	episodes?.forEach(e => {
+	episodes?.forEach((e: any) => {
 		parsedEpisodes.add(`${e.show_id}:${e.season_number}:${e.episode_number}`);
 	});
 
