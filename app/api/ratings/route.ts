@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 
 export async function GET() {
 	try {
-		const cookieStore = await cookies();
+		const cookieStore = cookies();
 		const userCookie = cookieStore.get('tmdb_user');
 
 		if (!userCookie) {
@@ -39,7 +39,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
 	try {
-		const cookieStore = await cookies();
+		const cookieStore = cookies();
 		const userCookie = cookieStore.get('tmdb_user');
 
 		if (!userCookie) {
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
 	try {
-		const cookieStore = await cookies();
+		const cookieStore = cookies();
 		const userCookie = cookieStore.get('tmdb_user');
 
 		if (!userCookie) {
