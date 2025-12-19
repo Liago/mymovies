@@ -217,8 +217,63 @@ export async function actionGetWatchlist(mediaType: 'movies' | 'tv', page: numbe
 }
 
 export async function actionGetListDetails(listId: number) {
-	const lang = await getLanguage();
-	return await getListDetails(listId, lang);
+	'use server';
+	try {
+		const supabase = await createClient();
+		const { data: { user } } = await supabase.auth.getUser();
+
+		if (!user) return null;
+
+		const { data: profile } = await supabase
+			.from('profiles')
+			.select('tmdb_id')
+			.eq('auth_user_id', user.id)
+			.single();
+
+		if (!profile) return null;
+
+		// Get list details
+		const { data: list, error: listError } = await supabase
+			.from('user_lists')
+			.select('*')
+			.eq('id', listId)
+			.eq('user_id', profile.tmdb_id)
+			.single();
+
+		if (listError || !list) return null;
+
+		// Get list items
+		const { data: items, error: itemsError } = await supabase
+			.from('list_items')
+			.select('*')
+			.eq('list_id', listId)
+			.order('added_at', { ascending: false });
+
+		if (itemsError) {
+			console.error('[actionGetListDetails] Error fetching items:', itemsError);
+		}
+
+		// Transform items to MovieCard format
+		const transformedItems = (items || []).map((item: any) => ({
+			id: item.media_id,
+			title: item.title,
+			poster_path: item.poster_path,
+			media_type: item.media_type,
+			vote_average: 0,
+			release_date: '',
+		}));
+
+		return {
+			id: list.id,
+			name: list.name,
+			description: list.description,
+			item_count: items?.length || 0,
+			items: transformedItems
+		};
+	} catch (error) {
+		console.error('[actionGetListDetails] Error:', error);
+		return null;
+	}
 }
 
 export async function actionDeleteList(listId: number) {
