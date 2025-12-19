@@ -95,7 +95,12 @@ export async function GET(request: NextRequest) {
 						access_token,
 						refresh_token,
 					});
+					console.log("Supabase session set successfully in callback");
+				} else {
+					console.log("Missing access/refresh token from Supabase auth endpoint");
 				}
+			} else {
+				console.log("Supabase auth endpoint returned failed status", await supabaseAuthResponse.clone().text());
 			}
 		} catch (supabaseError) {
 			console.error('Supabase auth failed (non-fatal):', supabaseError);

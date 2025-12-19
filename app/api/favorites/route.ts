@@ -9,6 +9,7 @@ export async function GET() {
 		const { data: { user }, error: authError } = await supabase.auth.getUser();
 
 		if (authError || !user) {
+			console.log("Favorites API Auth Error:", authError, "User:", user);
 			return NextResponse.json([], { status: 200 }); // Return empty for guests
 		}
 
@@ -49,9 +50,11 @@ export async function GET() {
 export async function POST(request: NextRequest) {
 	try {
 		const supabase = await createClient();
+
 		const { data: { user }, error: authError } = await supabase.auth.getUser();
 
 		if (authError || !user) {
+			console.log("Favorites POST Auth Error:", authError, "User:", user);
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
