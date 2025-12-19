@@ -93,11 +93,29 @@ async function getAccountId() {
 }
 
 export async function actionGetUserLists() {
-	const sessionId = await getSessionId();
-	const accountId = await getAccountId();
-	if (!sessionId || !accountId) return [];
+	'use server';
+	try {
+		// Call the API endpoint that uses Supabase auth
+		const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+		const response = await fetch(`${baseUrl}/api/lists`, {
+			cache: 'no-store',
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
 
-	return await getUserLists(accountId, sessionId);
+		if (!response.ok) {
+			console.error('[actionGetUserLists] API returned:', response.status);
+			return [];
+		}
+
+		const lists = await response.json();
+		console.log('[actionGetUserLists] Fetched lists:', lists.length);
+		return lists;
+	} catch (error) {
+		console.error('[actionGetUserLists] Error:', error);
+		return [];
+	}
 }
 
 export async function actionCreateList(name: string, description: string) {

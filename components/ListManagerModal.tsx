@@ -7,9 +7,11 @@ interface ListManagerModalProps {
 	onClose: () => void;
 	mediaType: 'movie' | 'tv';
 	mediaId: number;
+	title: string;
+	poster: string | null;
 }
 
-export default function ListManagerModal({ isOpen, onClose, mediaType, mediaId }: ListManagerModalProps) {
+export default function ListManagerModal({ isOpen, onClose, mediaType, mediaId, title, poster }: ListManagerModalProps) {
 	const { lists, createList, addToList, isLoading } = useLists();
 	const [isCreating, setIsCreating] = useState(false);
 	const [newListName, setNewListName] = useState('');
@@ -31,13 +33,11 @@ export default function ListManagerModal({ isOpen, onClose, mediaType, mediaId }
 	};
 
 	const handleAddToList = async (listId: number) => {
-		// Need title/poster again. Assuming default for now
-		// This is a limitation of the current design.
 		await addToList(listId, {
 			id: mediaId,
 			media_type: mediaType,
-			title: 'Unknown', // Placeholder
-			poster: null,
+			title: title,
+			poster: poster,
 			added_at: new Date().toISOString()
 		});
 		setAddedLists(prev => [...prev, listId]);

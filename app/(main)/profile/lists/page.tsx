@@ -60,7 +60,7 @@ export default async function ListsPage() {
 												{list.name}
 											</h3>
 											<p className="text-sm text-gray-500">
-												{list.item_count} {itemsLabel}
+												{list.count} {itemsLabel}
 											</p>
 										</div>
 									</div>
