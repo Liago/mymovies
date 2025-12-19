@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSession, getAccountDetails } from '@/lib/tmdb-auth';
 import { createServerClient } from '@supabase/ssr';
+import { linkSupabaseUser } from '@/lib/supabase/auth-admin';
 
 export async function GET(request: NextRequest) {
 	try {
@@ -58,54 +59,44 @@ export async function GET(request: NextRequest) {
 			path: '/',
 		});
 
-		// *** NEW: Create Supabase auth session ***
-		try {
-			const supabaseAuthResponse = await fetch(new URL('/api/auth/supabase', request.nextUrl.origin), {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					tmdb_user: user,
-					tmdb_session: sessionId
-				})
-			});
 
-			if (supabaseAuthResponse.ok) {
-				const { access_token, refresh_token } = await supabaseAuthResponse.json();
+		// *** NEW: Create Supabase auth session directly ***
+		try {
+			console.log("Attempting to link Supabase user...");
+			const result = await linkSupabaseUser(user, sessionId);
+
+			if (result.success && result.access_token && result.refresh_token) {
+				const { access_token, refresh_token } = result;
 
 				// Use ssr client to correctly set cookies
-				if (access_token && refresh_token) {
-					const supabase = createServerClient(
-						process.env.NEXT_PUBLIC_SUPABASE_URL!,
-						process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-						{
-							cookies: {
-								getAll() {
-									return request.cookies.getAll();
-								},
-								setAll(cookiesToSet) {
-									console.log("Setting Supabase cookies in callback:", cookiesToSet.map(c => c.name));
-									cookiesToSet.forEach(({ name, value, options }) =>
-										response.cookies.set(name, value, options)
-									);
-								},
+				const supabase = createServerClient(
+					process.env.NEXT_PUBLIC_SUPABASE_URL!,
+					process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+					{
+						cookies: {
+							getAll() {
+								return request.cookies.getAll();
 							},
-						}
-					);
+							setAll(cookiesToSet) {
+								console.log("Setting Supabase cookies in callback:", cookiesToSet.map(c => c.name));
+								cookiesToSet.forEach(({ name, value, options }) =>
+									response.cookies.set(name, value, options)
+								);
+							},
+						},
+					}
+				);
 
-					await supabase.auth.setSession({
-						access_token,
-						refresh_token,
-					});
-					console.log("Supabase session set successfully in callback");
-				} else {
-					console.log("Missing access/refresh token from Supabase auth endpoint");
-				}
+				await supabase.auth.setSession({
+					access_token,
+					refresh_token,
+				});
+				console.log("Supabase session set successfully in callback");
 			} else {
-				console.log("Supabase auth endpoint returned failed status", await supabaseAuthResponse.clone().text());
+				console.log("Supabase auth linking failed:", result.error);
 			}
 		} catch (supabaseError) {
 			console.error('Supabase auth failed (non-fatal):', supabaseError);
-			// Continue anyway - user will use TMDB auth
 		}
 
 		return response;

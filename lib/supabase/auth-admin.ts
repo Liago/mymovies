@@ -1,21 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
 
-/**
- * This endpoint creates/authenticates a Supabase user when TMDB login succeeds
- * Called automatically after TMDB authentication
- */
-export async function POST(request: NextRequest) {
+interface TMDBUser {
+	id: number;
+	username: string;
+	name: string;
+	avatar: {
+		tmdb: { avatar_path: string | null };
+		gravatar: { hash: string | null };
+	};
+}
+
+export async function linkSupabaseUser(tmdb_user: TMDBUser, tmdb_session: string) {
 	try {
-		const body = await request.json();
-		const { tmdb_user, tmdb_session } = body;
-
 		if (!tmdb_user || !tmdb_session) {
-			return NextResponse.json({ error: 'Missing TMDB credentials' }, { status: 400 });
+			return { error: 'Missing TMDB credentials' };
 		}
 
-		// Use admin client to create/update user
 		const supabase = createAdminClient();
 
 		// Create a unique email for this TMDB user
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
 			if (signUpError) {
 				console.error('Error creating Supabase user:', signUpError);
-				return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+				return { error: 'Failed to create user' };
 			}
 
 			authUser = signUpData.user;
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		if (!authUser || !session) {
-			return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
+			return { error: 'Authentication failed' };
 		}
 
 		// Create/update profile with auth_user_id link
@@ -80,15 +80,15 @@ export async function POST(request: NextRequest) {
 			avatar_url
 		}, { onConflict: 'tmdb_id' });
 
-		return NextResponse.json({
+		return {
 			success: true,
 			user: authUser,
 			access_token: session.access_token,
 			refresh_token: session.refresh_token
-		});
+		};
 
 	} catch (error) {
 		console.error('Supabase auth error:', error);
-		return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+		return { error: 'Internal server error' };
 	}
 }
