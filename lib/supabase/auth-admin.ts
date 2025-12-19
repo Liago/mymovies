@@ -23,7 +23,7 @@ export async function linkSupabaseUser(tmdb_user: TMDBUser, tmdb_session: string
 
 		// Try to find existing user by listing all users and filtering
 		const { data: existingUsers } = await supabase.auth.admin.listUsers();
-		const existingUser = existingUsers?.users.find(u => u.email === email);
+		const existingUser = existingUsers?.users.find((u: any) => u.email === email);
 
 		let authUser;
 
