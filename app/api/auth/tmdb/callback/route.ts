@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSession, getAccountDetails } from '@/lib/tmdb-auth';
 import { createServerClient } from '@supabase/ssr';
 import { linkSupabaseUser } from '@/lib/supabase/auth-admin';
+import { SUPABASE_COOKIE_OPTIONS } from '@/lib/supabase/config';
 
 export async function GET(request: NextRequest) {
 	try {
@@ -67,31 +68,41 @@ export async function GET(request: NextRequest) {
 
 			if (result.success && result.access_token && result.refresh_token) {
 				const { access_token, refresh_token } = result;
+				console.log("Setting session with tokens:", { access_token: access_token.substring(0, 10), refresh_token: refresh_token.substring(0, 10) });
 
 				// Use ssr client to correctly set cookies
 				const supabase = createServerClient(
 					process.env.NEXT_PUBLIC_SUPABASE_URL!,
 					process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 					{
+						cookieOptions: {
+							name: SUPABASE_COOKIE_OPTIONS.name,
+						},
 						cookies: {
 							getAll() {
 								return request.cookies.getAll();
 							},
 							setAll(cookiesToSet) {
-								console.log("Setting Supabase cookies in callback:", cookiesToSet.map(c => c.name));
-								cookiesToSet.forEach(({ name, value, options }) =>
-									response.cookies.set(name, value, options)
-								);
+								console.log("Setting Supabase cookies count:", cookiesToSet.length);
+								cookiesToSet.forEach(({ name, value, options }) => {
+									console.log(`Setting cookie: ${name}`);
+									response.cookies.set(name, value, options);
+								});
 							},
 						},
 					}
 				);
 
-				await supabase.auth.setSession({
+				const { error: setSessionError } = await supabase.auth.setSession({
 					access_token,
 					refresh_token,
 				});
-				console.log("Supabase session set successfully in callback");
+
+				if (setSessionError) {
+					console.error("setSession error:", setSessionError);
+				} else {
+					console.log("Supabase setSession() completed");
+				}
 			} else {
 				console.log("Supabase auth linking failed:", result.error);
 			}
