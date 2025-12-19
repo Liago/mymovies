@@ -44,10 +44,11 @@ export function RSSProvider({ children }: { children: React.ReactNode }) {
 						console.log('[RSSContext] Loaded feeds:', data.length);
 						setFeeds(data);
 					} else {
-						console.error('[RSSContext] API error:', await response.text());
+						const errorText = await response.text();
+						console.error('[RSSContext] API error:', response.status, errorText);
 					}
 				} catch (error) {
-					console.error('Error loading RSS feeds:', error);
+					console.error('[RSSContext] Fetch error:', error);
 				}
 			} else {
 				console.log('[RSSContext] Guest mode - loading from localStorage');
