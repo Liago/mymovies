@@ -1,17 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Rss } from 'lucide-react';
-import { getRSSFeeds } from '@/lib/rss-feeds';
+import { useRSS } from '@/context/RSSContext';
 
 export default function RSSFeedsCard() {
-	const [feedsCount, setFeedsCount] = useState(0);
-
-	useEffect(() => {
-		const feeds = getRSSFeeds();
-		setFeedsCount(feeds.length);
-	}, []);
+	const { feeds } = useRSS();
 
 	return (
 		<Link
@@ -26,7 +20,7 @@ export default function RSSFeedsCard() {
 				<p className="text-gray-400 text-sm">Your cinema news sources</p>
 			</div>
 			<div className="flex items-center gap-2 text-sm">
-				<span className="text-3xl font-bold text-orange-400">{feedsCount}</span>
+				<span className="text-3xl font-bold text-orange-400">{feeds.length}</span>
 				<span className="text-gray-500">feeds</span>
 			</div>
 		</Link>

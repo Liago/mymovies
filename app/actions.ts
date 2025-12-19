@@ -30,6 +30,7 @@ import { cookies } from 'next/headers';
 
 // ... imports ...
 
+import { createClient } from '@/lib/supabase/server';
 async function getLanguage() {
 	const cookieStore = await cookies();
 	const lang = cookieStore.get('app_language')?.value;
@@ -95,23 +96,49 @@ async function getAccountId() {
 export async function actionGetUserLists() {
 	'use server';
 	try {
-		// Call the API endpoint that uses Supabase auth
-		const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-		const response = await fetch(`${baseUrl}/api/lists`, {
-			cache: 'no-store',
-			headers: {
-				'Content-Type': 'application/json'
-			}
-		});
+		const supabase = await createClient();
+		const { data: { user } } = await supabase.auth.getUser();
 
-		if (!response.ok) {
-			console.error('[actionGetUserLists] API returned:', response.status);
+		if (!user) return [];
+
+		const { data: profile } = await supabase
+			.from('profiles')
+			.select('tmdb_id')
+			.eq('auth_user_id', user.id)
+			.single();
+
+		if (!profile) return [];
+
+		// Get lists with item count
+		const { data: userLists, error } = await supabase
+			.from('user_lists')
+			.select('id, name, description, created_at')
+			.eq('user_id', profile.tmdb_id)
+			.order('created_at', { ascending: false });
+
+		if (error) {
+			console.error('[actionGetUserLists] Query error:', error);
 			return [];
 		}
 
-		const lists = await response.json();
-		console.log('[actionGetUserLists] Fetched lists:', lists.length);
-		return lists;
+		// Count items for each list
+		const listsWithCounts = await Promise.all(
+			(userLists || []).map(async (list: any) => {
+				const { count } = await supabase
+					.from('list_items')
+					.select('*', { count: 'exact', head: true })
+					.eq('list_id', list.id);
+
+				return {
+					id: list.id,
+					name: list.name,
+					description: list.description,
+					count: count || 0
+				};
+			})
+		);
+
+		return listsWithCounts;
 	} catch (error) {
 		console.error('[actionGetUserLists] Error:', error);
 		return [];
