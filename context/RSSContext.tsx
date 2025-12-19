@@ -31,19 +31,26 @@ export function RSSProvider({ children }: { children: React.ReactNode }) {
 	// Load feeds
 	useEffect(() => {
 		const loadFeeds = async () => {
+			console.log('[RSSContext] Loading feeds, user:', user?.id);
 			setIsLoading(true);
 
 			if (user) {
 				try {
+					console.log('[RSSContext] Fetching from API...');
 					const response = await fetch('/api/rss-feeds');
+					console.log('[RSSContext] API response status:', response.status);
 					if (response.ok) {
 						const data = await response.json();
+						console.log('[RSSContext] Loaded feeds:', data.length);
 						setFeeds(data);
+					} else {
+						console.error('[RSSContext] API error:', await response.text());
 					}
 				} catch (error) {
 					console.error('Error loading RSS feeds:', error);
 				}
 			} else {
+				console.log('[RSSContext] Guest mode - loading from localStorage');
 				const stored = localStorage.getItem('cinescope_rss_feeds');
 				if (stored) {
 					try {

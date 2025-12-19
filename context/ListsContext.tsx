@@ -39,18 +39,25 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
 	// Load lists on mount/auth
 	useEffect(() => {
 		const loadLists = async () => {
+			console.log('[ListsContext] Loading lists, user:', user?.id);
 			setIsLoading(true);
 			if (user) {
 				try {
+					console.log('[ListsContext] Fetching from API...');
 					const response = await fetch('/api/lists');
+					console.log('[ListsContext] API response status:', response.status);
 					if (response.ok) {
 						const data = await response.json();
+						console.log('[ListsContext] Loaded lists:', data.length);
 						setLists(data);
+					} else {
+						console.error('[ListsContext] API error:', await response.text());
 					}
 				} catch (error) {
 					console.error('Error loading lists:', error);
 				}
 			} else {
+				console.log('[ListsContext] Guest mode - loading from localStorage');
 				// Guest mode - localStorage
 				const stored = localStorage.getItem('cine_lists');
 				if (stored) {
