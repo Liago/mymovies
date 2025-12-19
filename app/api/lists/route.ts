@@ -65,12 +65,13 @@ export async function POST(request: NextRequest) {
 		const { data: profile } = await supabase.from('profiles').select('tmdb_id').eq('auth_user_id', user.id).single();
 		if (!profile) return NextResponse.json({ error: 'No profile' }, { status: 404 });
 
-		const { name, description } = await request.json();
+		const { name, description, tmdb_list_id } = await request.json();
 
 		const { data, error } = await supabase.from('user_lists').insert({
 			user_id: profile.tmdb_id,
 			name,
-			description
+			description,
+			tmdb_list_id: tmdb_list_id || null
 		}).select().single();
 
 		if (error) {

@@ -81,21 +81,28 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
 	}, [lists, user, isLoading]);
 
 	const createList = useCallback(async (name: string, description: string = '') => {
-		const newList: UserList = {
-			id: Date.now(), // Temporary ID for optimistic/guest
-			name,
-			description,
-			count: 0,
-			items: []
-		};
-
 		if (user) {
 			try {
-				const response = await fetch('/api/lists', {
+				// First, create on TMDB
+				const tmdbResponse = await fetch('/api/lists/tmdb/create', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ name, description })
 				});
+
+				let tmdbListId: string | null = null;
+				if (tmdbResponse.ok) {
+					const tmdbData = await tmdbResponse.json();
+					tmdbListId = tmdbData.list_id?.toString();
+				}
+
+				// Then create on Supabase with TMDB reference
+				const response = await fetch('/api/lists', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ name, description, tmdb_list_id: tmdbListId })
+				});
+
 				if (response.ok) {
 					const created = await response.json();
 					setLists(prev => [...prev, created]);
@@ -106,6 +113,14 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
 			}
 			return null;
 		} else {
+			// Guest mode - local only
+			const newList: UserList = {
+				id: Date.now(),
+				name,
+				description,
+				count: 0,
+				items: []
+			};
 			setLists(prev => [...prev, newList]);
 			return newList.id;
 		}
