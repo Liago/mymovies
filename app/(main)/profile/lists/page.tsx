@@ -44,7 +44,7 @@ export default async function ListsPage() {
 
 				{lists.length > 0 ? (
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-						{lists.map((list) => (
+						{lists.map((list: any) => (
 							<Link
 								key={list.id}
 								href={`/profile/lists/${list.id}`}

@@ -227,6 +227,8 @@ export default function ActionButtons({ mediaType, mediaId, title, poster, initi
 				onClose={() => setIsListModalOpen(false)}
 				mediaType={mediaType}
 				mediaId={mediaId}
+				title={title || 'Unknown Title'}
+				poster={poster}
 			/>
 		</div>
 	);
