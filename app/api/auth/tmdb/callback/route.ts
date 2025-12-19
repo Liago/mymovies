@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSession, getAccountDetails } from '@/lib/tmdb-auth';
+import { createServerClient } from '@supabase/ssr';
 
 export async function GET(request: NextRequest) {
 	try {
@@ -69,16 +70,30 @@ export async function GET(request: NextRequest) {
 			});
 
 			if (supabaseAuthResponse.ok) {
-				const { access_token } = await supabaseAuthResponse.json();
+				const { access_token, refresh_token } = await supabaseAuthResponse.json();
 
-				// Set Supabase auth cookie if we got a token
-				if (access_token) {
-					response.cookies.set('sb-access-token', access_token, {
-						httpOnly: true,
-						secure: process.env.NODE_ENV === 'production',
-						sameSite: 'lax',
-						maxAge: 60 * 60 * 24 * 30,
-						path: '/',
+				// Use ssr client to correctly set cookies
+				if (access_token && refresh_token) {
+					const supabase = createServerClient(
+						process.env.NEXT_PUBLIC_SUPABASE_URL!,
+						process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+						{
+							cookies: {
+								getAll() {
+									return request.cookies.getAll();
+								},
+								setAll(cookiesToSet) {
+									cookiesToSet.forEach(({ name, value, options }) =>
+										response.cookies.set(name, value, options)
+									);
+								},
+							},
+						}
+					);
+
+					await supabase.auth.setSession({
+						access_token,
+						refresh_token,
 					});
 				}
 			}

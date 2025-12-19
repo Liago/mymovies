@@ -24,6 +24,8 @@ export async function POST(request: NextRequest) {
 
 		// Try to sign in first
 		let authUser;
+		let session;
+
 		const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
 			email,
 			password
@@ -48,11 +50,19 @@ export async function POST(request: NextRequest) {
 			}
 
 			authUser = signUpData.user;
+
+			// Sign in the new user to get the session
+			const { data: newSessionData } = await supabase.auth.signInWithPassword({
+				email,
+				password
+			});
+			session = newSessionData.session;
 		} else {
 			authUser = signInData.user;
+			session = signInData.session;
 		}
 
-		if (!authUser) {
+		if (!authUser || !session) {
 			return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
 		}
 
@@ -70,16 +80,11 @@ export async function POST(request: NextRequest) {
 			avatar_url
 		}, { onConflict: 'tmdb_id' });
 
-		// Generate session token for client
-		const { data: sessionData } = await supabase.auth.admin.generateLink({
-			type: 'magiclink',
-			email,
-		});
-
 		return NextResponse.json({
 			success: true,
 			user: authUser,
-			access_token: sessionData?.properties?.access_token
+			access_token: session.access_token,
+			refresh_token: session.refresh_token
 		});
 
 	} catch (error) {
