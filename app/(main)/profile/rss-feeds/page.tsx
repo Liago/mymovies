@@ -1,34 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Plus, Trash2, Rss, ExternalLink, CheckCircle } from 'lucide-react';
-import {
-	getRSSFeeds,
-	addRSSFeed,
-	removeRSSFeed,
-	POPULAR_CINEMA_FEEDS,
-	isFeedSubscribed,
-	type RSSFeed
-} from '@/lib/rss-feeds';
+import { POPULAR_CINEMA_FEEDS } from '@/lib/rss-feeds';
+import { useRSS } from '@/context/RSSContext';
 
 export default function RSSFeedsPage() {
-	const [feeds, setFeeds] = useState<RSSFeed[]>([]);
+	const { feeds, addFeed, removeFeed, isSubscribed } = useRSS();
 	const [showAddForm, setShowAddForm] = useState(false);
 	const [showPopularFeeds, setShowPopularFeeds] = useState(false);
 	const [newFeed, setNewFeed] = useState({ name: '', url: '', description: '', category: '' });
 	const [error, setError] = useState('');
 
-	useEffect(() => {
-		loadFeeds();
-	}, []);
-
-	const loadFeeds = () => {
-		const savedFeeds = getRSSFeeds();
-		setFeeds(savedFeeds);
-	};
-
-	const handleAddFeed = (e: React.FormEvent) => {
+	const handleAddFeed = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError('');
 
@@ -46,7 +31,7 @@ export default function RSSFeedsPage() {
 				return;
 			}
 
-			addRSSFeed({
+			await addFeed({
 				name: newFeed.name,
 				url: newFeed.url,
 				description: newFeed.description || undefined,
@@ -55,28 +40,25 @@ export default function RSSFeedsPage() {
 
 			setNewFeed({ name: '', url: '', description: '', category: '' });
 			setShowAddForm(false);
-			loadFeeds();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to add feed');
 		}
 	};
 
-	const handleRemoveFeed = (id: string) => {
+	const handleRemoveFeed = async (id: string) => {
 		if (confirm('Are you sure you want to remove this feed?')) {
-			removeRSSFeed(id);
-			loadFeeds();
+			await removeFeed(id);
 		}
 	};
 
-	const handleAddPopularFeed = (feed: typeof POPULAR_CINEMA_FEEDS[0]) => {
+	const handleAddPopularFeed = async (feed: typeof POPULAR_CINEMA_FEEDS[0]) => {
 		try {
-			addRSSFeed({
+			await addFeed({
 				name: feed.name,
 				url: feed.url,
 				description: feed.description,
 				category: feed.category
 			});
-			loadFeeds();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to add feed');
 		}
@@ -212,7 +194,7 @@ export default function RSSFeedsPage() {
 						<h2 className="text-xl font-bold mb-4">Popular Cinema News Feeds</h2>
 						<div className="space-y-3">
 							{POPULAR_CINEMA_FEEDS.map((feed, index) => {
-								const isSubscribed = isFeedSubscribed(feed.url);
+								const subscribed = isSubscribed(feed.url);
 								return (
 									<div
 										key={index}
@@ -229,14 +211,13 @@ export default function RSSFeedsPage() {
 										</div>
 										<button
 											onClick={() => handleAddPopularFeed(feed)}
-											disabled={isSubscribed}
-											className={`ml-4 px-4 py-2 rounded-lg font-semibold transition-colors ${
-												isSubscribed
+											disabled={subscribed}
+											className={`ml-4 px-4 py-2 rounded-lg font-semibold transition-colors ${subscribed
 													? 'bg-green-600/20 text-green-400 cursor-not-allowed'
 													: 'bg-primary hover:bg-primary/80 text-white'
-											}`}
+												}`}
 										>
-											{isSubscribed ? (
+											{subscribed ? (
 												<span className="flex items-center gap-2">
 													<CheckCircle size={16} />
 													Subscribed
@@ -300,7 +281,7 @@ export default function RSSFeedsPage() {
 												</span>
 											)}
 											<span className="text-xs">
-												Added {new Date(feed.addedAt).toLocaleDateString()}
+												Added {feed.added_at ? new Date(feed.added_at).toLocaleDateString() : 'N/A'}
 											</span>
 										</div>
 									</div>

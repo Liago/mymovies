@@ -8,6 +8,8 @@ import { TrackerProvider } from "@/context/TrackerContext";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { WatchlistProvider } from "@/context/WatchlistContext";
 import { RatingsProvider } from "@/context/RatingsContext";
+import { ListsProvider } from "@/context/ListsContext";
+import { RSSProvider } from "@/context/RSSContext";
 
 export const metadata: Metadata = {
 	title: "MyMovies - Scopri film e serie TV",
@@ -28,10 +30,14 @@ export default function RootLayout({
 							<TrackerProvider>
 								<FavoritesProvider>
 									<WatchlistProvider>
-										<RatingsProvider>
-											<Navbar />
-											{children}
-										</RatingsProvider>
+										<ListsProvider>
+											<RatingsProvider>
+												<RSSProvider>
+													<Navbar />
+													{children}
+												</RSSProvider>
+											</RatingsProvider>
+										</ListsProvider>
 									</WatchlistProvider>
 								</FavoritesProvider>
 							</TrackerProvider>

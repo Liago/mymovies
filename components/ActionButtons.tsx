@@ -3,13 +3,17 @@
 import { useState, useEffect } from 'react';
 import { Heart, Bookmark, Star, Plus, Check } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { actionAddToWatchlist, actionMarkAsFavorite, actionRateMedia, actionDeleteRating } from '@/app/actions';
+import { useFavorites } from '@/context/FavoritesContext';
+import { useWatchlist } from '@/context/WatchlistContext';
+import { useRatings } from '@/context/RatingsContext';
 import { useRouter } from 'next/navigation';
 import ListManagerModal from './ListManagerModal';
 
 interface ActionButtonsProps {
 	mediaType: 'movie' | 'tv';
 	mediaId: number | string;
+	title?: string;
+	poster?: string | null;
 	initialState?: {
 		favorite: boolean;
 		watchlist: boolean;
@@ -20,50 +24,45 @@ interface ActionButtonsProps {
 	showRating?: boolean;
 }
 
-export default function ActionButtons({ mediaType, mediaId, initialState, className = '', showText = false, showRating = true }: ActionButtonsProps) {
+export default function ActionButtons({ mediaType, mediaId, title, poster, initialState, className = '', showText = false, showRating = true }: ActionButtonsProps) {
 	const { isLoggedIn, login } = useAuth();
 	const router = useRouter();
 
-	if (typeof mediaId === 'string') return null; // OMDb items cannot be synced to TMDB account yet
+	if (typeof mediaId === 'string') return null;
 
-	const [isFavorite, setIsFavorite] = useState(initialState?.favorite || false);
-	const [isWatchlist, setIsWatchlist] = useState(initialState?.watchlist || false);
-	const [rating, setRating] = useState<number | null>(
-		typeof initialState?.rated === 'object' ? initialState.rated.value :
-			(initialState?.rated ? 10 : null) // If boolean true, assume rated but don't know value? usually object.
-	);
+	// Context Hooks
+	const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+	const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
+	const { getRating, rateMedia, deleteRating: deleteContextRating } = useRatings();
+
+	// Computed State from Context
+	const favorite = isFavorite(Number(mediaId), mediaType);
+	const watchlist = isInWatchlist(Number(mediaId), mediaType);
+	const userRating = getRating(Number(mediaId), mediaType);
+
+	// Local UI State
 	const [isRatingOpen, setIsRatingOpen] = useState(false);
 	const [isListModalOpen, setIsListModalOpen] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-
-	// Sync state if props change (re-validation)
-	useEffect(() => {
-		if (initialState) {
-			setIsFavorite(initialState.favorite);
-			setIsWatchlist(initialState.watchlist);
-			setRating(typeof initialState.rated === 'object' ? initialState.rated.value : null);
-		}
-	}, [initialState]);
 
 	const handleFavorite = async (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
 
-		if (!isLoggedIn) {
-			// Trigger login flow
-			await login();
-			return;
-		}
+		// Check title/poster availability. If missing, we can try to proceed but data will be incomplete in local/db
+		// For now we use fallback. Ideally parent passes them.
+		const itemTitle = title || 'Unknown Title';
+		const itemPoster = poster || null;
 
-		// Optimistic update
-		const newState = !isFavorite;
-		setIsFavorite(newState);
-
-		try {
-			const success = await actionMarkAsFavorite(mediaType, mediaId, newState);
-			if (!success) setIsFavorite(!newState); // Revert
-		} catch (e) {
-			setIsFavorite(!newState);
+		if (favorite) {
+			await removeFavorite(Number(mediaId), mediaType);
+		} else {
+			await addFavorite({
+				id: Number(mediaId),
+				media_type: mediaType,
+				title: itemTitle,
+				poster: itemPoster
+			});
 		}
 	};
 
@@ -71,19 +70,18 @@ export default function ActionButtons({ mediaType, mediaId, initialState, classN
 		e.preventDefault();
 		e.stopPropagation();
 
-		if (!isLoggedIn) {
-			await login();
-			return;
-		}
+		const itemTitle = title || 'Unknown Title';
+		const itemPoster = poster || null;
 
-		const newState = !isWatchlist;
-		setIsWatchlist(newState);
-
-		try {
-			const success = await actionAddToWatchlist(mediaType, mediaId, newState);
-			if (!success) setIsWatchlist(!newState);
-		} catch (e) {
-			setIsWatchlist(!newState);
+		if (watchlist) {
+			await removeFromWatchlist(Number(mediaId), mediaType);
+		} else {
+			await addToWatchlist({
+				id: Number(mediaId),
+				media_type: mediaType,
+				title: itemTitle,
+				poster: itemPoster
+			});
 		}
 	};
 
@@ -91,22 +89,20 @@ export default function ActionButtons({ mediaType, mediaId, initialState, classN
 		e.preventDefault();
 		e.stopPropagation();
 
-		if (!isLoggedIn) {
-			await login();
-			return;
-		}
-
 		setIsSubmitting(true);
-		// Optimistic
-		const oldRating = rating;
-		setRating(value);
 		setIsRatingOpen(false);
 
+		const itemTitle = title || 'Unknown Title';
+		const itemPoster = poster || null;
+
 		try {
-			const success = await actionRateMedia(mediaType, mediaId, value);
-			if (!success) setRating(oldRating);
-		} catch (e) {
-			setRating(oldRating);
+			await rateMedia(
+				Number(mediaId),
+				mediaType,
+				value,
+				itemTitle,
+				itemPoster
+			);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -116,16 +112,10 @@ export default function ActionButtons({ mediaType, mediaId, initialState, classN
 		e.preventDefault();
 		e.stopPropagation();
 
-		if (!isLoggedIn) return;
 		setIsSubmitting(true);
-		const oldRating = rating;
-		setRating(null);
 		setIsRatingOpen(false);
 		try {
-			const success = await actionDeleteRating(mediaType, mediaId);
-			if (!success) setRating(oldRating);
-		} catch {
-			setRating(oldRating);
+			await deleteContextRating(Number(mediaId), mediaType);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -134,9 +124,8 @@ export default function ActionButtons({ mediaType, mediaId, initialState, classN
 	const toggleRating = (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
-		if (!isLoggedIn) login();
-		else setIsRatingOpen(!isRatingOpen);
-	}
+		setIsRatingOpen(!isRatingOpen);
+	};
 
 	const handleListClick = (e: React.MouseEvent) => {
 		e.preventDefault();
@@ -154,28 +143,28 @@ export default function ActionButtons({ mediaType, mediaId, initialState, classN
 			<button
 				onClick={handleFavorite}
 				className={`flex items-center justify-center p-3 rounded-full transition-all duration-300 group
-                    ${isFavorite
+                    ${favorite
 						? 'bg-pink-600 text-white shadow-lg shadow-pink-600/30 ring-2 ring-pink-500 ring-offset-2 ring-offset-black'
 						: 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white hover:scale-110'
 					}`}
-				title={isFavorite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti"}
+				title={favorite ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti"}
 			>
-				<Heart size={20} className={isFavorite ? "fill-current" : ""} />
-				{showText && <span className="ml-2 text-sm font-medium hidden md:block">{isFavorite ? 'Preferito' : 'Aggiungi ai preferiti'}</span>}
+				<Heart size={20} className={favorite ? "fill-current" : ""} />
+				{showText && <span className="ml-2 text-sm font-medium hidden md:block">{favorite ? 'Preferito' : 'Aggiungi ai preferiti'}</span>}
 			</button>
 
 			{/* Watchlist */}
 			<button
 				onClick={handleWatchlist}
 				className={`flex items-center justify-center p-3 rounded-full transition-all duration-300 group
-                    ${isWatchlist
+                    ${watchlist
 						? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-500 ring-offset-2 ring-offset-black'
 						: 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white hover:scale-110'
 					}`}
-				title={isWatchlist ? "Rimuovi dalla watchlist" : "Aggiungi alla watchlist"}
+				title={watchlist ? "Rimuovi dalla watchlist" : "Aggiungi alla watchlist"}
 			>
-				<Bookmark size={20} className={isWatchlist ? "fill-current" : ""} />
-				{showText && <span className="ml-2 text-sm font-medium hidden md:block">{isWatchlist ? 'In Watchlist' : 'Watchlist'}</span>}
+				<Bookmark size={20} className={watchlist ? "fill-current" : ""} />
+				{showText && <span className="ml-2 text-sm font-medium hidden md:block">{watchlist ? 'In Watchlist' : 'Watchlist'}</span>}
 			</button>
 
 			{/* Add to List */}
@@ -194,15 +183,15 @@ export default function ActionButtons({ mediaType, mediaId, initialState, classN
 					<button
 						onClick={toggleRating}
 						className={`flex items-center justify-center p-3 rounded-full transition-all duration-300 group
-                        ${rating
+                        ${userRating
 								? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30 ring-2 ring-amber-500 ring-offset-2 ring-offset-black'
 								: 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white hover:scale-110'
 							}`}
-						title={rating ? `Il tuo voto: ${rating}` : "Vota"}
+						title={userRating ? `Il tuo voto: ${userRating}` : "Vota"}
 					>
-						<Star size={20} className={rating ? "fill-current" : ""} />
-						{showText && rating && <span className="ml-2 text-sm font-medium hidden md:block">{rating}</span>}
-						{showText && !rating && <span className="ml-2 text-sm font-medium hidden md:block">Vota</span>}
+						<Star size={20} className={userRating ? "fill-current" : ""} />
+						{showText && userRating && <span className="ml-2 text-sm font-medium hidden md:block">{userRating}</span>}
+						{showText && !userRating && <span className="ml-2 text-sm font-medium hidden md:block">Vota</span>}
 					</button>
 
 					{/* Rating Popover */}
@@ -213,14 +202,14 @@ export default function ActionButtons({ mediaType, mediaId, initialState, classN
 									<button
 										key={star}
 										onClick={(e) => handleRate(star, e)}
-										className={`p-1 hover:scale-125 transition-transform ${(rating && star <= rating) ? 'text-amber-500' : 'text-gray-600 hover:text-amber-400'
+										className={`p-1 hover:scale-125 transition-transform ${(userRating && star <= userRating) ? 'text-amber-500' : 'text-gray-600 hover:text-amber-400'
 											}`}
 									>
-										<Star size={24} className={(rating && star <= rating) ? "fill-current" : ""} />
+										<Star size={24} className={(userRating && star <= userRating) ? "fill-current" : ""} />
 									</button>
 								))}
 							</div>
-							{rating && (
+							{userRating && (
 								<button
 									onClick={handleDeleteRating}
 									className="ml-2 p-1 text-red-400 hover:text-red-300 text-xs uppercase font-bold tracking-wider"

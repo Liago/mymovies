@@ -101,6 +101,8 @@ export default function HeroSection({ item }: HeroSectionProps) {
 						<ActionButtons
 							mediaType={item.type}
 							mediaId={item.id}
+							title={item.title}
+							poster={item.poster}
 							showText={false}
 							className="scale-110 ml-2"
 						/>

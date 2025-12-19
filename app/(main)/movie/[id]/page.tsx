@@ -212,6 +212,8 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 										<ActionButtons
 											mediaType="movie"
 											mediaId={parseInt(id)}
+											title={movie.title}
+											poster={movie.poster}
 											initialState={accountStates}
 											showText={true}
 										/>

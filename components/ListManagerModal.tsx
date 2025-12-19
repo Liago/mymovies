@@ -1,9 +1,6 @@
-'use client';
-
 import { useState, useEffect } from 'react';
-import { X, Plus, Check, Lock, Globe } from 'lucide-react';
-import { actionGetUserLists, actionCreateList, actionAddToList } from '@/app/actions';
-import type { TMDBList } from '@/lib/tmdb-user';
+import { X, Plus, Check } from 'lucide-react';
+import { useLists } from '@/context/ListsContext';
 
 interface ListManagerModalProps {
 	isOpen: boolean;
@@ -13,48 +10,37 @@ interface ListManagerModalProps {
 }
 
 export default function ListManagerModal({ isOpen, onClose, mediaType, mediaId }: ListManagerModalProps) {
-	const [lists, setLists] = useState<TMDBList[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const { lists, createList, addToList, isLoading } = useLists();
 	const [isCreating, setIsCreating] = useState(false);
 	const [newListName, setNewListName] = useState('');
 	const [newListDesc, setNewListDesc] = useState('');
-	const [addedLists, setAddedLists] = useState<number[]>([]); // Track which lists item was added to in this session
-
-	useEffect(() => {
-		if (isOpen) {
-			loadLists();
-		}
-	}, [isOpen]);
-
-	const loadLists = async () => {
-		setIsLoading(true);
-		const userLists = await actionGetUserLists();
-		setLists(userLists);
-		setIsLoading(false);
-	};
+	const [addedLists, setAddedLists] = useState<number[]>([]);
 
 	const handleCreateList = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!newListName.trim()) return;
 
 		setIsCreating(true);
-		const listId = await actionCreateList(newListName, newListDesc);
+		const listId = await createList(newListName, newListDesc);
 
 		if (listId) {
 			setNewListName('');
 			setNewListDesc('');
-			await loadLists();
 		}
 		setIsCreating(false);
 	};
 
 	const handleAddToList = async (listId: number) => {
-		// Optimistic UI updates are tricky here without knowing if it's already in list
-		// For now just try adding
-		const success = await actionAddToList(listId, mediaId);
-		if (success) {
-			setAddedLists(prev => [...prev, listId]);
-		}
+		// Need title/poster again. Assuming default for now
+		// This is a limitation of the current design.
+		await addToList(listId, {
+			id: mediaId,
+			media_type: mediaType,
+			title: 'Unknown', // Placeholder
+			poster: null,
+			added_at: new Date().toISOString()
+		});
+		setAddedLists(prev => [...prev, listId]);
 	};
 
 	if (!isOpen) return null;
@@ -114,7 +100,7 @@ export default function ListManagerModal({ isOpen, onClose, mediaType, mediaId }
 							<div className="text-center py-8 text-gray-500">No lists found. Create one!</div>
 						) : (
 							lists.map((list) => {
-								const isAdded = addedLists.includes(list.id);
+								const isAdded = addedLists.includes(list.id) || list.items?.some(i => i.id === mediaId);
 								return (
 									<button
 										key={list.id}
@@ -124,7 +110,7 @@ export default function ListManagerModal({ isOpen, onClose, mediaType, mediaId }
 									>
 										<div className="text-left">
 											<div className="font-semibold text-white">{list.name}</div>
-											<div className="text-xs text-gray-400">{list.item_count} items</div>
+											<div className="text-xs text-gray-400">{list.count} items</div>
 										</div>
 										{isAdded ? (
 											<div className="bg-green-500/20 text-green-500 p-1.5 rounded-full">

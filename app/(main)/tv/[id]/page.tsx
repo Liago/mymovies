@@ -158,6 +158,8 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 								<ActionButtons
 									mediaType="tv"
 									mediaId={parseInt(id)}
+									title={tvShow.title}
+									poster={tvShow.poster}
 									initialState={accountStates}
 									showText={true}
 								/>

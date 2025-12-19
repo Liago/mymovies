@@ -3,36 +3,32 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Rss, ExternalLink, Calendar, Loader2, Settings } from 'lucide-react';
-import { getRSSFeeds, type RSSFeed } from '@/lib/rss-feeds';
+import { useRSS } from '@/context/RSSContext';
 import type { RSSArticle } from '@/app/api/rss/parse/route';
 
 export default function RSSNewsSection() {
-	const [feeds, setFeeds] = useState<RSSFeed[]>([]);
+	const { feeds } = useRSS();
 	const [articles, setArticles] = useState<(RSSArticle & { feedName: string })[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
 
 	useEffect(() => {
-		loadRSSArticles();
-	}, []);
+		if (feeds.length > 0) {
+			loadRSSArticles();
+		} else {
+			setLoading(false);
+		}
+	}, [feeds]);
 
 	const loadRSSArticles = async () => {
 		setLoading(true);
 		setError('');
 
 		try {
-			const userFeeds = getRSSFeeds();
-			setFeeds(userFeeds);
-
-			if (userFeeds.length === 0) {
-				setLoading(false);
-				return;
-			}
-
 			// Fetch articles from all feeds
 			const allArticles: (RSSArticle & { feedName: string })[] = [];
 
-			for (const feed of userFeeds) {
+			for (const feed of feeds) {
 				try {
 					const response = await fetch(`/api/rss/parse?url=${encodeURIComponent(feed.url)}`);
 					const data = await response.json();

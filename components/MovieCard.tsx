@@ -49,6 +49,8 @@ export default function MovieCard({ id, title, poster, rating, year, type = 'mov
 							<ActionButtons
 								mediaType={type}
 								mediaId={id}
+								title={title}
+								poster={poster}
 								showText={false}
 								showRating={false}
 								className="scale-75 origin-right"
