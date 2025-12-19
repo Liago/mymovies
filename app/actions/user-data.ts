@@ -84,14 +84,14 @@ export async function addToHistory(tmdbId: number, item: HistoryItem) {
 
 	const { error } = await supabase
 		.from('history')
-		.insert({
+		.upsert({
 			user_id: tmdbId,
 			item_id: item.id,
 			title: item.title,
 			poster_path: item.poster,
 			media_type: item.type,
 			watched_at: new Date(item.timestamp).toISOString()
-		});
+		}, { onConflict: 'user_id, item_id' });
 
 	if (error) console.error('Error adding to history:', error);
 }

@@ -86,24 +86,36 @@ export async function linkSupabaseUser(tmdb_user: TMDBUser, tmdb_session: string
 			avatar_url
 		}, { onConflict: 'tmdb_id' });
 
-		// Generate a fresh session for this user using admin SDK
-		console.log('Generating session tokens for user:', authUser.email);
-		const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
+		// Generate a magic link for this user using admin SDK
+		console.log('Generating magic link for user:', authUser.email);
+		const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
 			type: 'magiclink',
 			email: authUser.email!,
 		});
 
-		if (sessionError || !sessionData?.properties) {
-			console.error('Error generating session:', sessionError);
-			return { error: 'Failed to generate session' };
+		if (linkError || !linkData?.properties?.hashed_token) {
+			console.error('Error generating link:', linkError);
+			return { error: 'Failed to generate link' };
 		}
 
-		console.log('Session tokens generated successfully');
+		// Verify the OTP to get actual session tokens
+		console.log('Verifying OTP to create session');
+		const { data: sessionData, error: sessionError } = await supabase.auth.verifyOtp({
+			token_hash: linkData.properties.hashed_token,
+			type: 'magiclink'
+		});
+
+		if (sessionError || !sessionData?.session) {
+			console.error('Error verifying OTP:', sessionError);
+			return { error: 'Failed to create session' };
+		}
+
+		console.log('Session created successfully');
 		return {
 			success: true,
 			user: authUser,
-			access_token: sessionData.properties.access_token,
-			refresh_token: sessionData.properties.refresh_token
+			access_token: sessionData.session.access_token,
+			refresh_token: sessionData.session.refresh_token
 		};
 
 	} catch (error) {
