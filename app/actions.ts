@@ -257,10 +257,10 @@ export async function actionGetListDetails(listId: number) {
 		const transformedItems = (items || []).map((item: any) => ({
 			id: item.media_id,
 			title: item.title,
-			poster_path: item.poster_path,
-			media_type: item.media_type,
-			vote_average: 0,
-			release_date: '',
+			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+			type: item.media_type,
+			rating: 0,
+			year: '',
 		}));
 
 		return {

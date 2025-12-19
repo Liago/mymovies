@@ -5,7 +5,7 @@ import { Rss } from 'lucide-react';
 import { useRSS } from '@/context/RSSContext';
 
 export default function RSSFeedsCard() {
-	const { feeds } = useRSS();
+	const { feeds, isLoading } = useRSS();
 
 	return (
 		<Link
@@ -19,10 +19,16 @@ export default function RSSFeedsCard() {
 				<h2 className="text-2xl font-bold mb-2">RSS Feeds</h2>
 				<p className="text-gray-400 text-sm">Your cinema news sources</p>
 			</div>
-			<div className="flex items-center gap-2 text-sm">
-				<span className="text-3xl font-bold text-orange-400">{feeds.length}</span>
-				<span className="text-gray-500">feeds</span>
-			</div>
+			{isLoading ? (
+				<div className="flex items-center justify-center py-4">
+					<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+				</div>
+			) : (
+				<div className="flex items-center gap-2 text-sm">
+					<span className="text-3xl font-bold text-orange-400">{feeds.length}</span>
+					<span className="text-gray-500">feeds</span>
+				</div>
+			)}
 		</Link>
 	);
 }
