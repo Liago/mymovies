@@ -228,7 +228,7 @@ export default function ActionButtons({ mediaType, mediaId, title, poster, initi
 				mediaType={mediaType}
 				mediaId={mediaId}
 				title={title || 'Unknown Title'}
-				poster={poster}
+				poster={poster ?? null}
 			/>
 		</div>
 	);
