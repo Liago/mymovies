@@ -20,22 +20,38 @@ export async function linkSupabaseUser(tmdb_user: TMDBUser, tmdb_session: string
 
 		// Create a unique email for this TMDB user
 		const email = `tmdb_${tmdb_user.id}@cinescope.app`;
-		const password = tmdb_session; // Use session as password (hashed by Supabase)
 
-		// Try to sign in first
+		// Try to find existing user by listing all users and filtering
+		const { data: existingUsers } = await supabase.auth.admin.listUsers();
+		const existingUser = existingUsers?.users.find(u => u.email === email);
+
 		let authUser;
-		let session;
 
-		const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-			email,
-			password
-		});
+		if (existingUser) {
+			// User exists, just update metadata
+			console.log('Updating existing Supabase user for TMDB ID:', tmdb_user.id);
+			const { data: updateData, error: updateError } = await supabase.auth.admin.updateUserById(
+				existingUser.id,
+				{
+					user_metadata: {
+						tmdb_id: tmdb_user.id,
+						tmdb_username: tmdb_user.username,
+						tmdb_name: tmdb_user.name
+					}
+				}
+			);
 
-		if (signInError) {
-			// User doesn't exist, create it
-			const { data: signUpData, error: signUpError } = await supabase.auth.admin.createUser({
+			if (updateError) {
+				console.error('Error updating Supabase user:', updateError);
+				return { error: 'Failed to update user' };
+			}
+
+			authUser = updateData.user;
+		} else {
+			// Create new user without password
+			console.log('Creating new Supabase user for TMDB ID:', tmdb_user.id);
+			const { data: createData, error: createError } = await supabase.auth.admin.createUser({
 				email,
-				password,
 				email_confirm: true,
 				user_metadata: {
 					tmdb_id: tmdb_user.id,
@@ -44,25 +60,15 @@ export async function linkSupabaseUser(tmdb_user: TMDBUser, tmdb_session: string
 				}
 			});
 
-			if (signUpError) {
-				console.error('Error creating Supabase user:', signUpError);
+			if (createError) {
+				console.error('Error creating Supabase user:', createError);
 				return { error: 'Failed to create user' };
 			}
 
-			authUser = signUpData.user;
-
-			// Sign in the new user to get the session
-			const { data: newSessionData } = await supabase.auth.signInWithPassword({
-				email,
-				password
-			});
-			session = newSessionData.session;
-		} else {
-			authUser = signInData.user;
-			session = signInData.session;
+			authUser = createData.user;
 		}
 
-		if (!authUser || !session) {
+		if (!authUser) {
 			return { error: 'Authentication failed' };
 		}
 
@@ -75,16 +81,29 @@ export async function linkSupabaseUser(tmdb_user: TMDBUser, tmdb_session: string
 
 		await supabase.from('profiles').upsert({
 			tmdb_id: tmdb_user.id,
-			auth_user_id: authUser.id, // Link to Supabase auth
+			auth_user_id: authUser.id,
 			username: tmdb_user.username,
 			avatar_url
 		}, { onConflict: 'tmdb_id' });
 
+		// Generate a fresh session for this user using admin SDK
+		console.log('Generating session tokens for user:', authUser.email);
+		const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
+			type: 'magiclink',
+			email: authUser.email!,
+		});
+
+		if (sessionError || !sessionData?.properties) {
+			console.error('Error generating session:', sessionError);
+			return { error: 'Failed to generate session' };
+		}
+
+		console.log('Session tokens generated successfully');
 		return {
 			success: true,
 			user: authUser,
-			access_token: session.access_token,
-			refresh_token: session.refresh_token
+			access_token: sessionData.properties.access_token,
+			refresh_token: sessionData.properties.refresh_token
 		};
 
 	} catch (error) {
