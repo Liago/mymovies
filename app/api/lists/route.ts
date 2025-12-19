@@ -13,43 +13,45 @@ export async function GET() {
 		const { data: profile } = await supabase.from('profiles').select('tmdb_id').eq('auth_user_id', user.id).single();
 		if (!profile) return NextResponse.json([], { status: 200 });
 
-		const { data } = await supabase
+		// Get lists with item count
+		const { data: userLists, error } = await supabase
 			.from('user_lists')
 			.select(`
-            id, 
-            name, 
-            description, 
-            created_at,
-            items:list_items(count)
-        `)
+				id,
+				name,
+				description,
+				created_at
+			`)
 			.eq('user_id', profile.tmdb_id)
 			.order('created_at', { ascending: false });
 
-		const lists = data?.map(l => ({
-			id: l.id,
-			name: l.name,
-			description: l.description,
-			count: l.items?.[0]?.count || 0, // Approximate count logic needs fix if count is separate
-			// Actually Supabase count is tricky. Let's assume list_items count. 
-			// Better: select count of list_items.
-		}));
+		if (error) {
+			console.error('[API /lists] Query error:', error);
+			throw error;
+		}
 
-		// Better query for count
-		const { data: listsWithCount } = await supabase
-			.from('user_lists')
-			.select('*, list_items(count)')
-			.eq('user_id', profile.tmdb_id);
+		// For each list, count items separately
+		const listsWithCounts = await Promise.all(
+			(userLists || []).map(async (list) => {
+				const { count } = await supabase
+					.from('list_items')
+					.select('*', { count: 'exact', head: true })
+					.eq('list_id', list.id);
 
-		const formatted = listsWithCount?.map(l => ({
-			id: l.id,
-			name: l.name,
-			description: l.description,
-			count: l.list_items?.[0]?.count || 0
-		}));
+				return {
+					id: list.id,
+					name: list.name,
+					description: list.description,
+					count: count || 0
+				};
+			})
+		);
 
-		return NextResponse.json(formatted || []);
+		console.log('[API /lists] Returning lists:', listsWithCounts.length);
+		return NextResponse.json(listsWithCounts);
 
 	} catch (error) {
+		console.error('[API /lists] Error:', error);
 		return NextResponse.json({ error: 'Failed' }, { status: 500 });
 	}
 }
@@ -71,9 +73,22 @@ export async function POST(request: NextRequest) {
 			description
 		}).select().single();
 
-		if (error) throw error;
-		return NextResponse.json(data);
+		if (error) {
+			console.error('[API /lists POST] Error:', error);
+			throw error;
+		}
+
+		const formatted = {
+			id: data.id,
+			name: data.name,
+			description: data.description,
+			count: 0
+		};
+
+		console.log('[API /lists POST] Created list:', formatted);
+		return NextResponse.json(formatted);
 	} catch (e) {
+		console.error('[API /lists POST] Failed:', e);
 		return NextResponse.json({ error: 'Failed to create list' }, { status: 500 });
 	}
 }
