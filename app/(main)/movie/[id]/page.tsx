@@ -231,9 +231,10 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 							</div>
 
 							{/* Details Grid */}
-							<div className="grid grid-cols-2 lg:grid-cols-4 gap-8 pt-8 border-t border-white/10">
+							<div className="space-y-8 pt-8 border-t border-white/10">
+								{/* Director Section */}
 								<div>
-									<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+									<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">
 										Director
 									</h3>
 									{(movie as any).director?.id ? (
@@ -248,30 +249,35 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 									)}
 								</div>
 
-								{(movie as any).budget && (
-									<div>
-										<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
-											Budget
-										</h3>
-										<p className="text-white font-medium">{(movie as any).budget}</p>
-									</div>
-								)}
+								{/* Financial Stats Section */}
+								{((movie as any).budget || (movie as any).revenue || (movie.boxOffice && movie.boxOffice !== 'N/A')) && (
+									<div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
+										{(movie as any).budget && (
+											<div>
+												<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+													Budget
+												</h3>
+												<p className="text-2xl font-bold text-white">{(movie as any).budget}</p>
+											</div>
+										)}
 
-								{(movie as any).revenue && (
-									<div>
-										<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
-											Revenue
-										</h3>
-										<p className="text-white font-medium">{(movie as any).revenue}</p>
-									</div>
-								)}
+										{(movie as any).revenue && (
+											<div>
+												<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+													Revenue
+												</h3>
+												<p className="text-2xl font-bold text-white">{(movie as any).revenue}</p>
+											</div>
+										)}
 
-								{movie.boxOffice && movie.boxOffice !== 'N/A' && (
-									<div>
-										<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
-											Box Office
-										</h3>
-										<p className="text-white font-medium">{movie.boxOffice}</p>
+										{movie.boxOffice && movie.boxOffice !== 'N/A' && (
+											<div>
+												<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+													Box Office
+												</h3>
+												<p className="text-2xl font-bold text-white">{movie.boxOffice}</p>
+											</div>
+										)}
 									</div>
 								)}
 							</div>
