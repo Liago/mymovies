@@ -236,8 +236,35 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 									<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
 										Director
 									</h3>
-									<p className="text-white font-medium">{movie.director}</p>
+									{(movie as any).director?.id ? (
+										<PersonCard
+											personId={(movie as any).director.id}
+											name={(movie as any).director.name}
+											role="Director"
+											profilePath={(movie as any).director.profilePath}
+										/>
+									) : (
+										<p className="text-white font-medium">{typeof movie.director === 'string' ? movie.director : (movie as any).director?.name || 'N/A'}</p>
+									)}
 								</div>
+
+								{(movie as any).budget && (
+									<div>
+										<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+											Budget
+										</h3>
+										<p className="text-white font-medium">{(movie as any).budget}</p>
+									</div>
+								)}
+
+								{(movie as any).revenue && (
+									<div>
+										<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+											Revenue
+										</h3>
+										<p className="text-white font-medium">{(movie as any).revenue}</p>
+									</div>
+								)}
 
 								{movie.boxOffice && movie.boxOffice !== 'N/A' && (
 									<div>
