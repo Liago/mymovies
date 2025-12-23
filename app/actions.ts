@@ -258,7 +258,7 @@ export async function actionGetListDetails(listId: number) {
 			id: item.media_id,
 			title: item.title,
 			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-			type: item.media_type,
+			media_type: item.media_type,
 			rating: 0,
 			year: '',
 		}));
