@@ -3,7 +3,7 @@ import { List, Trash2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { actionGetListDetails } from '@/app/actions';
-import MovieCard from '@/components/MovieCard';
+import ListItemsGrid from '@/components/ListItemsGrid';
 import DeleteListButton from '@/components/DeleteListButton';
 
 async function getT(key: string) {
@@ -74,11 +74,7 @@ export default async function ListDetailPage({ params }: { params: Promise<{ id:
 
 				{/* Items Grid */}
 				{listDetails.items && listDetails.items.length > 0 ? (
-					<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-						{listDetails.items.map((item: any) => (
-							<MovieCard key={item.id} {...item} />
-						))}
-					</div>
+					<ListItemsGrid listId={listId} items={listDetails.items} />
 				) : (
 					<div className="text-center py-20 bg-white/5 rounded-2xl border border-white/10 border-dashed">
 						<List size={48} className="mx-auto text-gray-600 mb-4" />
