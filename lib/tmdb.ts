@@ -190,6 +190,19 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 		const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits&language=${language}`);
 		const data = await res.json();
 
+		const directorData = data.credits?.crew?.find((c: any) => c.job === 'Director');
+
+		// Format budget and revenue
+		const formatCurrency = (amount: number) => {
+			if (!amount || amount === 0) return null;
+			return new Intl.NumberFormat('en-US', {
+				style: 'currency',
+				currency: 'USD',
+				minimumFractionDigits: 0,
+				maximumFractionDigits: 0
+			}).format(amount);
+		};
+
 		return {
 			title: data.title,
 			description: data.overview,
@@ -207,7 +220,13 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 				character: c.character,
 				profilePath: c.profile_path
 			})) || [],
-			director: data.credits?.crew?.find((c: any) => c.job === 'Director')?.name || 'N/A',
+			director: {
+				id: directorData?.id || null,
+				name: directorData?.name || 'N/A',
+				profilePath: directorData?.profile_path || null
+			},
+			budget: formatCurrency(data.budget),
+			revenue: formatCurrency(data.revenue),
 			boxOffice: 'N/A'
 		};
 	} catch (e) {
