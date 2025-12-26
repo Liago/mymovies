@@ -11,6 +11,7 @@ import { cookies } from 'next/headers';
 import MovieCarousel from '@/components/MovieCarousel';
 import HistoryTracker from '@/components/HistoryTracker';
 import TVSeasonsButton from '@/components/TVSeasonsButton';
+import PosterImage from '@/components/PosterImage';
 
 export default async function TVDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
@@ -61,10 +62,9 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 						<div className="w-full max-w-[350px] mx-auto lg:mx-0">
 							<div className="aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl shadow-blue-900/20 bg-zinc-900 border border-white/10 relative group">
 								{tvShow.poster ? (
-									<img
+									<PosterImage
 										src={tvShow.poster}
 										alt={tvShow.title}
-										className="w-full h-full object-cover"
 									/>
 								) : (
 									<div className="w-full h-full flex items-center justify-center text-zinc-700">

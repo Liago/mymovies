@@ -13,6 +13,7 @@ import { cookies } from 'next/headers';
 import MovieCarousel from '@/components/MovieCarousel';
 import { Metadata } from 'next';
 import HistoryTracker from '@/components/HistoryTracker';
+import PosterImage from '@/components/PosterImage';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
 	const { id } = await params;
@@ -128,10 +129,9 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 						<div className="w-full max-w-[350px] mx-auto lg:mx-0">
 							<div className="aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl shadow-purple-900/20 bg-zinc-900 border border-white/10 relative group">
 								{movie.poster ? (
-									<img
+									<PosterImage
 										src={movie.poster}
 										alt={movie.title}
-										className="w-full h-full object-cover"
 									/>
 								) : (
 									<div className="w-full h-full flex items-center justify-center text-zinc-700">
