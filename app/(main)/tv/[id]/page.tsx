@@ -12,6 +12,7 @@ import MovieCarousel from '@/components/MovieCarousel';
 import HistoryTracker from '@/components/HistoryTracker';
 import TVSeasonsButton from '@/components/TVSeasonsButton';
 import PosterImage from '@/components/PosterImage';
+import BackButton from '@/components/BackButton';
 
 export default async function TVDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
@@ -49,13 +50,7 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 
 			<div className="relative z-10">
 				<div className="max-w-7xl mx-auto px-6 md:px-12 py-12 pt-32">
-					<Link
-						href="/tv"
-						className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-8 transition-colors group"
-					>
-						<ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-						<span className="text-sm font-medium">Back to TV Shows</span>
-					</Link>
+					<BackButton fallbackHref="/tv" label="Back to TV Shows" />
 
 					<div className="grid lg:grid-cols-[350px,1fr] gap-12 items-start">
 						{/* Poster */}

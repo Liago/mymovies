@@ -2,7 +2,7 @@ import { getMovieDetail } from '@/lib/omdb';
 import { getMovieDetailTMDb, getMovieTrailerTMDb, getMovieTrailer, getMovieReviews } from '@/lib/tmdb';
 import { notFound } from 'next/navigation';
 import { Play, ChevronLeft, Calendar, Clock, Film } from 'lucide-react';
-import Link from 'next/link';
+import Link from 'next/link'; // Still used elsewhere if needed, or remove if unused. Kept for safety.
 import PersonCard from '@/components/PersonCard';
 import TrailerButton from '@/components/TrailerButton';
 import ReviewsButton from '@/components/ReviewsButton';
@@ -14,6 +14,7 @@ import MovieCarousel from '@/components/MovieCarousel';
 import { Metadata } from 'next';
 import HistoryTracker from '@/components/HistoryTracker';
 import PosterImage from '@/components/PosterImage';
+import BackButton from '@/components/BackButton';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
 	const { id } = await params;
@@ -116,13 +117,7 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 			<div className="relative z-10">
 
 				<div className="max-w-7xl mx-auto px-6 md:px-12 py-12 pt-32">
-					<Link
-						href="/discovery"
-						className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-8 transition-colors group"
-					>
-						<ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-						<span className="text-sm font-medium">Back to Discovery</span>
-					</Link>
+					<BackButton fallbackHref="/discovery" label="Back to Discovery" />
 
 					<div className="grid lg:grid-cols-[350px,1fr] gap-12 items-start">
 						{/* Poster */}
