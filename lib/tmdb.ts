@@ -206,6 +206,12 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 		// Fetch real IMDB and Rotten Tomatoes ratings from OMDB if IMDB ID is available
 		let imdbRating = data.vote_average;
 		let rottenTomatoesRating = Math.round(data.vote_average * 10);
+		let metascore: number | null = null;
+		let awards: string | null = null;
+		let omdbBoxOffice: string | null = null;
+		let writer: string | null = null;
+		let country: string | null = null;
+		let languages: string | null = null;
 
 		const imdbId = data.external_ids?.imdb_id;
 		if (imdbId) {
@@ -218,6 +224,26 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 					const rtRating = omdbData.Ratings?.find((r: any) => r.Source === 'Rotten Tomatoes');
 					if (rtRating) {
 						rottenTomatoesRating = parseInt(rtRating.Value.replace('%', '')) || Math.round(data.vote_average * 10);
+					}
+
+					// Extract additional OMDB data
+					if (omdbData.Metascore && omdbData.Metascore !== 'N/A') {
+						metascore = parseInt(omdbData.Metascore);
+					}
+					if (omdbData.Awards && omdbData.Awards !== 'N/A') {
+						awards = omdbData.Awards;
+					}
+					if (omdbData.BoxOffice && omdbData.BoxOffice !== 'N/A') {
+						omdbBoxOffice = omdbData.BoxOffice;
+					}
+					if (omdbData.Writer && omdbData.Writer !== 'N/A') {
+						writer = omdbData.Writer;
+					}
+					if (omdbData.Country && omdbData.Country !== 'N/A') {
+						country = omdbData.Country;
+					}
+					if (omdbData.Language && omdbData.Language !== 'N/A') {
+						languages = omdbData.Language;
 					}
 				}
 			} catch (omdbError) {
@@ -234,7 +260,8 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 			duration: `${data.runtime} min`,
 			rating: {
 				imdb: imdbRating,
-				rottenTomatoes: rottenTomatoesRating
+				rottenTomatoes: rottenTomatoesRating,
+				metascore
 			},
 			actors: data.credits?.cast?.slice(0, 8).map((c: any) => ({
 				id: c.id,
@@ -249,7 +276,11 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 			},
 			budget: formatCurrency(data.budget),
 			revenue: formatCurrency(data.revenue),
-			boxOffice: 'N/A'
+			boxOffice: omdbBoxOffice || 'N/A',
+			awards,
+			writer,
+			country,
+			languages
 		};
 	} catch (e) {
 		console.error('Error fetching TMDb movie detail:', e);
@@ -300,6 +331,11 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 		// Fetch real IMDB and Rotten Tomatoes ratings from OMDB if IMDB ID is available
 		let imdbRating = data.vote_average;
 		let rottenTomatoesRating = Math.round(data.vote_average * 10);
+		let metascore: number | null = null;
+		let awards: string | null = null;
+		let writer: string | null = null;
+		let country: string | null = null;
+		let languages: string | null = null;
 
 		const imdbId = data.external_ids?.imdb_id;
 		if (imdbId) {
@@ -312,6 +348,23 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 					const rtRating = omdbData.Ratings?.find((r: any) => r.Source === 'Rotten Tomatoes');
 					if (rtRating) {
 						rottenTomatoesRating = parseInt(rtRating.Value.replace('%', '')) || Math.round(data.vote_average * 10);
+					}
+
+					// Extract additional OMDB data
+					if (omdbData.Metascore && omdbData.Metascore !== 'N/A') {
+						metascore = parseInt(omdbData.Metascore);
+					}
+					if (omdbData.Awards && omdbData.Awards !== 'N/A') {
+						awards = omdbData.Awards;
+					}
+					if (omdbData.Writer && omdbData.Writer !== 'N/A') {
+						writer = omdbData.Writer;
+					}
+					if (omdbData.Country && omdbData.Country !== 'N/A') {
+						country = omdbData.Country;
+					}
+					if (omdbData.Language && omdbData.Language !== 'N/A') {
+						languages = omdbData.Language;
 					}
 				}
 			} catch (omdbError) {
@@ -330,7 +383,8 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 			status: data.status,
 			rating: {
 				imdb: imdbRating,
-				rottenTomatoes: rottenTomatoesRating
+				rottenTomatoes: rottenTomatoesRating,
+				metascore
 			},
 			actors: data.credits?.cast?.slice(0, 8).map((c: any) => ({
 				id: c.id,
@@ -339,7 +393,11 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 				profilePath: c.profile_path
 			})) || [],
 			creators: data.created_by?.map((c: any) => c.name).join(', ') || 'N/A',
-			genres: data.genres?.map((g: any) => g.name) || []
+			genres: data.genres?.map((g: any) => g.name) || [],
+			awards,
+			writer,
+			country,
+			languages
 		};
 	} catch (e) {
 		console.error('Error fetching TMDb TV detail:', e);
