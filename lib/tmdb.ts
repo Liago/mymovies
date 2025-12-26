@@ -187,7 +187,7 @@ export async function getUpcomingMovies(page: number = 1, language: string = 'en
 export async function getMovieDetailTMDb(id: number, language: string = 'en-US') {
 	if (!TMDB_API_KEY) return null;
 	try {
-		const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits&language=${language}`);
+		const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits,external_ids&language=${language}`);
 		const data = await res.json();
 
 		const directorData = data.credits?.crew?.find((c: any) => c.job === 'Director');
@@ -203,6 +203,54 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 			}).format(amount);
 		};
 
+		// Fetch real IMDB and Rotten Tomatoes ratings from OMDB if IMDB ID is available
+		let imdbRating = data.vote_average;
+		let rottenTomatoesRating = Math.round(data.vote_average * 10);
+		let metascore: number | null = null;
+		let awards: string | null = null;
+		let omdbBoxOffice: string | null = null;
+		let writer: string | null = null;
+		let country: string | null = null;
+		let languages: string | null = null;
+
+		const imdbId = data.external_ids?.imdb_id;
+		if (imdbId) {
+			try {
+				const omdbRes = await fetch(`http://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY}&i=${imdbId}`);
+				const omdbData = await omdbRes.json();
+
+				if (omdbData.Response === 'True') {
+					imdbRating = parseFloat(omdbData.imdbRating) || data.vote_average;
+					const rtRating = omdbData.Ratings?.find((r: any) => r.Source === 'Rotten Tomatoes');
+					if (rtRating) {
+						rottenTomatoesRating = parseInt(rtRating.Value.replace('%', '')) || Math.round(data.vote_average * 10);
+					}
+
+					// Extract additional OMDB data
+					if (omdbData.Metascore && omdbData.Metascore !== 'N/A') {
+						metascore = parseInt(omdbData.Metascore);
+					}
+					if (omdbData.Awards && omdbData.Awards !== 'N/A') {
+						awards = omdbData.Awards;
+					}
+					if (omdbData.BoxOffice && omdbData.BoxOffice !== 'N/A') {
+						omdbBoxOffice = omdbData.BoxOffice;
+					}
+					if (omdbData.Writer && omdbData.Writer !== 'N/A') {
+						writer = omdbData.Writer;
+					}
+					if (omdbData.Country && omdbData.Country !== 'N/A') {
+						country = omdbData.Country;
+					}
+					if (omdbData.Language && omdbData.Language !== 'N/A') {
+						languages = omdbData.Language;
+					}
+				}
+			} catch (omdbError) {
+				console.warn('Could not fetch OMDB data, using TMDB ratings:', omdbError);
+			}
+		}
+
 		return {
 			title: data.title,
 			description: data.overview,
@@ -211,8 +259,9 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 			releaseDate: data.release_date,
 			duration: `${data.runtime} min`,
 			rating: {
-				imdb: data.vote_average,
-				rottenTomatoes: Math.round(data.vote_average * 10)
+				imdb: imdbRating,
+				rottenTomatoes: rottenTomatoesRating,
+				metascore
 			},
 			actors: data.credits?.cast?.slice(0, 8).map((c: any) => ({
 				id: c.id,
@@ -227,7 +276,11 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 			},
 			budget: formatCurrency(data.budget),
 			revenue: formatCurrency(data.revenue),
-			boxOffice: 'N/A'
+			boxOffice: omdbBoxOffice || 'N/A',
+			awards,
+			writer,
+			country,
+			languages
 		};
 	} catch (e) {
 		console.error('Error fetching TMDb movie detail:', e);
@@ -272,8 +325,52 @@ export async function getMovieTrailerTMDb(id: number, language: string = 'en-US'
 export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 	if (!TMDB_API_KEY) return null;
 	try {
-		const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits&language=${language}`);
+		const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits,external_ids&language=${language}`);
 		const data = await res.json();
+
+		// Fetch real IMDB and Rotten Tomatoes ratings from OMDB if IMDB ID is available
+		let imdbRating = data.vote_average;
+		let rottenTomatoesRating = Math.round(data.vote_average * 10);
+		let metascore: number | null = null;
+		let awards: string | null = null;
+		let writer: string | null = null;
+		let country: string | null = null;
+		let languages: string | null = null;
+
+		const imdbId = data.external_ids?.imdb_id;
+		if (imdbId) {
+			try {
+				const omdbRes = await fetch(`http://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY}&i=${imdbId}`);
+				const omdbData = await omdbRes.json();
+
+				if (omdbData.Response === 'True') {
+					imdbRating = parseFloat(omdbData.imdbRating) || data.vote_average;
+					const rtRating = omdbData.Ratings?.find((r: any) => r.Source === 'Rotten Tomatoes');
+					if (rtRating) {
+						rottenTomatoesRating = parseInt(rtRating.Value.replace('%', '')) || Math.round(data.vote_average * 10);
+					}
+
+					// Extract additional OMDB data
+					if (omdbData.Metascore && omdbData.Metascore !== 'N/A') {
+						metascore = parseInt(omdbData.Metascore);
+					}
+					if (omdbData.Awards && omdbData.Awards !== 'N/A') {
+						awards = omdbData.Awards;
+					}
+					if (omdbData.Writer && omdbData.Writer !== 'N/A') {
+						writer = omdbData.Writer;
+					}
+					if (omdbData.Country && omdbData.Country !== 'N/A') {
+						country = omdbData.Country;
+					}
+					if (omdbData.Language && omdbData.Language !== 'N/A') {
+						languages = omdbData.Language;
+					}
+				}
+			} catch (omdbError) {
+				console.warn('Could not fetch OMDB data, using TMDB ratings:', omdbError);
+			}
+		}
 
 		return {
 			title: data.name,
@@ -285,8 +382,9 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 			episodes: data.number_of_episodes,
 			status: data.status,
 			rating: {
-				imdb: data.vote_average,
-				rottenTomatoes: Math.round(data.vote_average * 10)
+				imdb: imdbRating,
+				rottenTomatoes: rottenTomatoesRating,
+				metascore
 			},
 			actors: data.credits?.cast?.slice(0, 8).map((c: any) => ({
 				id: c.id,
@@ -295,7 +393,11 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 				profilePath: c.profile_path
 			})) || [],
 			creators: data.created_by?.map((c: any) => c.name).join(', ') || 'N/A',
-			genres: data.genres?.map((g: any) => g.name) || []
+			genres: data.genres?.map((g: any) => g.name) || [],
+			awards,
+			writer,
+			country,
+			languages
 		};
 	} catch (e) {
 		console.error('Error fetching TMDb TV detail:', e);

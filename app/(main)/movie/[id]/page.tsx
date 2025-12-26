@@ -184,6 +184,16 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 										</div>
 									)}
 
+									{/* Metascore Rating */}
+									{(movie.rating as any).metascore && (
+										<div className="flex items-center gap-2">
+											<div className="w-10 h-6 rounded flex items-center justify-center bg-yellow-600 text-white font-bold text-sm">
+												M
+											</div>
+											<span className="text-lg font-bold text-white">{(movie.rating as any).metascore}</span>
+										</div>
+									)}
+
 									<div className="flex items-center gap-2">
 										<Clock size={18} />
 										<span>{movie.duration}</span>
@@ -224,6 +234,53 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 									{movie.description}
 								</p>
 							</div>
+
+							{/* Awards Section */}
+							{(movie as any).awards && (
+								<div className="border-t border-white/10 pt-8">
+									<h2 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-4">
+										Awards & Recognition
+									</h2>
+									<p className="text-lg text-zinc-300 leading-relaxed font-light">
+										{(movie as any).awards}
+									</p>
+								</div>
+							)}
+
+							{/* Additional Info */}
+							{((movie as any).writer || (movie as any).country || (movie as any).languages) && (
+								<div className="border-t border-white/10 pt-8">
+									<h2 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-4">
+										Additional Information
+									</h2>
+									<div className="space-y-4">
+										{(movie as any).writer && (
+											<div>
+												<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+													Writer
+												</h3>
+												<p className="text-zinc-300">{(movie as any).writer}</p>
+											</div>
+										)}
+										{(movie as any).country && (
+											<div>
+												<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+													Country
+												</h3>
+												<p className="text-zinc-300">{(movie as any).country}</p>
+											</div>
+										)}
+										{(movie as any).languages && (
+											<div>
+												<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
+													Languages
+												</h3>
+												<p className="text-zinc-300">{(movie as any).languages}</p>
+											</div>
+										)}
+									</div>
+								</div>
+							)}
 
 							{/* Details Grid */}
 							<div className="space-y-8 pt-8 border-t border-white/10">
