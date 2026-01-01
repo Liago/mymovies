@@ -216,8 +216,10 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 		const imdbId = data.external_ids?.imdb_id;
 		if (imdbId && process.env.OMDB_API_KEY && process.env.OMDB_API_KEY !== 'undefined') {
 			try {
+				console.log(`[OMDB] Fetching data for IMDB ID: ${imdbId}`);
 				const omdbRes = await fetch(`http://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY}&i=${imdbId}`);
 				const omdbData = await omdbRes.json();
+				console.log(`[OMDB] Response status: ${omdbData.Response}`);
 
 				if (omdbData.Response === 'True') {
 					// Use OMDB IMDB rating if valid, otherwise keep TMDB rating
@@ -227,11 +229,14 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 					}
 
 					// Extract Rotten Tomatoes rating
-					const rtRating = omdbData.Ratings?.find((r: any) => r.Source === 'Rotten Tomatoes');
-					if (rtRating) {
-						const rtValue = parseInt(rtRating.Value.replace('%', ''));
-						if (!isNaN(rtValue)) {
-							rottenTomatoesRating = rtValue;
+					if (omdbData.Ratings && Array.isArray(omdbData.Ratings)) {
+						const rtRating = omdbData.Ratings.find((r: any) => r.Source === 'Rotten Tomatoes');
+						if (rtRating && rtRating.Value) {
+							const rtValue = parseInt(rtRating.Value.replace('%', ''), 10);
+							if (!isNaN(rtValue) && rtValue >= 0) {
+								rottenTomatoesRating = rtValue;
+								console.log(`[OMDB] Rotten Tomatoes rating found: ${rtValue}%`);
+							}
 						}
 					}
 
@@ -256,7 +261,13 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 					}
 				}
 			} catch (omdbError) {
-				console.warn('Could not fetch OMDB data, using TMDB ratings:', omdbError);
+				console.warn('[OMDB] Error fetching data, using TMDB ratings:', omdbError);
+			}
+		} else {
+			if (!imdbId) {
+				console.log('[OMDB] No IMDB ID available, skipping OMDB fetch');
+			} else if (!process.env.OMDB_API_KEY || process.env.OMDB_API_KEY === 'undefined') {
+				console.log('[OMDB] API key not configured, skipping OMDB fetch');
 			}
 		}
 
@@ -349,8 +360,10 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 		const imdbId = data.external_ids?.imdb_id;
 		if (imdbId && process.env.OMDB_API_KEY && process.env.OMDB_API_KEY !== 'undefined') {
 			try {
+				console.log(`[OMDB] Fetching data for IMDB ID: ${imdbId}`);
 				const omdbRes = await fetch(`http://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY}&i=${imdbId}`);
 				const omdbData = await omdbRes.json();
+				console.log(`[OMDB] Response status: ${omdbData.Response}`);
 
 				if (omdbData.Response === 'True') {
 					// Use OMDB IMDB rating if valid, otherwise keep TMDB rating
@@ -360,11 +373,14 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 					}
 
 					// Extract Rotten Tomatoes rating
-					const rtRating = omdbData.Ratings?.find((r: any) => r.Source === 'Rotten Tomatoes');
-					if (rtRating) {
-						const rtValue = parseInt(rtRating.Value.replace('%', ''));
-						if (!isNaN(rtValue)) {
-							rottenTomatoesRating = rtValue;
+					if (omdbData.Ratings && Array.isArray(omdbData.Ratings)) {
+						const rtRating = omdbData.Ratings.find((r: any) => r.Source === 'Rotten Tomatoes');
+						if (rtRating && rtRating.Value) {
+							const rtValue = parseInt(rtRating.Value.replace('%', ''), 10);
+							if (!isNaN(rtValue) && rtValue >= 0) {
+								rottenTomatoesRating = rtValue;
+								console.log(`[OMDB] Rotten Tomatoes rating found: ${rtValue}%`);
+							}
 						}
 					}
 
@@ -386,7 +402,13 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 					}
 				}
 			} catch (omdbError) {
-				console.warn('Could not fetch OMDB data, using TMDB ratings:', omdbError);
+				console.warn('[OMDB] Error fetching data, using TMDB ratings:', omdbError);
+			}
+		} else {
+			if (!imdbId) {
+				console.log('[OMDB] No IMDB ID available, skipping OMDB fetch');
+			} else if (!process.env.OMDB_API_KEY || process.env.OMDB_API_KEY === 'undefined') {
+				console.log('[OMDB] API key not configured, skipping OMDB fetch');
 			}
 		}
 
