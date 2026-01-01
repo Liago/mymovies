@@ -463,7 +463,8 @@ export async function searchMulti(query: string, page: number = 1, language: str
 				poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
 				year: (item.release_date || item.first_air_date || '').split('-')[0],
 				rating: item.vote_average,
-				type: mediaType === 'movie' ? 'movie' : 'tv'
+				type: mediaType === 'movie' ? 'movie' : 'tv',
+				overview: item.overview || ''
 			};
 		}) || [];
 	} catch (e) {
