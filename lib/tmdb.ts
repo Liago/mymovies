@@ -205,7 +205,7 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 
 		// Fetch real IMDB and Rotten Tomatoes ratings from OMDB if IMDB ID is available
 		let imdbRating = data.vote_average;
-		let rottenTomatoesRating = Math.round(data.vote_average * 10);
+		let rottenTomatoesRating: number | null = null;
 		let metascore: number | null = null;
 		let awards: string | null = null;
 		let omdbBoxOffice: string | null = null;
@@ -214,16 +214,25 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 		let languages: string | null = null;
 
 		const imdbId = data.external_ids?.imdb_id;
-		if (imdbId) {
+		if (imdbId && process.env.OMDB_API_KEY && process.env.OMDB_API_KEY !== 'undefined') {
 			try {
 				const omdbRes = await fetch(`http://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY}&i=${imdbId}`);
 				const omdbData = await omdbRes.json();
 
 				if (omdbData.Response === 'True') {
-					imdbRating = parseFloat(omdbData.imdbRating) || data.vote_average;
+					// Use OMDB IMDB rating if valid, otherwise keep TMDB rating
+					const omdbImdbRating = parseFloat(omdbData.imdbRating);
+					if (!isNaN(omdbImdbRating) && omdbImdbRating > 0) {
+						imdbRating = omdbImdbRating;
+					}
+
+					// Extract Rotten Tomatoes rating
 					const rtRating = omdbData.Ratings?.find((r: any) => r.Source === 'Rotten Tomatoes');
 					if (rtRating) {
-						rottenTomatoesRating = parseInt(rtRating.Value.replace('%', '')) || Math.round(data.vote_average * 10);
+						const rtValue = parseInt(rtRating.Value.replace('%', ''));
+						if (!isNaN(rtValue)) {
+							rottenTomatoesRating = rtValue;
+						}
 					}
 
 					// Extract additional OMDB data
@@ -330,7 +339,7 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 
 		// Fetch real IMDB and Rotten Tomatoes ratings from OMDB if IMDB ID is available
 		let imdbRating = data.vote_average;
-		let rottenTomatoesRating = Math.round(data.vote_average * 10);
+		let rottenTomatoesRating: number | null = null;
 		let metascore: number | null = null;
 		let awards: string | null = null;
 		let writer: string | null = null;
@@ -338,16 +347,25 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 		let languages: string | null = null;
 
 		const imdbId = data.external_ids?.imdb_id;
-		if (imdbId) {
+		if (imdbId && process.env.OMDB_API_KEY && process.env.OMDB_API_KEY !== 'undefined') {
 			try {
 				const omdbRes = await fetch(`http://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY}&i=${imdbId}`);
 				const omdbData = await omdbRes.json();
 
 				if (omdbData.Response === 'True') {
-					imdbRating = parseFloat(omdbData.imdbRating) || data.vote_average;
+					// Use OMDB IMDB rating if valid, otherwise keep TMDB rating
+					const omdbImdbRating = parseFloat(omdbData.imdbRating);
+					if (!isNaN(omdbImdbRating) && omdbImdbRating > 0) {
+						imdbRating = omdbImdbRating;
+					}
+
+					// Extract Rotten Tomatoes rating
 					const rtRating = omdbData.Ratings?.find((r: any) => r.Source === 'Rotten Tomatoes');
 					if (rtRating) {
-						rottenTomatoesRating = parseInt(rtRating.Value.replace('%', '')) || Math.round(data.vote_average * 10);
+						const rtValue = parseInt(rtRating.Value.replace('%', ''));
+						if (!isNaN(rtValue)) {
+							rottenTomatoesRating = rtValue;
+						}
 					}
 
 					// Extract additional OMDB data

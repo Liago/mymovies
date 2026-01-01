@@ -170,11 +170,11 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 											<rect width="64" height="32" rx="4" fill="#F5C518" />
 											<text x="32" y="22" fontSize="16" fontWeight="bold" fontFamily="Arial, sans-serif" fill="#000" textAnchor="middle">IMDb</text>
 										</svg>
-										<span className="text-lg font-bold text-white">{movie.rating.imdb}</span>
+										<span className="text-lg font-bold text-white">{typeof movie.rating.imdb === 'number' ? movie.rating.imdb.toFixed(1) : movie.rating.imdb}</span>
 									</div>
 
 									{/* Rotten Tomatoes Rating */}
-									{movie.rating.rottenTomatoes && (
+									{movie.rating.rottenTomatoes !== null && movie.rating.rottenTomatoes !== undefined && (
 										<div className="flex items-center gap-2">
 											<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 												<path d="M12 2C12 2 10.5 0.5 9 1C7.5 1.5 8 3 8 3C5 3 3 5.5 3 8.5C3 12.5 6 16 9 18.5C10 19.5 11 21 12 22C13 21 14 19.5 15 18.5C18 16 21 12.5 21 8.5C21 5.5 19 3 16 3C16 3 16.5 1.5 15 1C13.5 0.5 12 2 12 2Z" fill="#FA320A" />
