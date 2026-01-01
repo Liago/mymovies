@@ -74,17 +74,9 @@ export async function searchMovies(query: string): Promise<MovieData[]> {
 		const response = await fetch(`${BASE_URL}/?apikey=${API_KEY}&s=${encodeURIComponent(query)}`);
 		const data: OMDbSearchResponse = await response.json();
 
-		if (data.Response === 'False') {
+		if (data.Response === 'False' || !data.Search) {
 			return [];
 		}
-
-		// We need to fetch details for each result to get the full data needed for MovieData
-		// However, for the search list, we might want to be lighter. 
-		// But the current UI expects description and ratings in the list view (relevance calculation needs title).
-		// The current UI shows description and relevance.
-		// To keep it fast, we might just map what we have and maybe fetch details only for top results?
-		// Or just fetch details for all (might be slow).
-		// Let's fetch details for the top 5 results to populate the rich search card.
 
 		const topResults = data.Search.slice(0, 5);
 		const detailedResults = await Promise.all(
@@ -117,25 +109,26 @@ export async function getMovieDetail(imdbId: string): Promise<MovieData | null> 
 }
 
 function mapOMDbToMovieData(data: OMDbDetailResponse): MovieData {
-	const rottenTomatoes = data.Ratings.find(r => r.Source === 'Rotten Tomatoes')?.Value.replace('%', '') || '0';
+	const ratings = data.Ratings || [];
+	const rottenTomatoes = ratings.find(r => r.Source === 'Rotten Tomatoes')?.Value.replace('%', '') || '0';
 
 	return {
 		id: data.imdbID,
 		title: data.Title,
 		type: data.Type === 'series' ? 'tv' : 'movie',
 		year: parseInt(data.Year) || 0,
-		description: data.Plot,
-		poster: data.Poster !== 'N/A' ? data.Poster : undefined,
-		actors: data.Actors.split(', '),
-		director: data.Director,
+		description: data.Plot || '',
+		poster: data.Poster && data.Poster !== 'N/A' ? data.Poster : undefined,
+		actors: data.Actors ? data.Actors.split(', ') : [],
+		director: data.Director || '',
 		rating: {
 			imdb: parseFloat(data.imdbRating) || 0,
 			rottenTomatoes: parseInt(rottenTomatoes) || 0,
 		},
-		budget: 'N/A', // OMDb often doesn't have budget in the standard response or it's BoxOffice
+		budget: 'N/A',
 		boxOffice: data.BoxOffice || 'N/A',
-		duration: data.Runtime,
-		genre: data.Genre.split(', '),
-		releaseDate: data.Released,
+		duration: data.Runtime || '',
+		genre: data.Genre ? data.Genre.split(', ') : [],
+		releaseDate: data.Released || '',
 	};
 }
