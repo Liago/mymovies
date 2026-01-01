@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server';
-import { searchMovies, MovieData } from '@/lib/omdb';
+import { searchMulti } from '@/lib/tmdb';
 
-export interface SearchResult extends MovieData {
+export interface SearchResult {
+	id: number | string;
+	title: string;
+	type: 'movie' | 'tv' | 'person';
+	poster: string | null;
+	year: string;
+	rating?: number;
+	description?: string;
 	relevance: number;
 }
 
-// Simple relevance calculation to keep UI happy
-function calculateRelevance(item: MovieData, query: string): number {
+function calculateRelevance(title: string, query: string): number {
 	const lowerQuery = query.toLowerCase();
-	const lowerTitle = item.title.toLowerCase();
+	const lowerTitle = title.toLowerCase();
 
 	if (lowerTitle === lowerQuery) return 100;
 	if (lowerTitle.startsWith(lowerQuery)) return 90;
@@ -24,12 +30,21 @@ export async function GET(request: Request) {
 		return NextResponse.json({ results: [] });
 	}
 
-	const movies = await searchMovies(query);
+	const items = await searchMulti(query);
 
-	const results: SearchResult[] = movies.map(movie => ({
-		...movie,
-		relevance: calculateRelevance(movie, query)
-	})).sort((a, b) => b.relevance - a.relevance);
+	const results: SearchResult[] = items
+		.filter((item: any) => item.type === 'movie' || item.type === 'tv')
+		.map((item: any) => ({
+			id: item.id,
+			title: item.title,
+			type: item.type,
+			poster: item.poster,
+			year: item.year || '',
+			rating: item.rating,
+			description: item.overview,
+			relevance: calculateRelevance(item.title, query)
+		}))
+		.sort((a: SearchResult, b: SearchResult) => b.relevance - a.relevance);
 
 	return NextResponse.json({ results });
 }
