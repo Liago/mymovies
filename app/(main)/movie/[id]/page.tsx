@@ -1,5 +1,5 @@
 import { getMovieDetail } from '@/lib/omdb';
-import { getMovieDetailTMDb, getMovieTrailerTMDb, getMovieTrailer, getMovieReviews } from '@/lib/tmdb';
+import { getMovieDetailTMDb, getMovieTrailerTMDb, getMovieTrailer, getMovieReviews, getMovieDetailByImdbId } from '@/lib/tmdb';
 import { notFound } from 'next/navigation';
 import { Play, ChevronLeft, Calendar, Clock, Film } from 'lucide-react';
 import Link from 'next/link'; // Still used elsewhere if needed, or remove if unused. Kept for safety.
@@ -20,13 +20,17 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 	const { id } = await params;
 	const isTMDbId = /^\d+$/.test(id);
 	const cookieStore = await cookies();
-	const lang = cookieStore.get('app_language')?.value || 'en-US';
+	const lang = cookieStore.get('app_language')?.value || 'it-IT';
 
 	let movie;
 	if (isTMDbId) {
 		movie = await getMovieDetailTMDb(parseInt(id), lang);
 	} else {
-		movie = await getMovieDetail(id);
+		// Try TMDB first for localized metadata
+		movie = await getMovieDetailByImdbId(id, lang);
+		if (!movie) {
+			movie = await getMovieDetail(id);
+		}
 	}
 
 	if (!movie) {
@@ -69,7 +73,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function MovieDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
 	const cookieStore = await cookies();
-	const lang = cookieStore.get('app_language')?.value || 'en-US';
+	const lang = cookieStore.get('app_language')?.value || 'it-IT';
 
 	const isTMDbId = /^\d+$/.test(id);
 
@@ -91,8 +95,24 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 			getMovieReviews(movieId, 1, lang)
 		]);
 	} else {
-		movie = await getMovieDetail(id);
-		trailerUrl = await getMovieTrailer(id);
+		// Try TMDB first via IMDb ID
+		movie = await getMovieDetailByImdbId(id, lang);
+
+		if (movie) {
+			// Found in TMDB! Fetch rich data using the resolved TMDB ID
+			const movieId = (movie as any).id;
+			[trailerUrl, accountStates, similarMovies, recommendations, reviews] = await Promise.all([
+				getMovieTrailerTMDb(movieId, lang),
+				fetchAccountStates('movie', movieId),
+				fetchSimilarMovies(movieId),
+				fetchMovieRecommendations(movieId),
+				getMovieReviews(movieId, 1, lang)
+			]);
+		} else {
+			// Fallback to OMDB
+			movie = await getMovieDetail(id);
+			trailerUrl = await getMovieTrailer(id);
+		}
 	}
 
 	if (!movie) {

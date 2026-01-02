@@ -43,7 +43,7 @@ export async function getMovieTrailer(imdbId: string): Promise<string | null> {
 	}
 }
 
-export async function getPersonDetails(name: string, language: string = 'en-US') {
+export async function getPersonDetails(name: string, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return null;
 	try {
 		const searchRes = await fetch(`${BASE_URL}/search/person?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(name)}&language=${language}`);
@@ -63,7 +63,7 @@ export async function getPersonDetails(name: string, language: string = 'en-US')
 	}
 }
 
-export async function getPersonCredits(personId: number, language: string = 'en-US') {
+export async function getPersonCredits(personId: number, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const creditsRes = await fetch(`${BASE_URL}/person/${personId}/combined_credits?api_key=${TMDB_API_KEY}&language=${language}`);
@@ -85,7 +85,7 @@ export async function getPersonCredits(personId: number, language: string = 'en-
 	}
 }
 
-export async function getPersonDetailsById(personId: number, language: string = 'en-US') {
+export async function getPersonDetailsById(personId: number, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return null;
 	try {
 		const res = await fetch(
@@ -130,7 +130,7 @@ export async function getPersonDetailsById(personId: number, language: string = 
 	}
 }
 
-export async function getDiscoverMovies(page: number = 1, language: string = 'en-US') {
+export async function getDiscoverMovies(page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(`${BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=${page}&language=${language}`);
@@ -148,7 +148,7 @@ export async function getDiscoverMovies(page: number = 1, language: string = 'en
 	}
 }
 
-export async function getTVShows(page: number = 1, language: string = 'en-US') {
+export async function getTVShows(page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(`${BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&page=${page}&language=${language}`);
@@ -166,7 +166,7 @@ export async function getTVShows(page: number = 1, language: string = 'en-US') {
 	}
 }
 
-export async function getUpcomingMovies(page: number = 1, language: string = 'en-US') {
+export async function getUpcomingMovies(page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(`${BASE_URL}/movie/upcoming?api_key=${TMDB_API_KEY}&language=${language}&page=${page}`);
@@ -184,7 +184,24 @@ export async function getUpcomingMovies(page: number = 1, language: string = 'en
 	}
 }
 
-export async function getMovieDetailTMDb(id: number, language: string = 'en-US') {
+export async function getMovieDetailByImdbId(imdbId: string, language: string = 'it-IT') {
+	if (!TMDB_API_KEY) return null;
+	try {
+		const res = await fetch(`${BASE_URL}/find/${imdbId}?api_key=${TMDB_API_KEY}&external_source=imdb_id&language=${language}`);
+		const data = await res.json();
+		const movie = data.movie_results?.[0];
+
+		if (movie && movie.id) {
+			return getMovieDetailTMDb(movie.id, language);
+		}
+		return null;
+	} catch (e) {
+		console.error('Error fetching movie by IMDb ID:', e);
+		return null;
+	}
+}
+
+export async function getMovieDetailTMDb(id: number, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return null;
 	try {
 		const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits,external_ids&language=${language}`);
@@ -312,7 +329,7 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 	}
 }
 
-export async function getMovieTrailerTMDb(id: number, language: string = 'en-US'): Promise<string | null> {
+export async function getMovieTrailerTMDb(id: number, language: string = 'it-IT'): Promise<string | null> {
 	if (!TMDB_API_KEY) return null;
 	try {
 		// Try to get trailer in specific language, fallback to English if not found?
@@ -346,7 +363,7 @@ export async function getMovieTrailerTMDb(id: number, language: string = 'en-US'
 	}
 }
 
-export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
+export async function getTVDetailTMDb(id: number, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return null;
 	try {
 		const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits,external_ids&language=${language}`);
@@ -453,7 +470,7 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 	}
 }
 
-export async function getTVTrailerTMDb(id: number, language: string = 'en-US'): Promise<string | null> {
+export async function getTVTrailerTMDb(id: number, language: string = 'it-IT'): Promise<string | null> {
 	if (!TMDB_API_KEY) return null;
 	try {
 		let videosResponse = await fetch(
@@ -484,7 +501,7 @@ export async function getTVTrailerTMDb(id: number, language: string = 'en-US'): 
 }
 
 // Search multi-type (movies, TV shows, people)
-export async function searchMulti(query: string, page: number = 1, language: string = 'en-US') {
+export async function searchMulti(query: string, page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
@@ -522,7 +539,7 @@ export async function searchMulti(query: string, page: number = 1, language: str
 }
 
 // Trending content (all, movie, tv, person) with time window (day, week)
-export async function getTrending(mediaType: 'all' | 'movie' | 'tv' | 'person' = 'all', timeWindow: 'day' | 'week' = 'week', language: string = 'en-US') {
+export async function getTrending(mediaType: 'all' | 'movie' | 'tv' | 'person' = 'all', timeWindow: 'day' | 'week' = 'week', language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
@@ -559,7 +576,7 @@ export async function getTrending(mediaType: 'all' | 'movie' | 'tv' | 'person' =
 }
 
 // Top Rated Movies
-export async function getTopRatedMovies(page: number = 1, language: string = 'en-US') {
+export async function getTopRatedMovies(page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
@@ -582,7 +599,7 @@ export async function getTopRatedMovies(page: number = 1, language: string = 'en
 }
 
 // Top Rated TV Shows
-export async function getTopRatedTV(page: number = 1, language: string = 'en-US') {
+export async function getTopRatedTV(page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
@@ -605,7 +622,7 @@ export async function getTopRatedTV(page: number = 1, language: string = 'en-US'
 }
 
 // Now Playing Movies (currently in theaters)
-export async function getNowPlayingMovies(page: number = 1, language: string = 'en-US') {
+export async function getNowPlayingMovies(page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
@@ -628,7 +645,7 @@ export async function getNowPlayingMovies(page: number = 1, language: string = '
 }
 
 // Popular Movies
-export async function getPopularMovies(page: number = 1, language: string = 'en-US') {
+export async function getPopularMovies(page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
@@ -651,7 +668,7 @@ export async function getPopularMovies(page: number = 1, language: string = 'en-
 }
 
 // Popular TV Shows
-export async function getPopularTV(page: number = 1, language: string = 'en-US') {
+export async function getPopularTV(page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
@@ -674,7 +691,7 @@ export async function getPopularTV(page: number = 1, language: string = 'en-US')
 }
 
 // Get Movie Genres
-export async function getMovieGenres(language: string = 'en-US') {
+export async function getMovieGenres(language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
@@ -690,7 +707,7 @@ export async function getMovieGenres(language: string = 'en-US') {
 }
 
 // Get TV Genres
-export async function getTVGenres(language: string = 'en-US') {
+export async function getTVGenres(language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
@@ -706,7 +723,7 @@ export async function getTVGenres(language: string = 'en-US') {
 }
 
 // Discover Movies with genre filter
-export async function getDiscoverMoviesByGenre(genreId: number, page: number = 1, language: string = 'en-US') {
+export async function getDiscoverMoviesByGenre(genreId: number, page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
@@ -729,7 +746,7 @@ export async function getDiscoverMoviesByGenre(genreId: number, page: number = 1
 }
 
 // Discover TV Shows with genre filter
-export async function getDiscoverTVByGenre(genreId: number, page: number = 1, language: string = 'en-US') {
+export async function getDiscoverTVByGenre(genreId: number, page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
@@ -752,7 +769,7 @@ export async function getDiscoverTVByGenre(genreId: number, page: number = 1, la
 }
 
 // Similar Movies
-export async function getSimilarMovies(movieId: number, page: number = 1, language: string = 'en-US') {
+export async function getSimilarMovies(movieId: number, page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
@@ -775,7 +792,7 @@ export async function getSimilarMovies(movieId: number, page: number = 1, langua
 }
 
 // Similar TV Shows
-export async function getSimilarTV(tvId: number, page: number = 1, language: string = 'en-US') {
+export async function getSimilarTV(tvId: number, page: number = 1, language: string = 'it-IT') {
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(

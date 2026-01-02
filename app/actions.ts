@@ -34,7 +34,7 @@ import { createClient } from '@/lib/supabase/server';
 async function getLanguage() {
 	const cookieStore = await cookies();
 	const lang = cookieStore.get('app_language')?.value;
-	return lang && (lang === 'en-US' || lang === 'it-IT') ? lang : 'en-US';
+	return lang && (lang === 'en-US' || lang === 'it-IT') ? lang : 'it-IT';
 }
 
 export async function fetchPersonDetails(name: string) {

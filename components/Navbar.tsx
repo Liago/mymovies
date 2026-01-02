@@ -18,7 +18,7 @@ export default function Navbar() {
 	const langMenuRef = useRef<HTMLDivElement>(null);
 
 	const { isLoggedIn, user, avatarUrl, isLoading, hasMounted, login, logout } = useAuth();
-	const { language, setLanguage, t } = useLanguage();
+	const { language, setLanguage } = useLanguage();
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -33,6 +33,9 @@ export default function Navbar() {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
 				setIsUserMenuOpen(false);
+			}
+			if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+				setIsLangMenuOpen(false);
 			}
 		};
 		document.addEventListener('mousedown', handleClickOutside);
@@ -108,6 +111,41 @@ export default function Navbar() {
 							<Bell size={18} />
 							<span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
 						</button>
+
+						{/* Language Switcher */}
+						<div className="relative" ref={langMenuRef}>
+							<button
+								onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+								className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/10 flex items-center gap-2"
+								aria-label="Select language"
+							>
+								<Globe size={18} />
+								<span className="text-xs font-bold uppercase">{language === 'it-IT' ? 'IT' : 'EN'}</span>
+							</button>
+							
+							{isLangMenuOpen && (
+								<div className="absolute right-0 mt-2 w-32 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-xl overflow-hidden">
+									<button
+										onClick={() => {
+											setLanguage('it-IT');
+											setIsLangMenuOpen(false);
+										}}
+										className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 transition-colors ${language === 'it-IT' ? 'text-primary font-bold bg-white/5' : 'text-gray-300'}`}
+									>
+										🇮🇹 Italiano
+									</button>
+									<button
+										onClick={() => {
+											setLanguage('en-US');
+											setIsLangMenuOpen(false);
+										}}
+										className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 transition-colors ${language === 'en-US' ? 'text-primary font-bold bg-white/5' : 'text-gray-300'}`}
+									>
+										🇺🇸 English
+									</button>
+								</div>
+							)}
+						</div>
 
 						{/* User Avatar / Login Button */}
 						{!hasMounted || isLoading ? (

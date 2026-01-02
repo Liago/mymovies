@@ -61,7 +61,7 @@ const translations: Record<Language, Record<string, string>> = {
 };
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-	const [language, setLanguage] = useState<Language>('en-US');
+	const [language, setLanguage] = useState<Language>('it-IT');
 	const [isLoaded, setIsLoaded] = useState(false);
 
 	useEffect(() => {
