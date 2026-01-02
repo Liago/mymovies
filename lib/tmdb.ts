@@ -221,6 +221,10 @@ export async function getMovieDetailTMDb(id: number, language: string = 'en-US')
 				const omdbData = await omdbRes.json();
 				console.log(`[OMDB] Response status: ${omdbData.Response}`);
 
+				if (omdbData.Response === 'False') {
+					console.error(`[OMDB] API Error: ${omdbData.Error || 'Unknown error'}`);
+				}
+
 				if (omdbData.Response === 'True') {
 					// Use OMDB IMDB rating if valid, otherwise keep TMDB rating
 					const omdbImdbRating = parseFloat(omdbData.imdbRating);
@@ -364,6 +368,10 @@ export async function getTVDetailTMDb(id: number, language: string = 'en-US') {
 				const omdbRes = await fetch(`http://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY}&i=${imdbId}`);
 				const omdbData = await omdbRes.json();
 				console.log(`[OMDB] Response status: ${omdbData.Response}`);
+
+				if (omdbData.Response === 'False') {
+					console.error(`[OMDB] API Error: ${omdbData.Error || 'Unknown error'}`);
+				}
 
 				if (omdbData.Response === 'True') {
 					// Use OMDB IMDB rating if valid, otherwise keep TMDB rating
