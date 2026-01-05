@@ -40,6 +40,9 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 
 	// Load from localStorage or DB on mount/auth change
 	useEffect(() => {
+		// Reset initialization state when user changes
+		setIsInitialized(false);
+
 		const initTracker = async () => {
 			// Always check local storage first for any pending data or guest data
 			const storedEpisodes = localStorage.getItem('cine_tracker_watched');

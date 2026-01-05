@@ -91,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 						syncLocalFavorites,
 						syncLocalWatchlist,
 						syncLocalRatings,
+						syncLocalTracker,
 						pushLocalToTMDB
 					} = await import('@/app/actions/user-data');
 
@@ -104,6 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					// 4. Merge local guest data to Supabase
 					const localFavorites = localStorage.getItem('cine_favorites');
 					const localWatchlist = localStorage.getItem('cine_watchlist');
+					const localTrackerEpisodes = localStorage.getItem('cine_tracker_watched');
+					const localTrackerShows = localStorage.getItem('cine_tracker_shows');
 					const localRatings = localStorage.getItem('cine_ratings');
 
 					if (localFavorites) {
@@ -121,6 +124,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 						await syncLocalRatings(user.id, parsed);
 					}
 
+					// Sync tracker data
+					if (localTrackerEpisodes || localTrackerShows) {
+						const episodes: string[] = [];
+						const shows: any[] = [];
+						
+						if (localTrackerEpisodes) {
+							try {
+								const parsed = JSON.parse(localTrackerEpisodes);
+								if (Array.isArray(parsed)) episodes.push(...parsed);
+							} catch (e) {
+								console.error('Failed to parse tracker episodes', e);
+							}
+						}
+						
+						if (localTrackerShows) {
+							try {
+								const parsed = JSON.parse(localTrackerShows);
+								if (Array.isArray(parsed)) shows.push(...parsed);
+							} catch (e) {
+								console.error('Failed to parse tracker shows', e);
+							}
+						}
+						
+						if (episodes.length > 0 || shows.length > 0) {
+							await syncLocalTracker(user.id, episodes, shows);
+						}
+					}
+
 					// 5. Push local+new items TO TMDB (bidirectional sync)
 					await pushLocalToTMDB(user.id, sessionId);
 
@@ -128,6 +159,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					localStorage.removeItem('cine_favorites');
 					localStorage.removeItem('cine_watchlist');
 					localStorage.removeItem('cine_ratings');
+					localStorage.removeItem('cine_tracker_watched');
+					localStorage.removeItem('cine_tracker_shows');
 
 				} catch (err) {
 					console.error('Sync error:', err);
