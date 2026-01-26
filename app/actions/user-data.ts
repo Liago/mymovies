@@ -151,21 +151,37 @@ export async function syncFavoritesFromTMDB(tmdbId: number, sessionId: string) {
 	const supabase = createAdminClient();
 
 	try {
-		// Fetch from TMDB (movies + tv)
-		const [moviesData, tvData] = await Promise.all([
-			getFavorites(tmdbId, sessionId, 'movies', 1),
-			getFavorites(tmdbId, sessionId, 'tv', 1)
-		]);
+		// Fetch ALL pages from TMDB for both movies and TV
+		const allMovies: any[] = [];
+		const allTV: any[] = [];
+
+		let moviesPage = 1;
+		let moviesTotalPages = 1;
+		do {
+			const data = await getFavorites(tmdbId, sessionId, 'movies', moviesPage);
+			allMovies.push(...data.results);
+			moviesTotalPages = data.total_pages;
+			moviesPage++;
+		} while (moviesPage <= moviesTotalPages);
+
+		let tvPage = 1;
+		let tvTotalPages = 1;
+		do {
+			const data = await getFavorites(tmdbId, sessionId, 'tv', tvPage);
+			allTV.push(...data.results);
+			tvTotalPages = data.total_pages;
+			tvPage++;
+		} while (tvPage <= tvTotalPages);
 
 		const favorites = [
-			...moviesData.results.map((item: any) => ({
+			...allMovies.map((item: any) => ({
 				user_id: tmdbId,
 				media_id: item.id,
 				media_type: 'movie' as const,
 				title: item.title,
 				poster_path: item.poster
 			})),
-			...tvData.results.map((item: any) => ({
+			...allTV.map((item: any) => ({
 				user_id: tmdbId,
 				media_id: item.id,
 				media_type: 'tv' as const,
@@ -173,6 +189,24 @@ export async function syncFavoritesFromTMDB(tmdbId: number, sessionId: string) {
 				poster_path: item.poster
 			}))
 		];
+
+		// Remove stale items from Supabase that no longer exist in TMDB
+		const tmdbIds = new Set(favorites.map(f => `${f.media_id}_${f.media_type}`));
+		const { data: existing } = await supabase
+			.from('favorites')
+			.select('media_id, media_type')
+			.eq('user_id', tmdbId);
+
+		if (existing) {
+			const toDelete = existing.filter(e => !tmdbIds.has(`${e.media_id}_${e.media_type}`));
+			for (const item of toDelete) {
+				await supabase.from('favorites').delete().match({
+					user_id: tmdbId,
+					media_id: item.media_id,
+					media_type: item.media_type
+				});
+			}
+		}
 
 		if (favorites.length > 0) {
 			await supabase.from('favorites').upsert(favorites, { onConflict: 'user_id, media_id, media_type' });
@@ -190,20 +224,37 @@ export async function syncWatchlistFromTMDB(tmdbId: number, sessionId: string) {
 	const supabase = createAdminClient();
 
 	try {
-		const [moviesData, tvData] = await Promise.all([
-			getWatchlist(tmdbId, sessionId, 'movies', 1),
-			getWatchlist(tmdbId, sessionId, 'tv', 1)
-		]);
+		// Fetch ALL pages from TMDB for both movies and TV
+		const allMovies: any[] = [];
+		const allTV: any[] = [];
+
+		let moviesPage = 1;
+		let moviesTotalPages = 1;
+		do {
+			const data = await getWatchlist(tmdbId, sessionId, 'movies', moviesPage);
+			allMovies.push(...data.results);
+			moviesTotalPages = data.total_pages;
+			moviesPage++;
+		} while (moviesPage <= moviesTotalPages);
+
+		let tvPage = 1;
+		let tvTotalPages = 1;
+		do {
+			const data = await getWatchlist(tmdbId, sessionId, 'tv', tvPage);
+			allTV.push(...data.results);
+			tvTotalPages = data.total_pages;
+			tvPage++;
+		} while (tvPage <= tvTotalPages);
 
 		const watchlist = [
-			...moviesData.results.map((item: any) => ({
+			...allMovies.map((item: any) => ({
 				user_id: tmdbId,
 				media_id: item.id,
 				media_type: 'movie' as const,
 				title: item.title,
 				poster_path: item.poster
 			})),
-			...tvData.results.map((item: any) => ({
+			...allTV.map((item: any) => ({
 				user_id: tmdbId,
 				media_id: item.id,
 				media_type: 'tv' as const,
@@ -211,6 +262,24 @@ export async function syncWatchlistFromTMDB(tmdbId: number, sessionId: string) {
 				poster_path: item.poster
 			}))
 		];
+
+		// Remove stale items from Supabase that no longer exist in TMDB
+		const tmdbIds = new Set(watchlist.map(w => `${w.media_id}_${w.media_type}`));
+		const { data: existing } = await supabase
+			.from('watchlist')
+			.select('media_id, media_type')
+			.eq('user_id', tmdbId);
+
+		if (existing) {
+			const toDelete = existing.filter(e => !tmdbIds.has(`${e.media_id}_${e.media_type}`));
+			for (const item of toDelete) {
+				await supabase.from('watchlist').delete().match({
+					user_id: tmdbId,
+					media_id: item.media_id,
+					media_type: item.media_type
+				});
+			}
+		}
 
 		if (watchlist.length > 0) {
 			await supabase.from('watchlist').upsert(watchlist, { onConflict: 'user_id, media_id, media_type' });
@@ -228,13 +297,30 @@ export async function syncRatingsFromTMDB(tmdbId: number, sessionId: string) {
 	const supabase = createAdminClient();
 
 	try {
-		const [moviesData, tvData] = await Promise.all([
-			getRatedMedia(tmdbId, sessionId, 'movies', 1),
-			getRatedMedia(tmdbId, sessionId, 'tv', 1)
-		]);
+		// Fetch ALL pages from TMDB for both movies and TV
+		const allMovies: any[] = [];
+		const allTV: any[] = [];
+
+		let moviesPage = 1;
+		let moviesTotalPages = 1;
+		do {
+			const data = await getRatedMedia(tmdbId, sessionId, 'movies', moviesPage);
+			allMovies.push(...data.results);
+			moviesTotalPages = data.total_pages;
+			moviesPage++;
+		} while (moviesPage <= moviesTotalPages);
+
+		let tvPage = 1;
+		let tvTotalPages = 1;
+		do {
+			const data = await getRatedMedia(tmdbId, sessionId, 'tv', tvPage);
+			allTV.push(...data.results);
+			tvTotalPages = data.total_pages;
+			tvPage++;
+		} while (tvPage <= tvTotalPages);
 
 		const ratings = [
-			...moviesData.results.map((item: any) => ({
+			...allMovies.map((item: any) => ({
 				user_id: tmdbId,
 				media_id: item.id,
 				media_type: 'movie' as const,
@@ -242,7 +328,7 @@ export async function syncRatingsFromTMDB(tmdbId: number, sessionId: string) {
 				poster_path: item.poster,
 				rating: item.userRating
 			})),
-			...tvData.results.map((item: any) => ({
+			...allTV.map((item: any) => ({
 				user_id: tmdbId,
 				media_id: item.id,
 				media_type: 'tv' as const,
@@ -251,6 +337,24 @@ export async function syncRatingsFromTMDB(tmdbId: number, sessionId: string) {
 				rating: item.userRating
 			}))
 		];
+
+		// Remove stale items from Supabase that no longer exist in TMDB
+		const tmdbIds = new Set(ratings.map(r => `${r.media_id}_${r.media_type}`));
+		const { data: existing } = await supabase
+			.from('ratings')
+			.select('media_id, media_type')
+			.eq('user_id', tmdbId);
+
+		if (existing) {
+			const toDelete = existing.filter(e => !tmdbIds.has(`${e.media_id}_${e.media_type}`));
+			for (const item of toDelete) {
+				await supabase.from('ratings').delete().match({
+					user_id: tmdbId,
+					media_id: item.media_id,
+					media_type: item.media_type
+				});
+			}
+		}
 
 		if (ratings.length > 0) {
 			await supabase.from('ratings').upsert(ratings, { onConflict: 'user_id, media_id, media_type' });
