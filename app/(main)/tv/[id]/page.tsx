@@ -1,4 +1,4 @@
-import { getTVDetailTMDb, getTVTrailerTMDb, getTVReviews } from '@/lib/tmdb';
+import { getTVDetailTMDb, getTVTrailerTMDb, getTVReviews, getTVWatchProviders } from '@/lib/tmdb';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Tv, Calendar, Layers } from 'lucide-react';
 import Link from 'next/link';
@@ -13,6 +13,7 @@ import HistoryTracker from '@/components/HistoryTracker';
 import TVSeasonsButton from '@/components/TVSeasonsButton';
 import PosterImage from '@/components/PosterImage';
 import BackButton from '@/components/BackButton';
+import WatchProviders from '@/components/WatchProviders';
 
 export default async function TVDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
@@ -20,13 +21,14 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 	const lang = cookieStore.get('app_language')?.value || 'en-US';
 
 	const tvId = parseInt(id);
-	const [tvShow, trailerUrl, accountStates, similarShows, recommendations, reviews] = await Promise.all([
+	const [tvShow, trailerUrl, accountStates, similarShows, recommendations, reviews, watchProviders] = await Promise.all([
 		getTVDetailTMDb(tvId, lang),
 		getTVTrailerTMDb(tvId, lang),
 		fetchAccountStates('tv', tvId),
 		fetchSimilarTV(tvId),
 		fetchTVRecommendations(tvId),
-		getTVReviews(tvId, 1, lang)
+		getTVReviews(tvId, 1, lang),
+		getTVWatchProviders(tvId, lang)
 	]);
 
 	if (!tvShow) {
@@ -224,6 +226,11 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 										)}
 									</div>
 								</div>
+							)}
+
+							{/* Where to Watch */}
+							{watchProviders && (
+								<WatchProviders providers={watchProviders} lang={lang} />
 							)}
 
 							{/* Details Grid */}

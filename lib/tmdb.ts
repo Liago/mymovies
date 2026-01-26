@@ -924,6 +924,79 @@ export async function getTVReviews(tvId: number, page: number = 1, language: str
 	}
 }
 
+// Watch Providers (powered by JustWatch via TMDB)
+export interface WatchProvider {
+	logo_path: string;
+	provider_id: number;
+	provider_name: string;
+	display_priority: number;
+}
+
+export interface WatchProviderData {
+	link: string;
+	flatrate?: WatchProvider[];
+	rent?: WatchProvider[];
+	buy?: WatchProvider[];
+	ads?: WatchProvider[];
+	free?: WatchProvider[];
+}
+
+export async function getMovieWatchProviders(movieId: number, language: string = 'it-IT'): Promise<WatchProviderData | null> {
+	if (!TMDB_API_KEY) return null;
+	try {
+		const res = await fetch(
+			`${BASE_URL}/movie/${movieId}/watch/providers?api_key=${TMDB_API_KEY}`
+		);
+		const data = await res.json();
+
+		// Extract country code from language (e.g. 'it-IT' -> 'IT', 'en-US' -> 'US')
+		const countryCode = language.split('-')[1] || language.split('-')[0].toUpperCase();
+		const countryData = data.results?.[countryCode];
+
+		if (!countryData) return null;
+
+		return {
+			link: countryData.link,
+			flatrate: countryData.flatrate || [],
+			rent: countryData.rent || [],
+			buy: countryData.buy || [],
+			ads: countryData.ads || [],
+			free: countryData.free || [],
+		};
+	} catch (e) {
+		console.error('Error in getMovieWatchProviders:', e);
+		return null;
+	}
+}
+
+export async function getTVWatchProviders(tvId: number, language: string = 'it-IT'): Promise<WatchProviderData | null> {
+	if (!TMDB_API_KEY) return null;
+	try {
+		const res = await fetch(
+			`${BASE_URL}/tv/${tvId}/watch/providers?api_key=${TMDB_API_KEY}`
+		);
+		const data = await res.json();
+
+		// Extract country code from language (e.g. 'it-IT' -> 'IT', 'en-US' -> 'US')
+		const countryCode = language.split('-')[1] || language.split('-')[0].toUpperCase();
+		const countryData = data.results?.[countryCode];
+
+		if (!countryData) return null;
+
+		return {
+			link: countryData.link,
+			flatrate: countryData.flatrate || [],
+			rent: countryData.rent || [],
+			buy: countryData.buy || [],
+			ads: countryData.ads || [],
+			free: countryData.free || [],
+		};
+	} catch (e) {
+		console.error('Error in getTVWatchProviders:', e);
+		return null;
+	}
+}
+
 // TV Season Details
 export async function getTVSeasonDetails(tvId: number, seasonNumber: number, language: string = 'en-US') {
 	if (!TMDB_API_KEY) return null;

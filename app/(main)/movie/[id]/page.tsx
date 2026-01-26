@@ -1,5 +1,5 @@
 import { getMovieDetail } from '@/lib/omdb';
-import { getMovieDetailTMDb, getMovieTrailerTMDb, getMovieTrailer, getMovieReviews, getMovieDetailByImdbId } from '@/lib/tmdb';
+import { getMovieDetailTMDb, getMovieTrailerTMDb, getMovieTrailer, getMovieReviews, getMovieDetailByImdbId, getMovieWatchProviders } from '@/lib/tmdb';
 import { notFound } from 'next/navigation';
 import { Play, ChevronLeft, Calendar, Clock, Film } from 'lucide-react';
 import Link from 'next/link'; // Still used elsewhere if needed, or remove if unused. Kept for safety.
@@ -15,6 +15,7 @@ import { Metadata } from 'next';
 import HistoryTracker from '@/components/HistoryTracker';
 import PosterImage from '@/components/PosterImage';
 import BackButton from '@/components/BackButton';
+import WatchProviders from '@/components/WatchProviders';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
 	const { id } = await params;
@@ -83,16 +84,18 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 	let similarMovies: any[] = [];
 	let recommendations: any[] = [];
 	let reviews: any = { results: [], totalResults: 0 };
+	let watchProviders: any = null;
 
 	if (isTMDbId) {
 		const movieId = parseInt(id);
-		[movie, trailerUrl, accountStates, similarMovies, recommendations, reviews] = await Promise.all([
+		[movie, trailerUrl, accountStates, similarMovies, recommendations, reviews, watchProviders] = await Promise.all([
 			getMovieDetailTMDb(movieId, lang),
 			getMovieTrailerTMDb(movieId, lang),
 			fetchAccountStates('movie', movieId),
 			fetchSimilarMovies(movieId),
 			fetchMovieRecommendations(movieId),
-			getMovieReviews(movieId, 1, lang)
+			getMovieReviews(movieId, 1, lang),
+			getMovieWatchProviders(movieId, lang)
 		]);
 	} else {
 		// Try TMDB first via IMDb ID
@@ -101,12 +104,13 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 		if (movie) {
 			// Found in TMDB! Fetch rich data using the resolved TMDB ID
 			const movieId = (movie as any).id;
-			[trailerUrl, accountStates, similarMovies, recommendations, reviews] = await Promise.all([
+			[trailerUrl, accountStates, similarMovies, recommendations, reviews, watchProviders] = await Promise.all([
 				getMovieTrailerTMDb(movieId, lang),
 				fetchAccountStates('movie', movieId),
 				fetchSimilarMovies(movieId),
 				fetchMovieRecommendations(movieId),
-				getMovieReviews(movieId, 1, lang)
+				getMovieReviews(movieId, 1, lang),
+				getMovieWatchProviders(movieId, lang)
 			]);
 		} else {
 			// Fallback to OMDB
@@ -300,6 +304,11 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 										)}
 									</div>
 								</div>
+							)}
+
+							{/* Where to Watch */}
+							{watchProviders && (
+								<WatchProviders providers={watchProviders} lang={lang} />
 							)}
 
 							{/* Details Grid */}
