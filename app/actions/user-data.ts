@@ -198,7 +198,7 @@ export async function syncFavoritesFromTMDB(tmdbId: number, sessionId: string) {
 			.eq('user_id', tmdbId);
 
 		if (existing) {
-			const toDelete = existing.filter(e => !tmdbIds.has(`${e.media_id}_${e.media_type}`));
+			const toDelete = existing.filter((e: { media_id: number; media_type: string }) => !tmdbIds.has(`${e.media_id}_${e.media_type}`));
 			for (const item of toDelete) {
 				await supabase.from('favorites').delete().match({
 					user_id: tmdbId,
@@ -271,7 +271,7 @@ export async function syncWatchlistFromTMDB(tmdbId: number, sessionId: string) {
 			.eq('user_id', tmdbId);
 
 		if (existing) {
-			const toDelete = existing.filter(e => !tmdbIds.has(`${e.media_id}_${e.media_type}`));
+			const toDelete = existing.filter((e: { media_id: number; media_type: string }) => !tmdbIds.has(`${e.media_id}_${e.media_type}`));
 			for (const item of toDelete) {
 				await supabase.from('watchlist').delete().match({
 					user_id: tmdbId,
@@ -346,7 +346,7 @@ export async function syncRatingsFromTMDB(tmdbId: number, sessionId: string) {
 			.eq('user_id', tmdbId);
 
 		if (existing) {
-			const toDelete = existing.filter(e => !tmdbIds.has(`${e.media_id}_${e.media_type}`));
+			const toDelete = existing.filter((e: { media_id: number; media_type: string }) => !tmdbIds.has(`${e.media_id}_${e.media_type}`));
 			for (const item of toDelete) {
 				await supabase.from('ratings').delete().match({
 					user_id: tmdbId,
