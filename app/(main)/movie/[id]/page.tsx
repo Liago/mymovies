@@ -16,6 +16,7 @@ import HistoryTracker from '@/components/HistoryTracker';
 import PosterImage from '@/components/PosterImage';
 import BackButton from '@/components/BackButton';
 import WatchProviders from '@/components/WatchProviders';
+import AwardsSection from '@/components/AwardsSection';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
 	const { id } = await params;
@@ -261,14 +262,7 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 
 							{/* Awards Section */}
 							{(movie as any).awards && (
-								<div className="border-t border-white/10 pt-8">
-									<h2 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-4">
-										Awards & Recognition
-									</h2>
-									<p className="text-lg text-zinc-300 leading-relaxed font-light">
-										{(movie as any).awards}
-									</p>
-								</div>
+								<AwardsSection awards={(movie as any).awards} lang={lang} />
 							)}
 
 							{/* Additional Info */}
