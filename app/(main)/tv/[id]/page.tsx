@@ -14,6 +14,7 @@ import TVSeasonsButton from '@/components/TVSeasonsButton';
 import PosterImage from '@/components/PosterImage';
 import BackButton from '@/components/BackButton';
 import WatchProviders from '@/components/WatchProviders';
+import AwardsSection from '@/components/AwardsSection';
 
 export default async function TVDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
@@ -183,14 +184,7 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 
 							{/* Awards Section */}
 							{(tvShow as any).awards && (
-								<div className="border-t border-white/10 pt-8">
-									<h2 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-4">
-										Awards & Recognition
-									</h2>
-									<p className="text-lg text-zinc-300 leading-relaxed font-light">
-										{(tvShow as any).awards}
-									</p>
-								</div>
+								<AwardsSection awards={(tvShow as any).awards} lang={lang} />
 							)}
 
 							{/* Additional Info */}
