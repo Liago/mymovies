@@ -262,7 +262,12 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 
 							{/* Awards Section */}
 							{(movie as any).awards && (
-								<AwardsSection awards={(movie as any).awards} lang={lang} />
+								<AwardsSection
+									awards={(movie as any).awards}
+									imdbId={(movie as any).imdbId}
+									tmdbId={(movie as any).id}
+									lang={lang}
+								/>
 							)}
 
 							{/* Additional Info */}

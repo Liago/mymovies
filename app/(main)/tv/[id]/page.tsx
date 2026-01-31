@@ -184,7 +184,12 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 
 							{/* Awards Section */}
 							{(tvShow as any).awards && (
-								<AwardsSection awards={(tvShow as any).awards} lang={lang} />
+								<AwardsSection
+									awards={(tvShow as any).awards}
+									imdbId={(tvShow as any).imdbId}
+									tmdbId={(tvShow as any).id}
+									lang={lang}
+								/>
 							)}
 
 							{/* Additional Info */}

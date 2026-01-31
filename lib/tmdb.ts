@@ -293,6 +293,8 @@ export async function getMovieDetailTMDb(id: number, language: string = 'it-IT')
 		}
 
 		return {
+			id: data.id,
+			imdbId: imdbId || null,
 			title: data.title,
 			description: data.overview,
 			poster: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : null,
@@ -438,6 +440,8 @@ export async function getTVDetailTMDb(id: number, language: string = 'it-IT') {
 		}
 
 		return {
+			id: data.id,
+			imdbId: imdbId || null,
 			title: data.name,
 			description: data.overview,
 			poster: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : null,
