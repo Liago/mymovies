@@ -1,6 +1,21 @@
 'use client';
 
-import { Award, Trophy, Star, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Award, Trophy, Star, ChevronDown, ChevronUp, Loader2, Crown, Medal } from 'lucide-react';
+
+interface MovieAward {
+	category: string;
+	year: string;
+	nominees: string[];
+	won: boolean;
+}
+
+interface MovieAwardsData {
+	oscarWins: MovieAward[];
+	oscarNominations: MovieAward[];
+	totalOscarWins: number;
+	totalOscarNominations: number;
+}
 
 interface AwardInfo {
 	type: 'oscar' | 'golden_globe' | 'bafta' | 'emmy' | 'other';
@@ -22,7 +37,6 @@ function parseAwardsString(awardsString: string): ParsedAwards {
 	let totalWins = 0;
 	let totalNominations = 0;
 
-	// Match "Won X Oscars" or "Nominated for X Oscars"
 	const oscarWonMatch = awardsString.match(/Won (\d+) Oscar/i);
 	const oscarNominatedMatch = awardsString.match(/Nominated for (\d+) Oscar/i);
 
@@ -43,7 +57,6 @@ function parseAwardsString(awardsString: string): ParsedAwards {
 		});
 	}
 
-	// Match Golden Globe
 	const goldenGlobeWonMatch = awardsString.match(/Won (\d+) Golden Globe/i);
 	const goldenGlobeNominatedMatch = awardsString.match(/Nominated for (\d+) Golden Globe/i);
 
@@ -64,7 +77,6 @@ function parseAwardsString(awardsString: string): ParsedAwards {
 		});
 	}
 
-	// Match BAFTA
 	const baftaWonMatch = awardsString.match(/Won (\d+) BAFTA/i);
 	const baftaNominatedMatch = awardsString.match(/Nominated for (\d+) BAFTA/i);
 
@@ -85,7 +97,6 @@ function parseAwardsString(awardsString: string): ParsedAwards {
 		});
 	}
 
-	// Match Emmy (for TV shows)
 	const emmyWonMatch = awardsString.match(/Won (\d+) (?:Primetime )?Emmy/i);
 	const emmyNominatedMatch = awardsString.match(/Nominated for (\d+) (?:Primetime )?Emmy/i);
 
@@ -106,7 +117,6 @@ function parseAwardsString(awardsString: string): ParsedAwards {
 		});
 	}
 
-	// Match total wins and nominations
 	const totalMatch = awardsString.match(/(\d+) wins? & (\d+) nominations?/i);
 	if (totalMatch) {
 		totalWins = parseInt(totalMatch[1]);
@@ -137,145 +147,155 @@ function OscarIcon({ className }: { className?: string }) {
 	);
 }
 
-// Golden Globe icon
-function GoldenGlobeIcon({ className }: { className?: string }) {
+// Category display names
+const CATEGORY_DISPLAY: Record<string, { name: string; nameIt: string; icon: string }> = {
+	'PICTURE': { name: 'Best Picture', nameIt: 'Miglior Film', icon: '🎬' },
+	'BEST PICTURE': { name: 'Best Picture', nameIt: 'Miglior Film', icon: '🎬' },
+	'DIRECTING': { name: 'Best Director', nameIt: 'Miglior Regia', icon: '🎥' },
+	'BEST DIRECTOR': { name: 'Best Director', nameIt: 'Miglior Regia', icon: '🎥' },
+	'ACTOR IN A LEADING ROLE': { name: 'Best Actor', nameIt: 'Miglior Attore', icon: '🎭' },
+	'ACTRESS IN A LEADING ROLE': { name: 'Best Actress', nameIt: 'Miglior Attrice', icon: '🎭' },
+	'ACTOR IN A SUPPORTING ROLE': { name: 'Best Supporting Actor', nameIt: 'Miglior Attore Non Protagonista', icon: '🎭' },
+	'ACTRESS IN A SUPPORTING ROLE': { name: 'Best Supporting Actress', nameIt: 'Miglior Attrice Non Protagonista', icon: '🎭' },
+	'WRITING (ORIGINAL SCREENPLAY)': { name: 'Best Original Screenplay', nameIt: 'Miglior Sceneggiatura Originale', icon: '✍️' },
+	'WRITING (ADAPTED SCREENPLAY)': { name: 'Best Adapted Screenplay', nameIt: 'Miglior Sceneggiatura Non Originale', icon: '✍️' },
+	'CINEMATOGRAPHY': { name: 'Best Cinematography', nameIt: 'Miglior Fotografia', icon: '📷' },
+	'FILM EDITING': { name: 'Best Film Editing', nameIt: 'Miglior Montaggio', icon: '✂️' },
+	'MUSIC (ORIGINAL SCORE)': { name: 'Best Original Score', nameIt: 'Miglior Colonna Sonora', icon: '🎵' },
+	'MUSIC (ORIGINAL SONG)': { name: 'Best Original Song', nameIt: 'Miglior Canzone', icon: '🎤' },
+	'SOUND': { name: 'Best Sound', nameIt: 'Miglior Sonoro', icon: '🔊' },
+	'SOUND EDITING': { name: 'Best Sound Editing', nameIt: 'Miglior Montaggio Sonoro', icon: '🔊' },
+	'SOUND MIXING': { name: 'Best Sound Mixing', nameIt: 'Miglior Missaggio Sonoro', icon: '🔊' },
+	'PRODUCTION DESIGN': { name: 'Best Production Design', nameIt: 'Miglior Scenografia', icon: '🏛️' },
+	'ART DIRECTION': { name: 'Best Art Direction', nameIt: 'Miglior Direzione Artistica', icon: '🏛️' },
+	'COSTUME DESIGN': { name: 'Best Costume Design', nameIt: 'Migliori Costumi', icon: '👗' },
+	'MAKEUP AND HAIRSTYLING': { name: 'Best Makeup', nameIt: 'Miglior Trucco', icon: '💄' },
+	'MAKEUP': { name: 'Best Makeup', nameIt: 'Miglior Trucco', icon: '💄' },
+	'VISUAL EFFECTS': { name: 'Best Visual Effects', nameIt: 'Migliori Effetti Speciali', icon: '✨' },
+	'ANIMATED FEATURE FILM': { name: 'Best Animated Feature', nameIt: 'Miglior Film d\'Animazione', icon: '🎨' },
+	'INTERNATIONAL FEATURE FILM': { name: 'Best International Film', nameIt: 'Miglior Film Straniero', icon: '🌍' },
+	'FOREIGN LANGUAGE FILM': { name: 'Best Foreign Language Film', nameIt: 'Miglior Film Straniero', icon: '🌍' },
+	'DOCUMENTARY (FEATURE)': { name: 'Best Documentary', nameIt: 'Miglior Documentario', icon: '📹' },
+};
+
+function getDisplayCategory(category: string, isItalian: boolean): string {
+	const upperCategory = category.toUpperCase();
+	const display = CATEGORY_DISPLAY[upperCategory];
+	if (display) {
+		return isItalian ? display.nameIt : display.name;
+	}
+	// Format unknown categories
+	return category.split(' ').map(word =>
+		word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+	).join(' ');
+}
+
+function getCategoryIcon(category: string): string {
+	const upperCategory = category.toUpperCase();
+	return CATEGORY_DISPLAY[upperCategory]?.icon || '🏆';
+}
+
+// Detailed Oscar Award Card
+function OscarAwardCard({ award, index, isItalian }: { award: MovieAward; index: number; isItalian: boolean }) {
 	return (
-		<svg viewBox="0 0 24 36" fill="currentColor" className={className}>
-			<circle cx="12" cy="10" r="9" strokeWidth="1.5" stroke="currentColor" fill="none" />
-			<ellipse cx="12" cy="10" rx="9" ry="3" strokeWidth="1" stroke="currentColor" fill="none" />
-			<path d="M12 1v18" strokeWidth="1" stroke="currentColor" fill="none" />
-			<path d="M10 19h4v6h-4v-6z" />
-			<ellipse cx="12" cy="27" rx="3" ry="1" />
-			<path d="M8 27h8v3c0 1-1.5 2-4 2s-4-1-4-2v-3z" />
-		</svg>
+		<div
+			className={`
+				group relative overflow-hidden rounded-xl border transition-all duration-300
+				${award.won
+					? 'bg-gradient-to-br from-amber-500/20 via-yellow-500/10 to-amber-600/20 border-amber-500/40 hover:border-amber-400/60'
+					: 'bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/10'
+				}
+			`}
+			style={{ animationDelay: `${index * 50}ms` }}
+		>
+			{/* Glow effect for wins */}
+			{award.won && (
+				<div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-transparent to-amber-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+			)}
+
+			<div className="relative p-4">
+				<div className="flex items-start gap-3">
+					{/* Icon and Status */}
+					<div className={`
+						flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-lg
+						${award.won
+							? 'bg-gradient-to-br from-amber-400 to-yellow-600 shadow-lg shadow-amber-500/30'
+							: 'bg-zinc-800 border border-zinc-700'
+						}
+					`}>
+						{award.won ? (
+							<OscarIcon className="w-4 h-6 text-amber-900" />
+						) : (
+							<span className="text-base">{getCategoryIcon(award.category)}</span>
+						)}
+					</div>
+
+					{/* Content */}
+					<div className="flex-1 min-w-0">
+						<div className="flex items-center gap-2 mb-1">
+							<h4 className={`font-semibold text-sm ${award.won ? 'text-amber-200' : 'text-zinc-200'}`}>
+								{getDisplayCategory(award.category, isItalian)}
+							</h4>
+							{award.won && (
+								<span className="px-1.5 py-0.5 bg-amber-500 text-amber-950 text-[10px] font-bold rounded uppercase">
+									{isItalian ? 'Vinto' : 'Won'}
+								</span>
+							)}
+						</div>
+
+						{/* Nominees */}
+						{award.nominees && award.nominees.length > 0 && (
+							<p className="text-xs text-zinc-400 truncate">
+								{award.nominees.join(', ')}
+							</p>
+						)}
+
+						{/* Year */}
+						<p className="text-[10px] text-zinc-500 mt-1 font-medium">
+							{award.year.includes('/') ? `${award.year} Ceremony` : `${award.year}`}
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
 	);
 }
 
-// BAFTA mask icon
-function BaftaIcon({ className }: { className?: string }) {
-	return (
-		<svg viewBox="0 0 24 28" fill="currentColor" className={className}>
-			<path d="M12 2C6 2 2 7 2 12c0 6 4 12 10 14 6-2 10-8 10-14 0-5-4-10-10-10z" />
-			<circle cx="8" cy="11" r="2" fill="black" />
-			<circle cx="16" cy="11" r="2" fill="black" />
-			<path d="M8 18c2 2 6 2 8 0" stroke="black" strokeWidth="1.5" fill="none" />
-		</svg>
-	);
-}
-
-// Emmy icon
-function EmmyIcon({ className }: { className?: string }) {
-	return (
-		<svg viewBox="0 0 24 36" fill="currentColor" className={className}>
-			<ellipse cx="12" cy="4" rx="2" ry="2" />
-			<path d="M10 6h4l1 2h-6l1-2z" />
-			<path d="M9 8h6v3h-6v-3z" />
-			<path d="M3 11c0-1 1-2 2-2h14c1 0 2 1 2 2l-2 4c-1 2-3 3-7 3s-6-1-7-3l-2-4z" />
-			<path d="M8 18h8c0 2-2 3-4 3s-4-1-4-3z" />
-			<path d="M11 21h2v6h-2v-6z" />
-			<ellipse cx="12" cy="29" rx="4" ry="2" />
-			<path d="M7 29h10v2c0 1-2 2-5 2s-5-1-5-2v-2z" />
-		</svg>
-	);
-}
-
-interface AwardBadgeProps {
-	award: AwardInfo;
-	index: number;
-}
-
-function AwardBadge({ award, index }: AwardBadgeProps) {
-	const getAwardStyles = () => {
-		switch (award.type) {
-			case 'oscar':
-				return {
-					bg: award.status === 'won'
-						? 'bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600'
-						: 'bg-gradient-to-br from-amber-400/20 via-yellow-500/20 to-amber-600/20',
-					border: award.status === 'won' ? 'border-amber-300/50' : 'border-amber-400/30',
-					text: award.status === 'won' ? 'text-amber-900' : 'text-amber-400',
-					iconColor: award.status === 'won' ? 'text-amber-800' : 'text-amber-400',
-					glow: award.status === 'won' ? 'shadow-lg shadow-amber-500/30' : '',
-					icon: <OscarIcon className="w-5 h-8" />
-				};
-			case 'golden_globe':
-				return {
-					bg: award.status === 'won'
-						? 'bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-500'
-						: 'bg-gradient-to-br from-yellow-300/20 via-amber-400/20 to-yellow-500/20',
-					border: award.status === 'won' ? 'border-yellow-200/50' : 'border-yellow-400/30',
-					text: award.status === 'won' ? 'text-yellow-900' : 'text-yellow-400',
-					iconColor: award.status === 'won' ? 'text-yellow-800' : 'text-yellow-400',
-					glow: award.status === 'won' ? 'shadow-lg shadow-yellow-500/30' : '',
-					icon: <GoldenGlobeIcon className="w-5 h-7" />
-				};
-			case 'bafta':
-				return {
-					bg: award.status === 'won'
-						? 'bg-gradient-to-br from-orange-400 via-amber-500 to-orange-600'
-						: 'bg-gradient-to-br from-orange-400/20 via-amber-500/20 to-orange-600/20',
-					border: award.status === 'won' ? 'border-orange-300/50' : 'border-orange-400/30',
-					text: award.status === 'won' ? 'text-orange-900' : 'text-orange-400',
-					iconColor: award.status === 'won' ? 'text-orange-800' : 'text-orange-400',
-					glow: award.status === 'won' ? 'shadow-lg shadow-orange-500/30' : '',
-					icon: <BaftaIcon className="w-5 h-6" />
-				};
-			case 'emmy':
-				return {
-					bg: award.status === 'won'
-						? 'bg-gradient-to-br from-rose-400 via-pink-500 to-rose-600'
-						: 'bg-gradient-to-br from-rose-400/20 via-pink-500/20 to-rose-600/20',
-					border: award.status === 'won' ? 'border-rose-300/50' : 'border-rose-400/30',
-					text: award.status === 'won' ? 'text-rose-900' : 'text-rose-400',
-					iconColor: award.status === 'won' ? 'text-rose-800' : 'text-rose-400',
-					glow: award.status === 'won' ? 'shadow-lg shadow-rose-500/30' : '',
-					icon: <EmmyIcon className="w-5 h-7" />
-				};
-			default:
-				return {
-					bg: 'bg-zinc-800',
-					border: 'border-zinc-700',
-					text: 'text-zinc-300',
-					iconColor: 'text-zinc-400',
-					glow: '',
-					icon: <Trophy className="w-5 h-5" />
-				};
-		}
-	};
-
-	const styles = getAwardStyles();
+// Summary badge for major awards
+function MajorAwardBadge({ award, index }: { award: AwardInfo; index: number }) {
+	const isWon = award.status === 'won';
 
 	return (
 		<div
 			className={`
 				relative flex items-center gap-3 px-4 py-3 rounded-xl border
-				${styles.bg} ${styles.border} ${styles.glow}
-				transform transition-all duration-300 hover:scale-105
-				animate-fade-in
+				transition-all duration-300 hover:scale-[1.02]
+				${isWon
+					? 'bg-gradient-to-br from-amber-500/30 via-yellow-500/20 to-amber-600/30 border-amber-400/50 shadow-lg shadow-amber-500/20'
+					: 'bg-amber-500/10 border-amber-500/30'
+				}
 			`}
 			style={{ animationDelay: `${index * 100}ms` }}
 		>
-			{/* Icon */}
-			<div className={`${styles.iconColor} flex-shrink-0`}>
-				{styles.icon}
+			<div className={`${isWon ? 'text-amber-400' : 'text-amber-500/70'}`}>
+				<OscarIcon className="w-6 h-10" />
 			</div>
 
-			{/* Content */}
 			<div className="flex flex-col">
-				<span className={`text-2xl font-bold ${styles.text}`}>
+				<span className={`text-2xl font-bold ${isWon ? 'text-amber-300' : 'text-amber-400/80'}`}>
 					{award.count}
 				</span>
-				<span className={`text-xs font-semibold uppercase tracking-wide ${styles.text} opacity-80`}>
-					{award.status === 'won' ? award.label : award.label}
+				<span className={`text-xs font-semibold uppercase tracking-wide ${isWon ? 'text-amber-400/90' : 'text-amber-500/60'}`}>
+					{award.label}
 				</span>
 			</div>
 
-			{/* Won badge */}
-			{award.status === 'won' && (
+			{isWon && (
 				<div className="absolute -top-1 -right-1">
 					<div className="relative">
 						<div className="absolute inset-0 bg-green-400 rounded-full blur-sm opacity-50" />
-						<div className="relative bg-green-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase">
+						<div className="relative bg-green-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase flex items-center gap-0.5">
+							<Crown size={8} />
 							Won
 						</div>
 					</div>
@@ -287,17 +307,58 @@ function AwardBadge({ award, index }: AwardBadgeProps) {
 
 interface AwardsSectionProps {
 	awards: string;
+	imdbId?: string | null;
+	tmdbId?: number | null;
 	lang?: string;
 }
 
-export default function AwardsSection({ awards, lang = 'it-IT' }: AwardsSectionProps) {
-	if (!awards || awards === 'N/A') return null;
-
-	const parsed = parseAwardsString(awards);
-	const hasMajorAwards = parsed.majorAwards.length > 0;
-	const hasStats = parsed.totalWins > 0 || parsed.totalNominations > 0;
+export default function AwardsSection({ awards, imdbId, tmdbId, lang = 'it-IT' }: AwardsSectionProps) {
+	const [oscarDetails, setOscarDetails] = useState<MovieAwardsData | null>(null);
+	const [loading, setLoading] = useState(false);
+	const [expanded, setExpanded] = useState(false);
+	const [error, setError] = useState(false);
 
 	const isItalian = lang.startsWith('it');
+	const parsed = parseAwardsString(awards || '');
+	const hasOscarMention = awards?.toLowerCase().includes('oscar');
+
+	// Fetch detailed Oscar data
+	useEffect(() => {
+		async function fetchOscarData() {
+			if (!imdbId && !tmdbId) return;
+			if (!hasOscarMention) return;
+
+			setLoading(true);
+			setError(false);
+
+			try {
+				const params = new URLSearchParams();
+				if (imdbId) params.set('imdb_id', imdbId);
+				else if (tmdbId) params.set('tmdb_id', tmdbId.toString());
+
+				const response = await fetch(`/api/awards?${params.toString()}`);
+				if (response.ok) {
+					const data = await response.json();
+					if (data.totalOscarNominations > 0) {
+						setOscarDetails(data);
+					}
+				}
+			} catch (err) {
+				console.error('[AwardsSection] Error fetching Oscar data:', err);
+				setError(true);
+			} finally {
+				setLoading(false);
+			}
+		}
+
+		fetchOscarData();
+	}, [imdbId, tmdbId, hasOscarMention]);
+
+	if (!awards || awards === 'N/A') return null;
+
+	const hasMajorAwards = parsed.majorAwards.length > 0;
+	const hasStats = parsed.totalWins > 0 || parsed.totalNominations > 0;
+	const hasOscarDetails = oscarDetails && oscarDetails.totalOscarNominations > 0;
 
 	return (
 		<div className="border-t border-white/10 pt-8">
@@ -306,45 +367,113 @@ export default function AwardsSection({ awards, lang = 'it-IT' }: AwardsSectionP
 				{isItalian ? 'Premi & Riconoscimenti' : 'Awards & Recognition'}
 			</h2>
 
-			{/* Major Awards Grid */}
+			{/* Summary badges for Oscar mentions */}
 			{hasMajorAwards && (
-				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-					{parsed.majorAwards.map((award, index) => (
-						<AwardBadge key={`${award.type}-${award.status}`} award={award} index={index} />
+				<div className="flex flex-wrap gap-4 mb-6">
+					{parsed.majorAwards.filter(a => a.type === 'oscar').map((award, index) => (
+						<MajorAwardBadge key={`${award.type}-${award.status}`} award={award} index={index} />
 					))}
 				</div>
 			)}
 
-			{/* Stats Section */}
-			{hasStats && (
-				<div className="flex flex-wrap items-center gap-6 mt-6">
-					{/* Total Wins */}
-					{parsed.totalWins > 0 && (
-						<div className="flex items-center gap-3 px-4 py-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
-							<div className="relative">
-								<div className="absolute inset-0 bg-emerald-400 rounded-full blur-md opacity-30" />
-								<Trophy size={20} className="relative text-emerald-400" />
-							</div>
-							<div className="flex flex-col">
-								<span className="text-2xl font-bold text-emerald-400">{parsed.totalWins}</span>
-								<span className="text-xs font-medium text-emerald-400/70 uppercase tracking-wide">
-									{isItalian ? 'Vittorie Totali' : 'Total Wins'}
-								</span>
+			{/* Detailed Oscar nominations */}
+			{loading && (
+				<div className="flex items-center gap-2 text-zinc-400 py-4">
+					<Loader2 className="w-4 h-4 animate-spin" />
+					<span className="text-sm">{isItalian ? 'Caricamento dettagli Oscar...' : 'Loading Oscar details...'}</span>
+				</div>
+			)}
+
+			{hasOscarDetails && !loading && (
+				<div className="mb-6">
+					{/* Oscar Wins */}
+					{oscarDetails.oscarWins.length > 0 && (
+						<div className="mb-4">
+							<h3 className="text-xs font-bold text-amber-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+								<Crown size={14} />
+								{isItalian ? 'Oscar Vinti' : 'Oscar Wins'} ({oscarDetails.oscarWins.length})
+							</h3>
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+								{oscarDetails.oscarWins.map((award, index) => (
+									<OscarAwardCard key={`win-${index}`} award={award} index={index} isItalian={isItalian} />
+								))}
 							</div>
 						</div>
 					)}
 
-					{/* Total Nominations */}
-					{parsed.totalNominations > 0 && (
-						<div className="flex items-center gap-3 px-4 py-3 bg-violet-500/10 border border-violet-500/30 rounded-xl">
-							<div className="relative">
-								<div className="absolute inset-0 bg-violet-400 rounded-full blur-md opacity-30" />
-								<Star size={20} className="relative text-violet-400" />
-							</div>
+					{/* Oscar Nominations (collapsible) */}
+					{oscarDetails.oscarNominations.length > 0 && (
+						<div>
+							<button
+								onClick={() => setExpanded(!expanded)}
+								className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-2 hover:text-zinc-300 transition-colors"
+							>
+								<Medal size={14} />
+								{isItalian ? 'Altre Nomination' : 'Other Nominations'} ({oscarDetails.oscarNominations.length})
+								{expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+							</button>
+
+							{expanded && (
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-fade-in">
+									{oscarDetails.oscarNominations.map((award, index) => (
+										<OscarAwardCard key={`nom-${index}`} award={award} index={index} isItalian={isItalian} />
+									))}
+								</div>
+							)}
+						</div>
+					)}
+				</div>
+			)}
+
+			{/* Non-Oscar major awards */}
+			{hasMajorAwards && (
+				<div className="flex flex-wrap gap-4 mb-6">
+					{parsed.majorAwards.filter(a => a.type !== 'oscar').map((award, index) => (
+						<div
+							key={`${award.type}-${award.status}`}
+							className={`
+								flex items-center gap-3 px-4 py-3 rounded-xl border
+								${award.status === 'won'
+									? 'bg-yellow-500/20 border-yellow-500/40'
+									: 'bg-yellow-500/10 border-yellow-500/20'
+								}
+							`}
+						>
+							<Award className={`w-5 h-5 ${award.status === 'won' ? 'text-yellow-400' : 'text-yellow-500/70'}`} />
 							<div className="flex flex-col">
-								<span className="text-2xl font-bold text-violet-400">{parsed.totalNominations}</span>
-								<span className="text-xs font-medium text-violet-400/70 uppercase tracking-wide">
-									{isItalian ? 'Nomination Totali' : 'Total Nominations'}
+								<span className={`text-xl font-bold ${award.status === 'won' ? 'text-yellow-300' : 'text-yellow-400/80'}`}>
+									{award.count}
+								</span>
+								<span className="text-xs font-semibold text-yellow-400/70 uppercase tracking-wide">
+									{award.label}
+								</span>
+							</div>
+						</div>
+					))}
+				</div>
+			)}
+
+			{/* Total Stats */}
+			{hasStats && (
+				<div className="flex flex-wrap items-center gap-4 pt-4 border-t border-white/5">
+					{parsed.totalWins > 0 && (
+						<div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+							<Trophy size={16} className="text-emerald-400" />
+							<div className="flex items-baseline gap-1">
+								<span className="text-lg font-bold text-emerald-400">{parsed.totalWins}</span>
+								<span className="text-xs text-emerald-400/70 uppercase">
+									{isItalian ? 'Vittorie' : 'Wins'}
+								</span>
+							</div>
+						</div>
+					)}
+					{parsed.totalNominations > 0 && (
+						<div className="flex items-center gap-2 px-3 py-2 bg-violet-500/10 border border-violet-500/30 rounded-lg">
+							<Star size={16} className="text-violet-400" />
+							<div className="flex items-baseline gap-1">
+								<span className="text-lg font-bold text-violet-400">{parsed.totalNominations}</span>
+								<span className="text-xs text-violet-400/70 uppercase">
+									{isItalian ? 'Nomination' : 'Nominations'}
 								</span>
 							</div>
 						</div>
@@ -352,8 +481,8 @@ export default function AwardsSection({ awards, lang = 'it-IT' }: AwardsSectionP
 				</div>
 			)}
 
-			{/* Fallback: Raw text if no structured data was parsed */}
-			{!hasMajorAwards && !hasStats && (
+			{/* Fallback if no structured data */}
+			{!hasMajorAwards && !hasStats && !hasOscarDetails && (
 				<div className="flex items-start gap-3 p-4 bg-white/5 border border-white/10 rounded-xl">
 					<Award size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
 					<p className="text-zinc-300 leading-relaxed">{awards}</p>
