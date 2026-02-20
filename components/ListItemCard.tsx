@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { useLists } from '@/context/ListsContext';
 import MovieCard from './MovieCard';
 
+import { useRouter } from 'next/navigation';
+
 interface ListItemCardProps {
 	listId: number;
 	id: number;
@@ -18,6 +20,7 @@ interface ListItemCardProps {
 export default function ListItemCard({ listId, id, title, poster, rating, year, type }: ListItemCardProps) {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const { removeFromList } = useLists();
+	const router = useRouter();
 
 	const handleDelete = async (e: React.MouseEvent) => {
 		e.preventDefault();
@@ -26,8 +29,10 @@ export default function ListItemCard({ listId, id, title, poster, rating, year, 
 		setIsDeleting(true);
 		try {
 			await removeFromList(listId, id, type);
+			router.refresh();
 		} catch (error) {
 			console.error('Error removing item from list:', error);
+		} finally {
 			setIsDeleting(false);
 		}
 	};

@@ -277,10 +277,53 @@ export async function actionGetListDetails(listId: number) {
 }
 
 export async function actionDeleteList(listId: number) {
-	const sessionId = await getSessionId();
-	if (!sessionId) return false;
+	try {
+		const supabase = await createClient();
+		const { data: { user } } = await supabase.auth.getUser();
 
-	return await deleteList(sessionId, listId);
+		if (!user) return false;
+
+		const { data: profile } = await supabase
+			.from('profiles')
+			.select('tmdb_id')
+			.eq('auth_user_id', user.id)
+			.single();
+
+		if (!profile) return false;
+
+		// Get the list to check tmdb_list_id
+		const { data: list } = await supabase
+			.from('user_lists')
+			.select('tmdb_list_id')
+			.eq('id', listId)
+			.eq('user_id', profile.tmdb_id)
+			.single();
+
+		if (list?.tmdb_list_id) {
+			// Also delete from TMDB
+			const sessionId = await getSessionId();
+			if (sessionId) {
+				await deleteList(sessionId, list.tmdb_list_id);
+			}
+		}
+
+		// Delete from Supabase
+		const { error } = await supabase
+			.from('user_lists')
+			.delete()
+			.eq('id', listId)
+			.eq('user_id', profile.tmdb_id);
+
+		if (error) {
+			console.error('[actionDeleteList] Supabase delete error:', error);
+			return false;
+		}
+
+		return true;
+	} catch (error) {
+		console.error('[actionDeleteList] Error:', error);
+		return false;
+	}
 }
 
 export async function actionRemoveFromList(listId: number, mediaId: number) {
