@@ -12,6 +12,18 @@ export default function TimelinePage() {
 	const { language } = useLanguage();
 	const [episodes, setEpisodes] = useState<TimelineEpisode[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [showWatched, setShowWatched] = useState(true);
+
+	useEffect(() => {
+		const savedOption = localStorage.getItem('cine_timeline_show_watched');
+		if (savedOption !== null) {
+			setShowWatched(savedOption === 'true');
+		}
+	}, []);
+
+	useEffect(() => {
+		localStorage.setItem('cine_timeline_show_watched', String(showWatched));
+	}, [showWatched]);
 
 	useEffect(() => {
 		const loadTimeline = async () => {
@@ -28,6 +40,11 @@ export default function TimelinePage() {
 
 		loadTimeline();
 	}, [watchedShows, language]);
+
+	const filteredEpisodes = episodes.filter(ep => {
+		if (showWatched) return true;
+		return !isWatched(ep.showId, ep.seasonNumber, ep.episodeNumber);
+	});
 
 	if (isLoading) {
 		return (
@@ -65,22 +82,48 @@ export default function TimelinePage() {
 		<div className="min-h-screen pt-32 px-6 md:px-12 pb-12">
 			<div className="max-w-4xl mx-auto">
 				<header className="mb-12">
-					<h1 className="text-4xl font-black text-white mb-2">Timeline</h1>
-					<p className="text-zinc-400">
-						{language === 'it-IT'
-							? 'Gli episodi più recenti e le prossime uscite delle serie che segui.'
-							: 'The most recent and upcoming episodes from the shows you track.'}
-					</p>
+					<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+						<div>
+							<h1 className="text-4xl font-black text-white mb-2">Timeline</h1>
+							<p className="text-zinc-400">
+								{language === 'it-IT'
+									? 'Gli episodi più recenti e le prossime uscite delle serie che segui.'
+									: 'The most recent and upcoming episodes from the shows you track.'}
+							</p>
+						</div>
+
+						{episodes.length > 0 && (
+							<button
+								onClick={() => setShowWatched(!showWatched)}
+								className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors border ${showWatched
+									? 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700'
+									: 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
+									}`}
+							>
+								{showWatched ? (
+									<>
+										<Circle size={16} />
+										{language === 'it-IT' ? 'Nascondi Visti' : 'Hide Watched'}
+									</>
+								) : (
+									<>
+										<CheckCircle2 size={16} />
+										{language === 'it-IT' ? 'Mostra Visti' : 'Show Watched'}
+									</>
+								)}
+							</button>
+						)}
+					</div>
 				</header>
 
-				{episodes.length === 0 ? (
+				{filteredEpisodes.length === 0 ? (
 					<div className="text-center py-12 text-zinc-500 bg-zinc-900/30 rounded-2xl border border-white/5">
 						<Calendar size={48} className="mx-auto mb-4 opacity-50" />
-						<p>{language === 'it-IT' ? 'Nessun episodio in programma trovato.' : 'No upcoming episodes found.'}</p>
+						<p>{language === 'it-IT' ? 'Nessun episodio da mostrare in questo momento.' : 'No episodes to show right now.'}</p>
 					</div>
 				) : (
 					<div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent">
-						{episodes.map((ep, index) => {
+						{filteredEpisodes.map((ep, index) => {
 							const watched = isWatched(ep.showId, ep.seasonNumber, ep.episodeNumber);
 							const date = ep.airDate ? new Date(ep.airDate) : null;
 							const formattedDate = date ? new Intl.DateTimeFormat(language, {
@@ -98,7 +141,7 @@ export default function TimelinePage() {
 									</div>
 
 									{/* Card */}
-									<div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-zinc-900/80 backdrop-blur border border-white/5 p-4 rounded-2xl hover:border-white/10 transition-colors shadow-xl">
+									<div className={`w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-zinc-900/80 backdrop-blur border border-white/5 p-4 rounded-2xl hover:border-white/10 transition-colors shadow-xl ${watched ? 'opacity-60' : ''}`}>
 										<div className="flex gap-4">
 											<div className="w-20 shrink-0 hidden sm:block">
 												{ep.stillPath ? (
