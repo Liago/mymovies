@@ -103,12 +103,39 @@ export async function clearHistory(tmdbId: number) {
 
 // --- Tracker Actions ---
 
+/**
+ * Ensures a profile row exists for the given TMDB user ID.
+ * This prevents foreign key constraint failures when writing to
+ * tracked_shows / watched_episodes before AuthContext's syncUserProfile completes.
+ */
+async function ensureProfileExists(supabase: any, tmdbId: number) {
+	const { data } = await supabase
+		.from('profiles')
+		.select('tmdb_id')
+		.eq('tmdb_id', tmdbId)
+		.single();
+
+	if (!data) {
+		const { error } = await supabase
+			.from('profiles')
+			.upsert({ tmdb_id: tmdbId, username: '' }, { onConflict: 'tmdb_id' });
+
+		if (error) {
+			console.error('Error ensuring profile exists:', error);
+			throw new Error(`Failed to ensure profile exists: ${error.message}`);
+		}
+	}
+}
+
 export async function syncLocalTracker(
 	tmdbId: number,
 	watchedEpisodes: string[], // "tvId:s:e"
 	watchedShows: ShowMetadata[]
 ) {
 	const supabase = createAdminClient();
+
+	// Ensure profile exists before writing tracker data (foreign key constraint)
+	await ensureProfileExists(supabase, tmdbId);
 
 	// 1. Sync Shows
 	if (watchedShows.length > 0) {
@@ -120,8 +147,11 @@ export async function syncLocalTracker(
 			last_updated: new Date(s.lastUpdated).toISOString()
 		}));
 
-		// Upsert shows
-		await supabase.from('tracked_shows').upsert(showRecords, { onConflict: 'user_id, show_id' });
+		const { error } = await supabase.from('tracked_shows').upsert(showRecords, { onConflict: 'user_id, show_id' });
+		if (error) {
+			console.error('Error syncing tracked shows:', error);
+			throw new Error(`Failed to sync tracked shows: ${error.message}`);
+		}
 	}
 
 	// 2. Sync Episodes
@@ -136,8 +166,11 @@ export async function syncLocalTracker(
 			};
 		});
 
-		// Upsert episodes
-		await supabase.from('watched_episodes').upsert(episodeRecords, { onConflict: 'user_id, show_id, season_number, episode_number', ignoreDuplicates: true });
+		const { error } = await supabase.from('watched_episodes').upsert(episodeRecords, { onConflict: 'user_id, show_id, season_number, episode_number', ignoreDuplicates: true });
+		if (error) {
+			console.error('Error syncing watched episodes:', error);
+			throw new Error(`Failed to sync watched episodes: ${error.message}`);
+		}
 	}
 }
 
@@ -466,8 +499,17 @@ export async function pushLocalToTMDB(tmdbId: number, sessionId: string) {
 export async function getTrackerData(tmdbId: number) {
 	const supabase = createAdminClient();
 
-	const { data: shows } = await supabase.from('tracked_shows').select('*').eq('user_id', tmdbId);
-	const { data: episodes } = await supabase.from('watched_episodes').select('*').eq('user_id', tmdbId);
+	const { data: shows, error: showsError } = await supabase.from('tracked_shows').select('*').eq('user_id', tmdbId);
+	if (showsError) {
+		console.error('Error fetching tracked shows:', showsError);
+		throw new Error(`Failed to fetch tracked shows: ${showsError.message}`);
+	}
+
+	const { data: episodes, error: episodesError } = await supabase.from('watched_episodes').select('*').eq('user_id', tmdbId);
+	if (episodesError) {
+		console.error('Error fetching watched episodes:', episodesError);
+		throw new Error(`Failed to fetch watched episodes: ${episodesError.message}`);
+	}
 
 	const parsedShows = new Map<number, ShowMetadata>();
 	shows?.forEach((s: any) => {
@@ -485,7 +527,7 @@ export async function getTrackerData(tmdbId: number) {
 	});
 
 	return {
-		watchedShows: Array.from(parsedShows.values()), // Return array for client to Map-ify
+		watchedShows: Array.from(parsedShows.values()),
 		watchedEpisodes: Array.from(parsedEpisodes)
 	};
 }
@@ -500,33 +542,51 @@ export async function toggleWatchedEpisode(
 ) {
 	const supabase = createAdminClient();
 
+	// Ensure profile exists before writing (foreign key constraint)
+	await ensureProfileExists(supabase, tmdbId);
+
 	if (isWatched) {
 		// Add episode
-		await supabase.from('watched_episodes').upsert({
+		const { error: epError } = await supabase.from('watched_episodes').upsert({
 			user_id: tmdbId,
 			show_id: showId,
 			season_number: season,
 			episode_number: episode
 		}, { onConflict: 'user_id, show_id, season_number, episode_number' });
 
+		if (epError) {
+			console.error('Error adding watched episode:', epError);
+			throw new Error(`Failed to mark episode as watched: ${epError.message}`);
+		}
+
 		// Update show meta
 		if (showMeta) {
-			await supabase.from('tracked_shows').upsert({
+			const { error: showError } = await supabase.from('tracked_shows').upsert({
 				user_id: tmdbId,
 				show_id: showId,
 				name: showMeta.name,
 				poster_path: showMeta.poster,
 				last_updated: new Date().toISOString()
 			}, { onConflict: 'user_id, show_id' });
+
+			if (showError) {
+				console.error('Error updating tracked show:', showError);
+				throw new Error(`Failed to update tracked show: ${showError.message}`);
+			}
 		}
 	} else {
 		// Remove episode
-		await supabase.from('watched_episodes').delete().match({
+		const { error } = await supabase.from('watched_episodes').delete().match({
 			user_id: tmdbId,
 			show_id: showId,
 			season_number: season,
 			episode_number: episode
 		});
+
+		if (error) {
+			console.error('Error removing watched episode:', error);
+			throw new Error(`Failed to unmark episode: ${error.message}`);
+		}
 	}
 }
 
@@ -539,6 +599,9 @@ export async function bulkMarkWatched(
 
 	if (episodes.length === 0) return;
 
+	// Ensure profile exists before writing (foreign key constraint)
+	await ensureProfileExists(supabase, tmdbId);
+
 	const records = episodes.map((e) => ({
 		user_id: tmdbId,
 		show_id: e.showId,
@@ -546,12 +609,17 @@ export async function bulkMarkWatched(
 		episode_number: e.episode,
 	}));
 
-	await supabase
+	const { error: epError } = await supabase
 		.from('watched_episodes')
 		.upsert(records, { onConflict: 'user_id, show_id, season_number, episode_number' });
 
+	if (epError) {
+		console.error('Error bulk marking episodes:', epError);
+		throw new Error(`Failed to bulk mark episodes: ${epError.message}`);
+	}
+
 	if (showMeta) {
-		await supabase.from('tracked_shows').upsert(
+		const { error: showError } = await supabase.from('tracked_shows').upsert(
 			{
 				user_id: tmdbId,
 				show_id: showMeta.id,
@@ -561,6 +629,11 @@ export async function bulkMarkWatched(
 			},
 			{ onConflict: 'user_id, show_id' }
 		);
+
+		if (showError) {
+			console.error('Error updating tracked show:', showError);
+			throw new Error(`Failed to update tracked show: ${showError.message}`);
+		}
 	}
 }
 
@@ -572,14 +645,18 @@ export async function bulkMarkUnwatched(
 
 	if (episodes.length === 0) return;
 
-	// Iterate to delete
 	for (const chunk of episodes) {
-		await supabase.from('watched_episodes').delete().match({
+		const { error } = await supabase.from('watched_episodes').delete().match({
 			user_id: tmdbId,
 			show_id: chunk.showId,
 			season_number: chunk.season,
 			episode_number: chunk.episode
 		});
+
+		if (error) {
+			console.error('Error removing watched episode:', error);
+			throw new Error(`Failed to unmark episode: ${error.message}`);
+		}
 	}
 }
 
@@ -591,26 +668,35 @@ export async function toggleTrackShow(
 ) {
 	const supabase = createAdminClient();
 
+	// Ensure profile exists before writing (foreign key constraint)
+	await ensureProfileExists(supabase, tmdbId);
+
 	if (isTracked) {
 		// Add to tracked shows
 		if (showMeta) {
-			await supabase.from('tracked_shows').upsert({
+			const { error } = await supabase.from('tracked_shows').upsert({
 				user_id: tmdbId,
 				show_id: showId,
 				name: showMeta.name,
 				poster_path: showMeta.poster,
 				last_updated: new Date().toISOString()
 			}, { onConflict: 'user_id, show_id' });
+
+			if (error) {
+				console.error('Error tracking show:', error);
+				throw new Error(`Failed to track show: ${error.message}`);
+			}
 		}
 	} else {
 		// Remove from tracked shows
-		await supabase.from('tracked_shows').delete().match({
+		const { error } = await supabase.from('tracked_shows').delete().match({
 			user_id: tmdbId,
 			show_id: showId
 		});
 
-		// Optionally: we might want to also delete watched episodes for this show if untracked, 
-		// but typically we'd just want to stop tracking upcoming ones and keep the history. 
-		// We'll just remove it from tracked_shows so it disappears from the timeline.
+		if (error) {
+			console.error('Error untracking show:', error);
+			throw new Error(`Failed to untrack show: ${error.message}`);
+		}
 	}
 }
