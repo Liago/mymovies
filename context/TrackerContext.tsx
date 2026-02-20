@@ -1,18 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-import {
-	syncLocalTracker,
-	getTrackerData,
-	toggleWatchedEpisode,
-	bulkMarkWatched,
-	bulkMarkUnwatched,
-	toggleTrackShow as apiToggleTrackShow
-} from '@/app/actions/user-data';
 
 // Key format: "tvId:seasonNumber:episodeNumber"
-// Example: "1399:1:1"
 type EpisodeKey = string;
 
 interface ShowMetadata {
@@ -32,297 +23,143 @@ interface TrackerContextType {
 	trackShow: (tvId: number, showMeta: { name: string, poster: string | null }) => void;
 	untrackShow: (tvId: number) => void;
 	isTracked: (tvId: number) => boolean;
-	refreshFromServer: () => Promise<void>;
+	isLoading: boolean;
 }
 
 const TrackerContext = createContext<TrackerContextType | undefined>(undefined);
-
-const PENDING_SHOWS_KEY = 'cine_tracker_pending_shows';
-const PENDING_EPISODES_KEY = 'cine_tracker_pending_episodes';
-
-/**
- * Retry a server action up to maxRetries times with exponential backoff.
- */
-async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> {
-	let lastError: Error | undefined;
-	for (let attempt = 0; attempt <= maxRetries; attempt++) {
-		try {
-			return await fn();
-		} catch (err) {
-			lastError = err instanceof Error ? err : new Error(String(err));
-			if (attempt < maxRetries) {
-				await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-			}
-		}
-	}
-	throw lastError;
-}
 
 export function TrackerProvider({ children }: { children: React.ReactNode }) {
 	const { user } = useAuth();
 	const [watchedEpisodes, setWatchedEpisodes] = useState<Set<EpisodeKey>>(new Set());
 	const [watchedShows, setWatchedShows] = useState<Map<number, ShowMetadata>>(new Map());
-	const [isInitialized, setIsInitialized] = useState(false);
-	const initRef = useRef(0);
+	const [isLoading, setIsLoading] = useState(true);
 
-	// Fetch tracker data from server (reusable)
-	const fetchFromServer = useCallback(async (userId: number) => {
-		const { watchedEpisodes: dbEpisodes, watchedShows: dbShows } = await withRetry(
-			() => getTrackerData(userId)
-		);
-		setWatchedEpisodes(new Set(dbEpisodes));
-		setWatchedShows(new Map(dbShows.map(s => [s.id, s])));
-	}, []);
-
-	// Public method to force a refresh from the server
-	const refreshFromServer = useCallback(async () => {
-		if (user) {
-			await fetchFromServer(user.id);
-		}
-	}, [user, fetchFromServer]);
-
-	// Save pending tracked show to localStorage (fallback for logged-in users)
-	const savePendingShow = useCallback((tvId: number, meta: ShowMetadata, action: 'track' | 'untrack') => {
-		try {
-			const stored = localStorage.getItem(PENDING_SHOWS_KEY);
-			const pending: Array<{ show: ShowMetadata; action: string }> = stored ? JSON.parse(stored) : [];
-			// Remove any existing entry for this show
-			const filtered = pending.filter(p => p.show.id !== tvId);
-			filtered.push({ show: meta, action });
-			localStorage.setItem(PENDING_SHOWS_KEY, JSON.stringify(filtered));
-		} catch (e) {
-			console.error('Failed to save pending show', e);
-		}
-	}, []);
-
-	const removePendingShow = useCallback((tvId: number) => {
-		try {
-			const stored = localStorage.getItem(PENDING_SHOWS_KEY);
-			if (stored) {
-				const pending = JSON.parse(stored);
-				const filtered = pending.filter((p: any) => p.show.id !== tvId);
-				if (filtered.length > 0) {
-					localStorage.setItem(PENDING_SHOWS_KEY, JSON.stringify(filtered));
-				} else {
-					localStorage.removeItem(PENDING_SHOWS_KEY);
-				}
-			}
-		} catch (e) {
-			console.error('Failed to remove pending show', e);
-		}
-	}, []);
-
-	// Flush any pending writes from localStorage to the server
-	const flushPendingWrites = useCallback(async (userId: number) => {
-		try {
-			const storedShows = localStorage.getItem(PENDING_SHOWS_KEY);
-			if (storedShows) {
-				const pending: Array<{ show: ShowMetadata; action: string }> = JSON.parse(storedShows);
-				for (const entry of pending) {
-					try {
-						if (entry.action === 'track') {
-							await apiToggleTrackShow(userId, entry.show.id, true, {
-								name: entry.show.name,
-								poster: entry.show.poster
-							});
-						} else {
-							await apiToggleTrackShow(userId, entry.show.id, false);
-						}
-					} catch (err) {
-						console.error('Failed to flush pending show write:', err);
-						// Keep it pending for next init
-						return;
-					}
-				}
-				localStorage.removeItem(PENDING_SHOWS_KEY);
-			}
-		} catch (e) {
-			console.error('Failed to flush pending writes', e);
-		}
-	}, []);
-
-	// Load from localStorage or DB on mount/auth change
+	// Load tracker data on mount or auth change
 	useEffect(() => {
-		// Reset initialization state when user changes
-		setIsInitialized(false);
-		const currentInit = ++initRef.current;
-
-		const initTracker = async () => {
-			// Always check local storage first for any pending data or guest data
-			const storedEpisodes = localStorage.getItem('cine_tracker_watched');
-			const storedShows = localStorage.getItem('cine_tracker_shows');
-
-			let localEpisodes = new Set<string>();
-			let localShows = new Map<number, ShowMetadata>();
-
-			if (storedEpisodes) {
-				try {
-					const parsed = JSON.parse(storedEpisodes);
-					if (Array.isArray(parsed)) localEpisodes = new Set(parsed);
-				} catch (e) {
-					console.error('Failed to parse watched episodes', e);
-				}
-			}
-
-			if (storedShows) {
-				try {
-					const parsed = JSON.parse(storedShows);
-					if (Array.isArray(parsed)) {
-						localShows = new Map(parsed.map((item: any) => [item.id, item]));
-					}
-				} catch (e) {
-					console.error('Failed to parse watched shows', e);
-				}
-			}
+		const loadTracker = async () => {
+			setIsLoading(true);
 
 			if (user) {
+				// Fetch from API (Supabase)
 				try {
-					// Sync local guest data to DB if exists
-					if (localEpisodes.size > 0 || localShows.size > 0) {
-						await syncLocalTracker(
-							user.id,
-							Array.from(localEpisodes),
-							Array.from(localShows.values())
-						);
-						// Clear local after sync
-						localStorage.removeItem('cine_tracker_watched');
-						localStorage.removeItem('cine_tracker_shows');
+					const response = await fetch('/api/tracker');
+					if (response.ok) {
+						const data = await response.json();
+						setWatchedShows(new Map(
+							(data.watchedShows || []).map((s: ShowMetadata) => [s.id, s])
+						));
+						setWatchedEpisodes(new Set(data.watchedEpisodes || []));
+					} else {
+						console.error('Failed to fetch tracker data:', response.status, await response.text());
 					}
-
-					// Flush any pending writes from previous failed saves
-					await flushPendingWrites(user.id);
-
-					// Bail if a newer init has started (user changed again)
-					if (currentInit !== initRef.current) return;
-
-					// Fetch from DB
-					await fetchFromServer(user.id);
-				} catch (err) {
-					console.error('Error initializing tracker from DB:', err);
-					// Fall back to local data if available, otherwise empty
-					if (localEpisodes.size > 0 || localShows.size > 0) {
-						setWatchedEpisodes(localEpisodes);
-						setWatchedShows(localShows);
-					}
+				} catch (error) {
+					console.error('Error loading tracker:', error);
 				}
 			} else {
-				// Guest mode
-				setWatchedEpisodes(localEpisodes);
-				setWatchedShows(localShows);
+				// Guest mode: load from localStorage
+				const storedEpisodes = localStorage.getItem('cine_tracker_watched');
+				const storedShows = localStorage.getItem('cine_tracker_shows');
+
+				if (storedEpisodes) {
+					try {
+						const parsed = JSON.parse(storedEpisodes);
+						if (Array.isArray(parsed)) setWatchedEpisodes(new Set(parsed));
+					} catch (e) {
+						console.error('Failed to parse watched episodes', e);
+					}
+				}
+
+				if (storedShows) {
+					try {
+						const parsed = JSON.parse(storedShows);
+						if (Array.isArray(parsed)) {
+							setWatchedShows(new Map(parsed.map((item: any) => [item.id, item])));
+						}
+					} catch (e) {
+						console.error('Failed to parse watched shows', e);
+					}
+				}
 			}
 
-			if (currentInit === initRef.current) {
-				setIsInitialized(true);
-			}
+			setIsLoading(false);
 		};
 
-		initTracker();
-	}, [user, fetchFromServer, flushPendingWrites]);
+		loadTracker();
+	}, [user]);
 
-	// Re-fetch from server when the page becomes visible again (handles cross-device sync)
+	// Re-fetch from server when page becomes visible (cross-device sync)
 	useEffect(() => {
-		if (!user || !isInitialized) return;
+		if (!user) return;
 
 		const handleVisibilityChange = () => {
 			if (document.visibilityState === 'visible') {
-				fetchFromServer(user.id).catch(console.error);
+				fetch('/api/tracker')
+					.then(res => res.ok ? res.json() : null)
+					.then(data => {
+						if (data) {
+							setWatchedShows(new Map(
+								(data.watchedShows || []).map((s: ShowMetadata) => [s.id, s])
+							));
+							setWatchedEpisodes(new Set(data.watchedEpisodes || []));
+						}
+					})
+					.catch(console.error);
 			}
 		};
 
 		document.addEventListener('visibilitychange', handleVisibilityChange);
 		return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-	}, [user, isInitialized, fetchFromServer]);
+	}, [user]);
 
-	// Save to localStorage whenever state changes (ONLY IF GUEST)
+	// Save to localStorage for guests
 	useEffect(() => {
-		if (isInitialized && !user) {
+		if (!user && !isLoading) {
 			localStorage.setItem('cine_tracker_watched', JSON.stringify(Array.from(watchedEpisodes)));
 		}
-	}, [watchedEpisodes, isInitialized, user]);
+	}, [watchedEpisodes, user, isLoading]);
 
 	useEffect(() => {
-		if (isInitialized && !user) {
+		if (!user && !isLoading) {
 			localStorage.setItem('cine_tracker_shows', JSON.stringify(Array.from(watchedShows.values())));
 		}
-	}, [watchedShows, isInitialized, user]);
+	}, [watchedShows, user, isLoading]);
 
-	const updateShowMetadata = useCallback((tvId: number, meta?: { name: string, poster: string | null }) => {
-		if (meta) {
-			setWatchedShows(prev => {
-				const newMap = new Map(prev);
-				newMap.set(tvId, {
-					id: tvId,
-					name: meta.name,
-					poster: meta.poster,
-					lastUpdated: Date.now()
-				});
-				return newMap;
+	const trackShow = useCallback(async (tvId: number, showMeta: { name: string, poster: string | null }) => {
+		// Optimistic update
+		setWatchedShows(prev => {
+			const newMap = new Map(prev);
+			newMap.set(tvId, {
+				id: tvId,
+				name: showMeta.name,
+				poster: showMeta.poster,
+				lastUpdated: Date.now()
 			});
-		}
-	}, []);
-
-	const toggleWatched = useCallback((tvId: number, seasonNumber: number, episodeNumber: number, showMeta?: { name: string, poster: string | null }) => {
-		const key = `${tvId}:${seasonNumber}:${episodeNumber}`;
-		const isPreviouslyWatched = watchedEpisodes.has(key);
-		const isWatched = !isPreviouslyWatched;
-
-		setWatchedEpisodes(prev => {
-			const newSet = new Set(prev);
-			if (newSet.has(key)) {
-				newSet.delete(key);
-			} else {
-				newSet.add(key);
-				updateShowMetadata(tvId, showMeta);
-			}
-			return newSet;
+			return newMap;
 		});
 
 		if (user) {
-			withRetry(() => toggleWatchedEpisode(user.id, tvId, seasonNumber, episodeNumber, isWatched, showMeta))
-				.catch(err => console.error('Failed to sync episode toggle after retries:', err));
-		}
-	}, [watchedEpisodes, user, updateShowMetadata]);
-
-	const isWatched = useCallback((tvId: number, seasonNumber: number, episodeNumber: number) => {
-		const key = `${tvId}:${seasonNumber}:${episodeNumber}`;
-		return watchedEpisodes.has(key);
-	}, [watchedEpisodes]);
-
-	const isTracked = useCallback((tvId: number) => {
-		return watchedShows.has(tvId);
-	}, [watchedShows]);
-
-	const trackShow = useCallback((tvId: number, showMeta: { name: string, poster: string | null }) => {
-		const meta: ShowMetadata = {
-			id: tvId,
-			name: showMeta.name,
-			poster: showMeta.poster,
-			lastUpdated: Date.now()
-		};
-
-		// Optimistic update
-		updateShowMetadata(tvId, showMeta);
-
-		if (user) {
-			// Save as pending in case the server write fails
-			savePendingShow(tvId, meta, 'track');
-
-			withRetry(() => apiToggleTrackShow(user.id, tvId, true, showMeta))
-				.then(() => {
-					// Server write succeeded, remove from pending
-					removePendingShow(tvId);
-				})
-				.catch(err => {
-					console.error('Failed to sync track show after retries:', err);
-					// Pending write stays in localStorage for next init
+			try {
+				await fetch('/api/tracker', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ showId: tvId, name: showMeta.name, poster: showMeta.poster })
 				});
+			} catch (error) {
+				console.error('Error tracking show:', error);
+				// Revert on error
+				setWatchedShows(prev => {
+					const newMap = new Map(prev);
+					newMap.delete(tvId);
+					return newMap;
+				});
+			}
 		}
-	}, [updateShowMetadata, user, savePendingShow, removePendingShow]);
+	}, [user]);
 
-	const untrackShow = useCallback((tvId: number) => {
-		// Capture the show metadata before removing (for pending writes if needed)
+	const untrackShow = useCallback(async (tvId: number) => {
 		const previousShow = watchedShows.get(tvId);
 
+		// Optimistic update
 		setWatchedShows(prev => {
 			const newMap = new Map(prev);
 			newMap.delete(tvId);
@@ -330,21 +167,90 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 		});
 
 		if (user) {
-			if (previousShow) {
-				savePendingShow(tvId, previousShow, 'untrack');
+			try {
+				await fetch(`/api/tracker?showId=${tvId}`, { method: 'DELETE' });
+			} catch (error) {
+				console.error('Error untracking show:', error);
+				// Revert on error
+				if (previousShow) {
+					setWatchedShows(prev => {
+						const newMap = new Map(prev);
+						newMap.set(tvId, previousShow);
+						return newMap;
+					});
+				}
 			}
-
-			withRetry(() => apiToggleTrackShow(user.id, tvId, false))
-				.then(() => {
-					removePendingShow(tvId);
-				})
-				.catch(err => {
-					console.error('Failed to sync untrack show after retries:', err);
-				});
 		}
-	}, [user, watchedShows, savePendingShow, removePendingShow]);
+	}, [user, watchedShows]);
 
-	const markSeasonWatched = useCallback((tvId: number, seasonNumber: number, episodes: { episodeNumber: number }[], showMeta?: { name: string, poster: string | null }) => {
+	const toggleWatched = useCallback(async (tvId: number, seasonNumber: number, episodeNumber: number, showMeta?: { name: string, poster: string | null }) => {
+		const key = `${tvId}:${seasonNumber}:${episodeNumber}`;
+		const wasWatched = watchedEpisodes.has(key);
+		const isWatchedNow = !wasWatched;
+
+		// Optimistic update
+		setWatchedEpisodes(prev => {
+			const newSet = new Set(prev);
+			if (wasWatched) {
+				newSet.delete(key);
+			} else {
+				newSet.add(key);
+			}
+			return newSet;
+		});
+
+		if (!wasWatched && showMeta) {
+			setWatchedShows(prev => {
+				const newMap = new Map(prev);
+				newMap.set(tvId, {
+					id: tvId,
+					name: showMeta.name,
+					poster: showMeta.poster,
+					lastUpdated: Date.now()
+				});
+				return newMap;
+			});
+		}
+
+		if (user) {
+			try {
+				await fetch('/api/tracker/episodes', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						showId: tvId,
+						season: seasonNumber,
+						episode: episodeNumber,
+						isWatched: isWatchedNow,
+						showMeta
+					})
+				});
+			} catch (error) {
+				console.error('Error toggling episode:', error);
+				// Revert on error
+				setWatchedEpisodes(prev => {
+					const newSet = new Set(prev);
+					if (wasWatched) {
+						newSet.add(key);
+					} else {
+						newSet.delete(key);
+					}
+					return newSet;
+				});
+			}
+		}
+	}, [watchedEpisodes, user]);
+
+	const isWatched = useCallback((tvId: number, seasonNumber: number, episodeNumber: number) => {
+		return watchedEpisodes.has(`${tvId}:${seasonNumber}:${episodeNumber}`);
+	}, [watchedEpisodes]);
+
+	const isTracked = useCallback((tvId: number) => {
+		return watchedShows.has(tvId);
+	}, [watchedShows]);
+
+	const markSeasonWatched = useCallback(async (tvId: number, seasonNumber: number, episodes: { episodeNumber: number }[], showMeta?: { name: string, poster: string | null }) => {
+		// Optimistic update
 		setWatchedEpisodes(prev => {
 			const newSet = new Set(prev);
 			episodes.forEach(ep => {
@@ -352,18 +258,40 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 			});
 			return newSet;
 		});
-		updateShowMetadata(tvId, showMeta);
+
+		if (showMeta) {
+			setWatchedShows(prev => {
+				const newMap = new Map(prev);
+				newMap.set(tvId, {
+					id: tvId,
+					name: showMeta.name,
+					poster: showMeta.poster,
+					lastUpdated: Date.now()
+				});
+				return newMap;
+			});
+		}
 
 		if (user) {
-			withRetry(() => bulkMarkWatched(
-				user.id,
-				episodes.map(e => ({ showId: tvId, season: seasonNumber, episode: e.episodeNumber })),
-				showMeta ? { id: tvId, ...showMeta } : undefined
-			)).catch(err => console.error('Failed to sync season watched after retries:', err));
+			try {
+				await fetch('/api/tracker/episodes', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						showId: tvId,
+						season: seasonNumber,
+						episodes: episodes.map(e => e.episodeNumber),
+						showMeta
+					})
+				});
+			} catch (error) {
+				console.error('Error marking season as watched:', error);
+			}
 		}
-	}, [user, updateShowMetadata]);
+	}, [user]);
 
-	const markSeasonUnwatched = useCallback((tvId: number, seasonNumber: number, episodes: { episodeNumber: number }[]) => {
+	const markSeasonUnwatched = useCallback(async (tvId: number, seasonNumber: number, episodes: { episodeNumber: number }[]) => {
+		// Optimistic update
 		setWatchedEpisodes(prev => {
 			const newSet = new Set(prev);
 			episodes.forEach(ep => {
@@ -373,10 +301,14 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 		});
 
 		if (user) {
-			withRetry(() => bulkMarkUnwatched(
-				user.id,
-				episodes.map(e => ({ showId: tvId, season: seasonNumber, episode: e.episodeNumber }))
-			)).catch(err => console.error('Failed to sync season unwatched after retries:', err));
+			try {
+				const episodeNums = episodes.map(e => e.episodeNumber).join(',');
+				await fetch(`/api/tracker/episodes?showId=${tvId}&season=${seasonNumber}&episodes=${episodeNums}`, {
+					method: 'DELETE'
+				});
+			} catch (error) {
+				console.error('Error unmarking season:', error);
+			}
 		}
 	}, [user]);
 
@@ -391,7 +323,7 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 			trackShow,
 			untrackShow,
 			isTracked,
-			refreshFromServer
+			isLoading
 		}}>
 			{children}
 		</TrackerContext.Provider>
