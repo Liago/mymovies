@@ -47,6 +47,7 @@ export default function Navbar() {
 		{ name: 'Trending', href: '/trending' },
 		{ name: 'Movies', href: '/movies' },
 		{ name: 'TV Shows', href: '/tv' },
+		{ name: language === 'it-IT' ? 'Timeline' : 'Timeline', href: '/timeline' },
 		{ name: 'Top Rated', href: '/top-rated' },
 		{ name: 'Now Playing', href: '/now-playing' },
 		{ name: 'New Releases', href: '/new-releases' },
@@ -122,7 +123,7 @@ export default function Navbar() {
 								<Globe size={18} />
 								<span className="text-xs font-bold uppercase">{language === 'it-IT' ? 'IT' : 'EN'}</span>
 							</button>
-							
+
 							{isLangMenuOpen && (
 								<div className="absolute right-0 mt-2 w-32 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-xl overflow-hidden">
 									<button

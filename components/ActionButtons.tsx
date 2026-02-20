@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Heart, Bookmark, Star, Plus, Check } from 'lucide-react';
+import { Heart, Bookmark, Star, Plus, Check, Bell } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { useWatchlist } from '@/context/WatchlistContext';
 import { useRatings } from '@/context/RatingsContext';
+import { useTracker } from '@/context/TrackerContext';
 import { useRouter } from 'next/navigation';
 import ListManagerModal from './ListManagerModal';
 
@@ -34,11 +35,13 @@ export default function ActionButtons({ mediaType, mediaId, title, poster, initi
 	const { isFavorite, addFavorite, removeFavorite } = useFavorites();
 	const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
 	const { getRating, rateMedia, deleteRating: deleteContextRating } = useRatings();
+	const { isTracked, trackShow, untrackShow } = useTracker();
 
 	// Computed State from Context
 	const favorite = isFavorite(Number(mediaId), mediaType);
 	const watchlist = isInWatchlist(Number(mediaId), mediaType);
 	const userRating = getRating(Number(mediaId), mediaType);
+	const tracked = mediaType === 'tv' ? isTracked(Number(mediaId)) : false;
 
 	// Local UI State
 	const [isRatingOpen, setIsRatingOpen] = useState(false);
@@ -137,6 +140,20 @@ export default function ActionButtons({ mediaType, mediaId, title, poster, initi
 		setIsListModalOpen(true);
 	};
 
+	const handleTrack = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		if (!isLoggedIn) {
+			login();
+			return;
+		}
+		if (tracked) {
+			untrackShow(Number(mediaId));
+		} else {
+			trackShow(Number(mediaId), { name: title || 'Unknown Title', poster: poster || null });
+		}
+	};
+
 	return (
 		<div className={`flex items-center gap-3 ${className}`}>
 			{/* Favorite */}
@@ -176,6 +193,22 @@ export default function ActionButtons({ mediaType, mediaId, title, poster, initi
 				<Plus size={20} />
 				{showText && <span className="ml-2 text-sm font-medium hidden md:block">Salva in lista</span>}
 			</button>
+
+			{/* Track TV Show (only visible for tv) */}
+			{mediaType === 'tv' && (
+				<button
+					onClick={handleTrack}
+					className={`flex items-center justify-center p-3 rounded-full transition-all duration-300 group
+						${tracked
+							? 'bg-primary text-white shadow-lg shadow-primary/30 ring-2 ring-primary ring-offset-2 ring-offset-black'
+							: 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white hover:scale-110'
+						}`}
+					title={tracked ? "Smetti di seguire" : "Segui serie"}
+				>
+					<Bell size={20} className={tracked ? "fill-current" : ""} />
+					{showText && <span className="ml-2 text-sm font-medium hidden md:block">{tracked ? 'Seguita' : 'Segui'}</span>}
+				</button>
+			)}
 
 			{/* Rating */}
 			{showRating && (

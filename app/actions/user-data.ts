@@ -582,3 +582,35 @@ export async function bulkMarkUnwatched(
 		});
 	}
 }
+
+export async function toggleTrackShow(
+	tmdbId: number,
+	showId: number,
+	isTracked: boolean,
+	showMeta?: { name: string, poster: string | null }
+) {
+	const supabase = createAdminClient();
+
+	if (isTracked) {
+		// Add to tracked shows
+		if (showMeta) {
+			await supabase.from('tracked_shows').upsert({
+				user_id: tmdbId,
+				show_id: showId,
+				name: showMeta.name,
+				poster_path: showMeta.poster,
+				last_updated: new Date().toISOString()
+			}, { onConflict: 'user_id, show_id' });
+		}
+	} else {
+		// Remove from tracked shows
+		await supabase.from('tracked_shows').delete().match({
+			user_id: tmdbId,
+			show_id: showId
+		});
+
+		// Optionally: we might want to also delete watched episodes for this show if untracked, 
+		// but typically we'd just want to stop tracking upcoming ones and keep the history. 
+		// We'll just remove it from tracked_shows so it disappears from the timeline.
+	}
+}

@@ -7,7 +7,8 @@ import {
 	getTrackerData,
 	toggleWatchedEpisode,
 	bulkMarkWatched,
-	bulkMarkUnwatched
+	bulkMarkUnwatched,
+	toggleTrackShow as apiToggleTrackShow
 } from '@/app/actions/user-data';
 
 // Key format: "tvId:seasonNumber:episodeNumber"
@@ -28,6 +29,9 @@ interface TrackerContextType {
 	isWatched: (tvId: number, seasonNumber: number, episodeNumber: number) => boolean;
 	markSeasonWatched: (tvId: number, seasonNumber: number, episodes: { episodeNumber: number }[], showMeta?: { name: string, poster: string | null }) => void;
 	markSeasonUnwatched: (tvId: number, seasonNumber: number, episodes: { episodeNumber: number }[]) => void;
+	trackShow: (tvId: number, showMeta: { name: string, poster: string | null }) => void;
+	untrackShow: (tvId: number) => void;
+	isTracked: (tvId: number) => boolean;
 }
 
 const TrackerContext = createContext<TrackerContextType | undefined>(undefined);
@@ -158,6 +162,28 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 		return watchedEpisodes.has(key);
 	}, [watchedEpisodes]);
 
+	const isTracked = useCallback((tvId: number) => {
+		return watchedShows.has(tvId);
+	}, [watchedShows]);
+
+	const trackShow = useCallback((tvId: number, showMeta: { name: string, poster: string | null }) => {
+		updateShowMetadata(tvId, showMeta);
+		if (user) {
+			apiToggleTrackShow(user.id, tvId, true, showMeta).catch(console.error);
+		}
+	}, [updateShowMetadata, user]);
+
+	const untrackShow = useCallback((tvId: number) => {
+		setWatchedShows(prev => {
+			const newMap = new Map(prev);
+			newMap.delete(tvId);
+			return newMap;
+		});
+		if (user) {
+			apiToggleTrackShow(user.id, tvId, false).catch(console.error);
+		}
+	}, [user]);
+
 	const markSeasonWatched = useCallback((tvId: number, seasonNumber: number, episodes: { episodeNumber: number }[], showMeta?: { name: string, poster: string | null }) => {
 		setWatchedEpisodes(prev => {
 			const newSet = new Set(prev);
@@ -201,7 +227,10 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 			toggleWatched,
 			isWatched,
 			markSeasonWatched,
-			markSeasonUnwatched
+			markSeasonUnwatched,
+			trackShow,
+			untrackShow,
+			isTracked
 		}}>
 			{children}
 		</TrackerContext.Provider>
