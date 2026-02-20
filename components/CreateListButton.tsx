@@ -2,9 +2,10 @@
 
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
-import { actionCreateList } from '@/app/actions';
-import { useRouter } from 'next/navigation';
+import { useLists } from '@/context/ListsContext';
 import { useLanguage } from '@/context/LanguageContext';
+
+import { useRouter } from 'next/navigation';
 
 export default function CreateListButton() {
 	const [isOpen, setIsOpen] = useState(false);
@@ -13,13 +14,14 @@ export default function CreateListButton() {
 	const [isLoading, setIsLoading] = useState(false);
 	const router = useRouter();
 	const { t } = useLanguage();
+	const { createList } = useLists();
 
 	const handleCreate = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!name.trim()) return;
 
 		setIsLoading(true);
-		const listId = await actionCreateList(name, description);
+		const listId = await createList(name, description);
 		setIsLoading(false);
 
 		if (listId) {
