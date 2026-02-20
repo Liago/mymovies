@@ -2,22 +2,24 @@
 
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { actionDeleteList } from '@/app/actions';
+import { useLists } from '@/context/ListsContext';
 import { useRouter } from 'next/navigation';
 
 export default function DeleteListButton({ listId }: { listId: number }) {
 	const [isConfirming, setIsConfirming] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const router = useRouter();
+	const { deleteList } = useLists();
 
 	const handleDelete = async () => {
 		setIsDeleting(true);
-		const success = await actionDeleteList(listId);
-
-		if (success) {
+		try {
+			await deleteList(listId);
 			router.push('/profile/lists');
 			router.refresh();
-		} else {
+		} catch (error) {
+			console.error('Error deleting list:', error);
+		} finally {
 			setIsDeleting(false);
 			setIsConfirming(false);
 		}
