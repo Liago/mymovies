@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTracker } from '@/context/TrackerContext';
+import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { getTimelineEpisodes, TimelineEpisode } from '@/app/actions/tmdb-timeline';
 import { Calendar, CheckCircle2, Circle, Clock, Tv } from 'lucide-react';
@@ -9,21 +10,56 @@ import Link from 'next/link';
 
 export default function TimelinePage() {
 	const { watchedShows, watchedEpisodes, toggleWatched, isWatched } = useTracker();
+	const { user } = useAuth();
 	const { language } = useLanguage();
 	const [episodes, setEpisodes] = useState<TimelineEpisode[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [showWatched, setShowWatched] = useState(true);
+	const [prefsLoaded, setPrefsLoaded] = useState(false);
 
 	useEffect(() => {
-		const savedOption = localStorage.getItem('cine_timeline_show_watched');
-		if (savedOption !== null) {
-			setShowWatched(savedOption === 'true');
+		let mounted = true;
+		const loadPreferences = async () => {
+			if (!user) {
+				const savedOption = localStorage.getItem('cine_timeline_show_watched');
+				if (savedOption !== null && mounted) {
+					setShowWatched(savedOption === 'true');
+				}
+				if (mounted) setPrefsLoaded(true);
+				return;
+			}
+
+			try {
+				const res = await fetch('/api/preferences');
+				if (res.ok) {
+					const data = await res.json();
+					if (data.preferences?.timeline_show_watched !== undefined && mounted) {
+						setShowWatched(data.preferences.timeline_show_watched);
+					}
+				}
+			} catch (e) {
+				console.error("Failed to load timeline preferences", e);
+			} finally {
+				if (mounted) setPrefsLoaded(true);
+			}
+		};
+		loadPreferences();
+		return () => { mounted = false; };
+	}, [user]);
+
+	useEffect(() => {
+		if (!prefsLoaded) return;
+
+		if (!user) {
+			localStorage.setItem('cine_timeline_show_watched', String(showWatched));
+		} else {
+			fetch('/api/preferences', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ timeline_show_watched: showWatched })
+			}).catch(e => console.error("Failed to save timeline preferences", e));
 		}
-	}, []);
-
-	useEffect(() => {
-		localStorage.setItem('cine_timeline_show_watched', String(showWatched));
-	}, [showWatched]);
+	}, [showWatched, prefsLoaded, user]);
 
 	useEffect(() => {
 		const loadTimeline = async () => {

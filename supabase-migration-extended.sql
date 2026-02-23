@@ -103,3 +103,9 @@ create index if not exists idx_rss_feeds_user on rss_feeds(user_id);
 create index if not exists idx_tracked_shows_user on tracked_shows(user_id);
 create index if not exists idx_watched_episodes_user on watched_episodes(user_id);
 create index if not exists idx_watched_episodes_show on watched_episodes(show_id);
+-- User preferences table
+create table if not exists user_preferences (
+  user_id integer primary key references profiles(tmdb_id) on delete cascade,
+  timeline_show_watched boolean default true,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
