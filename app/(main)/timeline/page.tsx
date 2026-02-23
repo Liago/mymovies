@@ -197,7 +197,11 @@ export default function TimelinePage() {
 														<Link href={`/tv/${ep.showId}`} className="text-xs font-bold text-primary hover:underline line-clamp-1 truncate block mb-0.5">
 															{ep.showName}
 														</Link>
-														<div className="text-sm font-medium text-white line-clamp-1">{ep.seasonNumber}x{ep.episodeNumber.toString().padStart(2, '0')} - {ep.name}</div>
+														<div className="text-sm font-medium text-white line-clamp-1">
+															{ep.seasonNumber === 0 && ep.episodeNumber === 0
+																? ep.name
+																: `${ep.seasonNumber}x${ep.episodeNumber.toString().padStart(2, '0')} - ${ep.name}`}
+														</div>
 													</div>
 
 													{!ep.isUpcoming && (

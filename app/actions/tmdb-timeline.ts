@@ -52,6 +52,21 @@ export async function getTimelineEpisodes(showIds: number[], language: string = 
 					voteAverage: ep.vote_average,
 					isUpcoming: ep.air_date ? new Date(ep.air_date) >= today : true
 				});
+			} else if (data.status === 'Returning Series' || data.in_production) {
+				episodes.push({
+					showId: id,
+					showName,
+					showPoster,
+					id: parseInt(`999999${id}`), // Fake ID to avoid collisions
+					name: language === 'it-IT' ? 'Nuovi episodi in arrivo' : 'Upcoming episodes',
+					overview: '',
+					seasonNumber: 0,
+					episodeNumber: 0,
+					airDate: null,
+					stillPath: null,
+					voteAverage: 0,
+					isUpcoming: true
+				});
 			}
 
 			// Add last episode if exists and it's not the same as next
