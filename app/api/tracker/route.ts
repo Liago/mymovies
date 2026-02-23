@@ -83,9 +83,12 @@ export async function POST(request: NextRequest) {
 		if (error) throw error;
 
 		return NextResponse.json({ success: true });
-	} catch (error) {
+	} catch (error: any) {
 		console.error('Error tracking show:', error);
-		return NextResponse.json({ error: 'Failed to track show' }, { status: 500 });
+		return NextResponse.json({
+			error: 'Failed to track show',
+			details: error.message || error.toString()
+		}, { status: 500 });
 	}
 }
 
