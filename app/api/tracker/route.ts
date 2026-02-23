@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 			name,
 			poster_path: poster,
 			last_updated: new Date().toISOString()
-		}, { onConflict: 'user_id, show_id' });
+		}, { onConflict: 'user_id,show_id' });
 
 		if (error) throw error;
 

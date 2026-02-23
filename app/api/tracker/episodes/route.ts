@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 				show_id: showId,
 				season_number: season,
 				episode_number: episode
-			}, { onConflict: 'user_id, show_id, season_number, episode_number' });
+			}, { onConflict: 'user_id,show_id,season_number,episode_number' });
 
 			if (epError) throw epError;
 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 					name: showMeta.name,
 					poster_path: showMeta.poster,
 					last_updated: new Date().toISOString()
-				}, { onConflict: 'user_id, show_id' });
+				}, { onConflict: 'user_id,show_id' });
 
 				if (showError) throw showError;
 			}
@@ -104,7 +104,7 @@ export async function PUT(request: NextRequest) {
 
 		const { error: epError } = await supabase
 			.from('watched_episodes')
-			.upsert(records, { onConflict: 'user_id, show_id, season_number, episode_number' });
+			.upsert(records, { onConflict: 'user_id,show_id,season_number,episode_number' });
 
 		if (epError) throw epError;
 
@@ -115,7 +115,7 @@ export async function PUT(request: NextRequest) {
 				name: showMeta.name,
 				poster_path: showMeta.poster,
 				last_updated: new Date().toISOString()
-			}, { onConflict: 'user_id, show_id' });
+			}, { onConflict: 'user_id,show_id' });
 
 			if (showError) throw showError;
 		}
