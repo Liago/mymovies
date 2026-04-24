@@ -25,7 +25,7 @@ import {
 	getTVRecommendations,
 	getTVSeasonDetails
 } from '@/lib/tmdb';
-import { addToWatchlist, markAsFavorite, rateMedia, deleteRating, getAccountStates, getUserLists, createList, addToList, getListDetails, deleteList, removeFromList, getFavorites, getWatchlist } from '@/lib/tmdb-user';
+import { addToWatchlist, markAsFavorite, rateMedia, deleteRating, getAccountStates, getUserLists, createList, addToList, getListDetails, deleteList, removeFromList, getFavorites } from '@/lib/tmdb-user';
 import { cookies } from 'next/headers';
 
 // ... imports ...
@@ -208,12 +208,52 @@ export async function actionGetFavorites(mediaType: 'movies' | 'tv', page: numbe
 }
 
 export async function actionGetWatchlist(mediaType: 'movies' | 'tv', page: number = 1) {
-	const sessionId = await getSessionId();
-	const accountId = await getAccountId();
-	if (!sessionId || !accountId) return { results: [], total_pages: 0 };
+	const supabase = await createClient();
+	const { data: { user } } = await supabase.auth.getUser();
+	if (!user) return { results: [], total_pages: 0 };
 
-	const lang = await getLanguage();
-	return await getWatchlist(accountId, sessionId, mediaType, page, lang);
+	const { data: profile } = await supabase
+		.from('profiles')
+		.select('tmdb_id')
+		.eq('auth_user_id', user.id)
+		.single();
+
+	if (!profile) return { results: [], total_pages: 0 };
+
+	const dbMediaType = mediaType === 'movies' ? 'movie' : 'tv';
+	const pageSize = 20;
+	const offset = (page - 1) * pageSize;
+
+	const { count } = await supabase
+		.from('watchlist')
+		.select('*', { count: 'exact', head: true })
+		.eq('user_id', profile.tmdb_id)
+		.eq('media_type', dbMediaType);
+
+	const { data, error } = await supabase
+		.from('watchlist')
+		.select('*')
+		.eq('user_id', profile.tmdb_id)
+		.eq('media_type', dbMediaType)
+		.order('added_at', { ascending: false })
+		.range(offset, offset + pageSize - 1);
+
+	if (error) {
+		console.error('Error fetching watchlist:', error);
+		return { results: [], total_pages: 0 };
+	}
+
+	const results = (data || []).map(item => ({
+		id: item.media_id,
+		title: item.title,
+		poster: item.poster_path,
+		type: item.media_type,
+	}));
+
+	return {
+		results,
+		total_pages: Math.ceil((count || 0) / pageSize),
+	};
 }
 
 export async function actionGetListDetails(listId: number) {
