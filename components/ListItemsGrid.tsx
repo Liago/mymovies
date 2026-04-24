@@ -9,6 +9,7 @@ interface ListItem {
 	rating?: number;
 	year?: string;
 	media_type: 'movie' | 'tv';
+	totalEpisodes?: number;
 }
 
 interface ListItemsGridProps {
@@ -29,6 +30,7 @@ export default function ListItemsGrid({ listId, items }: ListItemsGridProps) {
 					rating={item.rating}
 					year={item.year}
 					type={item.media_type}
+					totalEpisodes={item.totalEpisodes}
 				/>
 			))}
 		</div>

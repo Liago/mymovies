@@ -18,6 +18,7 @@ interface TrackerContextType {
 	watchedShows: Map<number, ShowMetadata>;
 	toggleWatched: (tvId: number, seasonNumber: number, episodeNumber: number, showMeta?: { name: string, poster: string | null }) => void;
 	isWatched: (tvId: number, seasonNumber: number, episodeNumber: number) => boolean;
+	getWatchedCount: (tvId: number) => number;
 	markSeasonWatched: (tvId: number, seasonNumber: number, episodes: { episodeNumber: number }[], showMeta?: { name: string, poster: string | null }) => void;
 	markSeasonUnwatched: (tvId: number, seasonNumber: number, episodes: { episodeNumber: number }[]) => void;
 	trackShow: (tvId: number, showMeta: { name: string, poster: string | null }) => void;
@@ -245,6 +246,15 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 		return watchedEpisodes.has(`${tvId}:${seasonNumber}:${episodeNumber}`);
 	}, [watchedEpisodes]);
 
+	const getWatchedCount = useCallback((tvId: number) => {
+		const prefix = `${tvId}:`;
+		let count = 0;
+		for (const key of watchedEpisodes) {
+			if (key.startsWith(prefix)) count++;
+		}
+		return count;
+	}, [watchedEpisodes]);
+
 	const isTracked = useCallback((tvId: number) => {
 		return watchedShows.has(tvId);
 	}, [watchedShows]);
@@ -318,6 +328,7 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 			watchedShows,
 			toggleWatched,
 			isWatched,
+			getWatchedCount,
 			markSeasonWatched,
 			markSeasonUnwatched,
 			trackShow,

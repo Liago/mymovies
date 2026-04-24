@@ -11,9 +11,10 @@ interface MovieCardProps {
 	rating?: number;
 	year?: string;
 	type?: 'movie' | 'tv';
+	episodeProgress?: { watched: number; total: number };
 }
 
-export default function MovieCard({ id, title, poster, rating, year, type = 'movie' }: MovieCardProps) {
+export default function MovieCard({ id, title, poster, rating, year, type = 'movie', episodeProgress }: MovieCardProps) {
 	return (
 		<Link
 			href={`/${type === 'tv' ? 'tv' : 'movie'}/${id}`}
@@ -30,6 +31,23 @@ export default function MovieCard({ id, title, poster, rating, year, type = 'mov
 				) : (
 					<div className="w-full h-full flex items-center justify-center text-zinc-500 bg-zinc-800">
 						<span className="text-xs">No Image</span>
+					</div>
+				)}
+
+				{/* Episode Progress Badge */}
+				{episodeProgress && episodeProgress.watched > 0 && (
+					<div className="absolute bottom-0 left-0 right-0 z-10">
+						<div className="bg-black/80 backdrop-blur-sm px-2.5 py-1.5 flex items-center gap-2">
+							<span className="text-[11px] font-semibold text-white whitespace-nowrap">
+								{episodeProgress.watched}/{episodeProgress.total} ep.
+							</span>
+							<div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
+								<div
+									className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+									style={{ width: `${Math.min((episodeProgress.watched / episodeProgress.total) * 100, 100)}%` }}
+								/>
+							</div>
+						</div>
 					</div>
 				)}
 

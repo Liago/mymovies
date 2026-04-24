@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useLists } from '@/context/ListsContext';
 import MovieCard from './MovieCard';
+import TVCardWithProgress from './TVCardWithProgress';
 
 import { useRouter } from 'next/navigation';
 
@@ -15,9 +16,10 @@ interface ListItemCardProps {
 	rating?: number;
 	year?: string;
 	type: 'movie' | 'tv';
+	totalEpisodes?: number;
 }
 
-export default function ListItemCard({ listId, id, title, poster, rating, year, type }: ListItemCardProps) {
+export default function ListItemCard({ listId, id, title, poster, rating, year, type, totalEpisodes }: ListItemCardProps) {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const { removeFromList } = useLists();
 	const router = useRouter();
@@ -39,14 +41,25 @@ export default function ListItemCard({ listId, id, title, poster, rating, year, 
 
 	return (
 		<div className="relative group/item">
-			<MovieCard
-				id={id}
-				title={title}
-				poster={poster}
-				rating={rating}
-				year={year}
-				type={type}
-			/>
+			{type === 'tv' && totalEpisodes ? (
+				<TVCardWithProgress
+					id={id}
+					title={title}
+					poster={poster}
+					rating={rating}
+					year={year}
+					totalEpisodes={totalEpisodes}
+				/>
+			) : (
+				<MovieCard
+					id={id}
+					title={title}
+					poster={poster}
+					rating={rating}
+					year={year}
+					type={type}
+				/>
+			)}
 
 			{/* Delete Button - sempre visibile su mobile, hover su desktop */}
 			<button

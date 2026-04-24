@@ -293,14 +293,26 @@ export async function actionGetListDetails(listId: number) {
 			console.error('[actionGetListDetails] Error fetching items:', itemsError);
 		}
 
-		// Transform items to MovieCard format
-		const transformedItems = (items || []).map((item: any) => ({
-			id: item.media_id,
-			title: item.title,
-			poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-			media_type: item.media_type,
-			rating: 0,
-			year: '',
+		// Transform items to MovieCard format and fetch episode counts for TV items
+		const { getTVEpisodeCount } = await import('@/lib/tmdb');
+
+		const transformedItems = await Promise.all((items || []).map(async (item: any) => {
+			const base = {
+				id: item.media_id,
+				title: item.title,
+				poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+				media_type: item.media_type,
+				rating: 0,
+				year: '',
+				totalEpisodes: undefined as number | undefined,
+			};
+
+			if (item.media_type === 'tv') {
+				const count = await getTVEpisodeCount(item.media_id);
+				base.totalEpisodes = count ?? undefined;
+			}
+
+			return base;
 		}));
 
 		return {

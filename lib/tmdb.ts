@@ -1048,3 +1048,15 @@ export async function getTVSeasonDetails(tvId: number, seasonNumber: number, lan
 		return null;
 	}
 }
+
+export async function getTVEpisodeCount(id: number): Promise<number | null> {
+	if (!TMDB_API_KEY) return null;
+	try {
+		const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=en-US`);
+		if (!res.ok) return null;
+		const data = await res.json();
+		return data.number_of_episodes ?? null;
+	} catch {
+		return null;
+	}
+}
