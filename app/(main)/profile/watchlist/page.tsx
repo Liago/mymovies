@@ -1,6 +1,5 @@
 import { actionGetWatchlist } from '@/app/actions';
-import MovieCard from '@/components/MovieCard';
-import PaginationControls from '@/components/PaginationControls';
+import WatchlistGrid from '@/components/WatchlistGrid';
 import Link from 'next/link';
 import { Bookmark, Film, Tv } from 'lucide-react';
 import { cookies } from 'next/headers';
@@ -27,12 +26,11 @@ async function getT(key: string) {
 	return translations[lang]?.[key] || key;
 }
 
-export default async function WatchlistPage({ searchParams }: { searchParams: Promise<{ tab?: string; page?: string }> }) {
-	const { tab, page } = await searchParams;
+export default async function WatchlistPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+	const { tab } = await searchParams;
 	const activeTab = tab === 'tv' ? 'tv' : 'movies';
-	const currentPage = page ? parseInt(page) : 1;
 
-	const { results, total_pages } = await actionGetWatchlist(activeTab as 'movies' | 'tv', currentPage);
+	const { results, total_pages } = await actionGetWatchlist(activeTab as 'movies' | 'tv');
 
 	return (
 		<main className="min-h-screen bg-black text-white pt-24 pb-12 px-6">
@@ -68,19 +66,11 @@ export default async function WatchlistPage({ searchParams }: { searchParams: Pr
 				</div>
 
 				{results.length > 0 ? (
-					<div className="flex flex-col gap-8">
-						<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-							{results.map((item: any) => (
-								<MovieCard key={item.id} {...item} />
-							))}
-						</div>
-						<PaginationControls
-							currentPage={currentPage}
-							totalPages={total_pages}
-							baseUrl="/profile/watchlist"
-							searchParams={{ tab: activeTab }}
-						/>
-					</div>
+					<WatchlistGrid
+						initialItems={results}
+						mediaType={activeTab as 'movies' | 'tv'}
+						totalPages={total_pages}
+					/>
 				) : (
 					<div className="text-center py-20 bg-white/5 rounded-2xl border border-white/10 border-dashed">
 						<Bookmark size={48} className="mx-auto text-gray-600 mb-4" />
