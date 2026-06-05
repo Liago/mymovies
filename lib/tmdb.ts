@@ -1066,21 +1066,52 @@ export async function getTVStatusAndEpisodeCount(id: number): Promise<TVStatusIn
 		if (!res.ok) return null;
 		const data = await res.json();
 
-		// Exclude Season 0 (specials/trailers) from the episode count so that
-		// fully-watched detection is not thrown off by bonus content the user
-		// has not tracked.
-		const regularEpisodes: number =
-			Array.isArray(data.seasons)
-				? data.seasons
-					.filter((s: { season_number: number }) => s.season_number > 0)
-					.reduce((sum: number, s: { episode_count: number }) => sum + (s.episode_count ?? 0), 0)
-				: (data.number_of_episodes ?? 0);
-
 		return {
 			status: data.status ?? null,
-			totalEpisodes: regularEpisodes || (data.number_of_episodes ?? null),
+			totalEpisodes: countAiredEpisodes(data),
 		};
 	} catch {
 		return null;
 	}
+}
+
+interface TVSeasonSummary {
+	season_number: number;
+	episode_count: number;
+}
+
+interface TVDetailForCount {
+	seasons?: TVSeasonSummary[];
+	number_of_episodes?: number;
+	last_episode_to_air?: { season_number: number; episode_number: number } | null;
+}
+
+/**
+ * Counts only episodes that have actually aired, ignoring Season 0 (specials)
+ * and future/announced seasons that TMDB lists but which have not been
+ * released yet. This is what determines whether a user has "watched
+ * everything available" for a show.
+ *
+ * Uses `last_episode_to_air` (the most recent aired episode) so that, for a
+ * show whose latest aired episode is SxEy, we sum the episode counts of every
+ * regular season before x and add y. Seasons after the current one (not yet
+ * aired) are therefore excluded automatically.
+ */
+function countAiredEpisodes(data: TVDetailForCount): number | null {
+	const seasons = Array.isArray(data.seasons) ? data.seasons : [];
+	const last = data.last_episode_to_air;
+
+	if (last && typeof last.season_number === 'number' && typeof last.episode_number === 'number') {
+		const beforeCurrent = seasons
+			.filter((s) => s.season_number >= 1 && s.season_number < last.season_number)
+			.reduce((sum, s) => sum + (s.episode_count ?? 0), 0);
+		return beforeCurrent + last.episode_number;
+	}
+
+	// No aired-episode info: fall back to the sum of regular seasons (exclude
+	// Season 0), then to TMDB's raw count.
+	const regular = seasons
+		.filter((s) => s.season_number > 0)
+		.reduce((sum, s) => sum + (s.episode_count ?? 0), 0);
+	return regular || (data.number_of_episodes ?? null);
 }

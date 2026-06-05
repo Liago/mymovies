@@ -39,7 +39,7 @@ export default function MovieCard({ id, title, poster, rating, year, type = 'mov
 					<div className="absolute bottom-0 left-0 right-0 z-10">
 						<div className="bg-black/80 backdrop-blur-sm px-2.5 py-1.5 flex items-center gap-2">
 							<span className="text-[11px] font-semibold text-white whitespace-nowrap">
-								{episodeProgress.watched}/{episodeProgress.total} ep.
+								{Math.min(episodeProgress.watched, episodeProgress.total)}/{episodeProgress.total} ep.
 							</span>
 							<div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
 								<div
