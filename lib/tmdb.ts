@@ -1065,9 +1065,20 @@ export async function getTVStatusAndEpisodeCount(id: number): Promise<TVStatusIn
 		const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&language=en-US`);
 		if (!res.ok) return null;
 		const data = await res.json();
+
+		// Exclude Season 0 (specials/trailers) from the episode count so that
+		// fully-watched detection is not thrown off by bonus content the user
+		// has not tracked.
+		const regularEpisodes: number =
+			Array.isArray(data.seasons)
+				? data.seasons
+					.filter((s: { season_number: number }) => s.season_number > 0)
+					.reduce((sum: number, s: { episode_count: number }) => sum + (s.episode_count ?? 0), 0)
+				: (data.number_of_episodes ?? 0);
+
 		return {
 			status: data.status ?? null,
-			totalEpisodes: data.number_of_episodes ?? null,
+			totalEpisodes: regularEpisodes || (data.number_of_episodes ?? null),
 		};
 	} catch {
 		return null;
