@@ -6,9 +6,9 @@ import { ArrowLeft, Tv } from 'lucide-react';
 import { useTracker } from '@/context/TrackerContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { actionGetFollowedShowsInfo } from '@/app/actions';
-import { isEndedToFinish } from '@/lib/tv-status';
+import { isEndedToFinish, isWaitingForNewSeason, type SeriesFilterMode } from '@/lib/tv-status';
 import TVCardWithProgress from '@/components/TVCardWithProgress';
-import EndedSeriesFilter from '@/components/EndedSeriesFilter';
+import SeriesStatusFilter from '@/components/SeriesStatusFilter';
 
 interface ShowInfo {
 	status: string | null;
@@ -18,7 +18,7 @@ interface ShowInfo {
 export default function FollowingPage() {
 	const { watchedShows, getWatchedCount, isLoading } = useTracker();
 	const { t } = useLanguage();
-	const [endedOnly, setEndedOnly] = useState(false);
+	const [mode, setMode] = useState<SeriesFilterMode>('all');
 	const [info, setInfo] = useState<Map<number, ShowInfo>>(new Map());
 	const [infoLoading, setInfoLoading] = useState(true);
 
@@ -66,21 +66,30 @@ export default function FollowingPage() {
 		};
 	}, [idsKey, isLoading]);
 
-	const endedCount = useMemo(
-		() =>
-			shows.filter((s) => {
-				const meta = info.get(s.id);
-				return isEndedToFinish(meta?.status, getWatchedCount(s.id), meta?.totalEpisodes);
-			}).length,
+	const isEnded = (id: number) => {
+		const meta = info.get(id);
+		return isEndedToFinish(meta?.status, getWatchedCount(id), meta?.totalEpisodes);
+	};
+	const isReturning = (id: number) => {
+		const meta = info.get(id);
+		return isWaitingForNewSeason(meta?.status, getWatchedCount(id), meta?.totalEpisodes);
+	};
+
+	const counts = useMemo(
+		() => ({
+			ended: shows.filter((s) => isEnded(s.id)).length,
+			returning: shows.filter((s) => isReturning(s.id)).length,
+		}),
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[shows, info, getWatchedCount]
 	);
 
-	const visibleShows = endedOnly
-		? shows.filter((s) => {
-				const meta = info.get(s.id);
-				return isEndedToFinish(meta?.status, getWatchedCount(s.id), meta?.totalEpisodes);
-		  })
-		: shows;
+	const visibleShows =
+		mode === 'ended'
+			? shows.filter((s) => isEnded(s.id))
+			: mode === 'returning'
+			? shows.filter((s) => isReturning(s.id))
+			: shows;
 
 	const loading = isLoading || infoLoading;
 
@@ -105,7 +114,7 @@ export default function FollowingPage() {
 
 				{/* Filter */}
 				<div className="mb-10">
-					<EndedSeriesFilter endedOnly={endedOnly} onChange={setEndedOnly} endedCount={endedCount} />
+					<SeriesStatusFilter mode={mode} onChange={setMode} counts={counts} />
 				</div>
 
 				{loading ? (
@@ -115,7 +124,7 @@ export default function FollowingPage() {
 						))}
 					</div>
 				) : visibleShows.length === 0 ? (
-					<EmptyState endedOnly={endedOnly} />
+					<EmptyState mode={mode} />
 				) : (
 					<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
 						{visibleShows.map((show) => (
@@ -134,19 +143,23 @@ export default function FollowingPage() {
 	);
 }
 
-function EmptyState({ endedOnly }: { endedOnly: boolean }) {
+function EmptyState({ mode }: { mode: SeriesFilterMode }) {
 	const { t } = useLanguage();
+
+	const { title, desc } =
+		mode === 'ended'
+			? { title: t('following.no_ended'), desc: t('following.no_ended_desc') }
+			: mode === 'returning'
+			? { title: t('following.no_returning'), desc: t('following.no_returning_desc') }
+			: { title: t('following.empty'), desc: t('following.empty_desc') };
+
 	return (
 		<div className="flex flex-col items-center justify-center text-center py-20">
 			<div className="w-24 h-24 bg-zinc-900 rounded-full flex items-center justify-center mb-6">
 				<Tv size={48} className="text-zinc-600" />
 			</div>
-			<h2 className="text-2xl font-bold text-white mb-2">
-				{endedOnly ? t('following.no_ended') : t('following.empty')}
-			</h2>
-			<p className="text-zinc-400 max-w-md mb-8">
-				{endedOnly ? t('following.no_ended_desc') : t('following.empty_desc')}
-			</p>
+			<h2 className="text-2xl font-bold text-white mb-2">{title}</h2>
+			<p className="text-zinc-400 max-w-md mb-8">{desc}</p>
 			<Link
 				href="/tv"
 				className="px-6 py-3 bg-primary text-white font-medium rounded-full hover:bg-primary/90 transition-colors"

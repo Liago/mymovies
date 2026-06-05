@@ -7,8 +7,15 @@
 
 export const ENDED_STATUSES = ['Ended', 'Canceled', 'Cancelled'];
 
+// Statuses that mean more content (a new season) is still coming.
+export const RETURNING_STATUSES = ['Returning Series', 'In Production', 'Planned'];
+
 export function isEndedStatus(status?: string | null): boolean {
 	return !!status && ENDED_STATUSES.includes(status);
+}
+
+export function isReturningStatus(status?: string | null): boolean {
+	return !!status && RETURNING_STATUSES.includes(status);
 }
 
 export function isFullyWatched(watched: number, total?: number | null): boolean {
@@ -26,3 +33,18 @@ export function isEndedToFinish(
 ): boolean {
 	return isEndedStatus(status) && !isFullyWatched(watched, total);
 }
+
+/**
+ * Returns true when a show should appear in the "waiting for a new season"
+ * view: the user has watched every aired episode and the show is still
+ * returning (a new season is expected).
+ */
+export function isWaitingForNewSeason(
+	status: string | null | undefined,
+	watched: number,
+	total: number | null | undefined
+): boolean {
+	return isReturningStatus(status) && isFullyWatched(watched, total);
+}
+
+export type SeriesFilterMode = 'all' | 'ended' | 'returning';
