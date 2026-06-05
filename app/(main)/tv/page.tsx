@@ -2,6 +2,7 @@ import { fetchTVShows } from '@/app/actions';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import InfiniteMovieGrid from '@/components/InfiniteMovieGrid';
+import FollowingButton from '@/components/FollowingButton';
 
 export default async function TVPage() {
 	const shows = await fetchTVShows();
@@ -12,14 +13,17 @@ export default async function TVPage() {
 		<main className="min-h-screen bg-black text-white pt-24 pb-20">
 			<div className="max-w-[1920px] mx-auto px-6 md:px-12">
 				{/* Header */}
-				<div className="mb-12">
-					<h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight">
-						TV Series
-						<span className="text-secondary">.</span>
-					</h1>
-					<p className="text-zinc-400 text-lg max-w-xl">
-						Binge-worthy series and TV shows. Discover your next obsession.
-					</p>
+				<div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+					<div>
+						<h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight">
+							TV Series
+							<span className="text-secondary">.</span>
+						</h1>
+						<p className="text-zinc-400 text-lg max-w-xl">
+							Binge-worthy series and TV shows. Discover your next obsession.
+						</p>
+					</div>
+					<FollowingButton />
 				</div>
 
 				{/* Featured Big Card */}

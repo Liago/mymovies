@@ -293,8 +293,8 @@ export async function actionGetListDetails(listId: number) {
 			console.error('[actionGetListDetails] Error fetching items:', itemsError);
 		}
 
-		// Transform items to MovieCard format and fetch episode counts for TV items
-		const { getTVEpisodeCount } = await import('@/lib/tmdb');
+		// Transform items to MovieCard format and fetch episode counts + status for TV items
+		const { getTVStatusAndEpisodeCount } = await import('@/lib/tmdb');
 
 		const transformedItems = await Promise.all((items || []).map(async (item: any) => {
 			const base = {
@@ -305,11 +305,13 @@ export async function actionGetListDetails(listId: number) {
 				rating: 0,
 				year: '',
 				totalEpisodes: undefined as number | undefined,
+				status: undefined as string | undefined,
 			};
 
 			if (item.media_type === 'tv') {
-				const count = await getTVEpisodeCount(item.media_id);
-				base.totalEpisodes = count ?? undefined;
+				const info = await getTVStatusAndEpisodeCount(item.media_id);
+				base.totalEpisodes = info?.totalEpisodes ?? undefined;
+				base.status = info?.status ?? undefined;
 			}
 
 			return base;
@@ -325,6 +327,28 @@ export async function actionGetListDetails(listId: number) {
 	} catch (error) {
 		console.error('[actionGetListDetails] Error:', error);
 		return null;
+	}
+}
+
+export async function actionGetFollowedShowsInfo(ids: number[]) {
+	'use server';
+	try {
+		if (!ids || ids.length === 0) return [];
+		const { getTVStatusAndEpisodeCount } = await import('@/lib/tmdb');
+		const results = await Promise.all(
+			ids.map(async (id) => {
+				const info = await getTVStatusAndEpisodeCount(id);
+				return {
+					id,
+					status: info?.status ?? null,
+					totalEpisodes: info?.totalEpisodes ?? null,
+				};
+			})
+		);
+		return results;
+	} catch (error) {
+		console.error('[actionGetFollowedShowsInfo] Error:', error);
+		return [];
 	}
 }
 
