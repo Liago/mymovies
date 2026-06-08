@@ -23,7 +23,10 @@ import {
 	getSimilarTV,
 	getMovieRecommendations,
 	getTVRecommendations,
-	getTVSeasonDetails
+	getTVSeasonDetails,
+	getMovieWatchProviders,
+	getTVWatchProviders,
+	type WatchProviderData,
 } from '@/lib/tmdb';
 import { addToWatchlist, markAsFavorite, rateMedia, deleteRating, getAccountStates, getUserLists, createList, addToList, getListDetails, deleteList, removeFromList, getFavorites } from '@/lib/tmdb-user';
 import { cookies } from 'next/headers';
@@ -243,17 +246,50 @@ export async function actionGetWatchlist(mediaType: 'movies' | 'tv', page: numbe
 		return { results: [], total_pages: 0 };
 	}
 
-	const results = (data || []).map(item => ({
+	const lang = await getLanguage();
+	const items = data || [];
+	const providerLists = await Promise.all(
+		items.map(async (item) => {
+			const data = item.media_type === 'tv'
+				? await getTVWatchProviders(item.media_id, lang)
+				: await getMovieWatchProviders(item.media_id, lang);
+			return flattenProviders(data);
+		})
+	);
+
+	const results = items.map((item, i) => ({
 		id: item.media_id,
 		title: item.title,
 		poster: item.poster_path,
 		type: item.media_type,
+		providers: providerLists[i],
 	}));
 
 	return {
 		results,
 		total_pages: Math.ceil((count || 0) / pageSize),
 	};
+}
+
+export interface WatchlistProviderRef {
+	id: number;
+	name: string;
+	logoPath: string;
+}
+
+function flattenProviders(data: WatchProviderData | null): WatchlistProviderRef[] {
+	if (!data) return [];
+	const seen = new Map<number, WatchlistProviderRef>();
+	const buckets = [data.flatrate, data.free, data.ads, data.rent, data.buy];
+	for (const bucket of buckets) {
+		if (!bucket) continue;
+		for (const p of bucket) {
+			if (!seen.has(p.provider_id)) {
+				seen.set(p.provider_id, { id: p.provider_id, name: p.provider_name, logoPath: p.logo_path });
+			}
+		}
+	}
+	return Array.from(seen.values());
 }
 
 export async function actionGetListDetails(listId: number) {

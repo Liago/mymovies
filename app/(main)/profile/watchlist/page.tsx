@@ -67,6 +67,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams: Pr
 
 				{results.length > 0 ? (
 					<WatchlistGrid
+						key={activeTab}
 						initialItems={results}
 						mediaType={activeTab as 'movies' | 'tv'}
 						totalPages={total_pages}

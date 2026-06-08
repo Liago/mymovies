@@ -55,6 +55,9 @@ const translations: Record<Language, Record<string, string>> = {
 		'following.no_ongoing_desc': "You don't have any renewed series with episodes left to watch right now.",
 		'following.browse': 'Browse TV Shows',
 		'following.loading': 'Loading your series…',
+		'watchlist.filter_providers': 'Filter by streaming service',
+		'watchlist.filter_clear': 'Clear',
+		'watchlist.filter_empty': 'No items match the selected services.',
 	},
 	'it-IT': {
 		'nav.home': 'Home',
@@ -97,6 +100,9 @@ const translations: Record<Language, Record<string, string>> = {
 		'following.no_ongoing_desc': 'Al momento non hai serie già rinnovate con episodi ancora da vedere.',
 		'following.browse': 'Esplora le Serie TV',
 		'following.loading': 'Caricamento delle tue serie…',
+		'watchlist.filter_providers': 'Filtra per servizio di streaming',
+		'watchlist.filter_clear': 'Azzera',
+		'watchlist.filter_empty': 'Nessun elemento corrisponde ai servizi selezionati.',
 	}
 };
 
