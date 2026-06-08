@@ -47,4 +47,17 @@ export function isWaitingForNewSeason(
 	return isReturningStatus(status) && isFullyWatched(watched, total);
 }
 
-export type SeriesFilterMode = 'all' | 'ended' | 'returning';
+/**
+ * Returns true when a show should appear in the "ongoing & renewed" view:
+ * it has already been renewed for more episodes/seasons (a "returning
+ * series") and the user still has aired episodes left to catch up on.
+ */
+export function isOngoingRenewed(
+	status: string | null | undefined,
+	watched: number,
+	total: number | null | undefined
+): boolean {
+	return isReturningStatus(status) && !isFullyWatched(watched, total);
+}
+
+export type SeriesFilterMode = 'all' | 'ended' | 'returning' | 'ongoing';

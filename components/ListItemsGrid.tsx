@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { List } from 'lucide-react';
 import { useTracker } from '@/context/TrackerContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { isEndedToFinish, isWaitingForNewSeason, type SeriesFilterMode } from '@/lib/tv-status';
+import { isEndedToFinish, isWaitingForNewSeason, isOngoingRenewed, type SeriesFilterMode } from '@/lib/tv-status';
 import ListItemCard from './ListItemCard';
 import SeriesStatusFilter from './SeriesStatusFilter';
 
@@ -33,20 +33,34 @@ export default function ListItemsGrid({ listId, items }: ListItemsGridProps) {
 		item.media_type === 'tv' && isEndedToFinish(item.status, getWatchedCount(item.id), item.totalEpisodes);
 	const isReturning = (item: ListItem) =>
 		item.media_type === 'tv' && isWaitingForNewSeason(item.status, getWatchedCount(item.id), item.totalEpisodes);
+	const isOngoing = (item: ListItem) =>
+		item.media_type === 'tv' && isOngoingRenewed(item.status, getWatchedCount(item.id), item.totalEpisodes);
 
 	const counts = useMemo(
 		() => ({
 			ended: items.filter(isEnded).length,
 			returning: items.filter(isReturning).length,
+			ongoing: items.filter(isOngoing).length,
 		}),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[items, getWatchedCount]
 	);
 
 	const visibleItems =
-		mode === 'ended' ? items.filter(isEnded) : mode === 'returning' ? items.filter(isReturning) : items;
+		mode === 'ended'
+			? items.filter(isEnded)
+			: mode === 'returning'
+			? items.filter(isReturning)
+			: mode === 'ongoing'
+			? items.filter(isOngoing)
+			: items;
 
-	const emptyText = mode === 'returning' ? t('following.no_returning') : t('following.no_ended');
+	const emptyText =
+		mode === 'returning'
+			? t('following.no_returning')
+			: mode === 'ongoing'
+			? t('following.no_ongoing')
+			: t('following.no_ended');
 
 	return (
 		<div>
