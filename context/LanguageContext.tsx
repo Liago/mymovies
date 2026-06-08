@@ -58,6 +58,9 @@ const translations: Record<Language, Record<string, string>> = {
 		'watchlist.filter_providers': 'Filter by streaming service',
 		'watchlist.filter_clear': 'Clear',
 		'watchlist.filter_empty': 'No items match the selected services.',
+		'watchlist.filter_button': 'Filter',
+		'watchlist.filter_search': 'Search service…',
+		'watchlist.filter_done': 'Done',
 	},
 	'it-IT': {
 		'nav.home': 'Home',
@@ -103,6 +106,9 @@ const translations: Record<Language, Record<string, string>> = {
 		'watchlist.filter_providers': 'Filtra per servizio di streaming',
 		'watchlist.filter_clear': 'Azzera',
 		'watchlist.filter_empty': 'Nessun elemento corrisponde ai servizi selezionati.',
+		'watchlist.filter_button': 'Filtra',
+		'watchlist.filter_search': 'Cerca servizio…',
+		'watchlist.filter_done': 'Fatto',
 	}
 };
 
