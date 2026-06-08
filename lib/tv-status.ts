@@ -36,28 +36,28 @@ export function isEndedToFinish(
 
 /**
  * Returns true when a show should appear in the "waiting for a new season"
- * view: the user has watched every aired episode and the show is still
- * returning (a new season is expected).
+ * view: the show is still returning but no next episode is scheduled on
+ * TMDB, so the current season has finished airing and nothing concrete is
+ * coming soon.
  */
 export function isWaitingForNewSeason(
 	status: string | null | undefined,
-	watched: number,
-	total: number | null | undefined
+	hasUpcomingEpisode: boolean | null | undefined
 ): boolean {
-	return isReturningStatus(status) && isFullyWatched(watched, total);
+	return isReturningStatus(status) && !hasUpcomingEpisode;
 }
 
 /**
  * Returns true when a show should appear in the "ongoing & renewed" view:
- * it has already been renewed for more episodes/seasons (a "returning
- * series") and the user still has aired episodes left to catch up on.
+ * the show is returning AND TMDB has a `next_episode_to_air` scheduled,
+ * meaning more content is concretely on the way (mid-season or imminent
+ * release). Independent of whether the user is caught up.
  */
 export function isOngoingRenewed(
 	status: string | null | undefined,
-	watched: number,
-	total: number | null | undefined
+	hasUpcomingEpisode: boolean | null | undefined
 ): boolean {
-	return isReturningStatus(status) && !isFullyWatched(watched, total);
+	return isReturningStatus(status) && !!hasUpcomingEpisode;
 }
 
 export type SeriesFilterMode = 'all' | 'ended' | 'returning' | 'ongoing';

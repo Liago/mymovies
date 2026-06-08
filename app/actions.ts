@@ -306,12 +306,14 @@ export async function actionGetListDetails(listId: number) {
 				year: '',
 				totalEpisodes: undefined as number | undefined,
 				status: undefined as string | undefined,
+				hasUpcomingEpisode: undefined as boolean | undefined,
 			};
 
 			if (item.media_type === 'tv') {
 				const info = await getTVStatusAndEpisodeCount(item.media_id);
 				base.totalEpisodes = info?.totalEpisodes ?? undefined;
 				base.status = info?.status ?? undefined;
+				base.hasUpcomingEpisode = info?.hasUpcomingEpisode ?? undefined;
 			}
 
 			return base;
@@ -342,6 +344,7 @@ export async function actionGetFollowedShowsInfo(ids: number[]) {
 					id,
 					status: info?.status ?? null,
 					totalEpisodes: info?.totalEpisodes ?? null,
+					hasUpcomingEpisode: info?.hasUpcomingEpisode ?? false,
 				};
 			})
 		);

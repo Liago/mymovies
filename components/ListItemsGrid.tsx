@@ -17,6 +17,7 @@ interface ListItem {
 	media_type: 'movie' | 'tv';
 	totalEpisodes?: number;
 	status?: string;
+	hasUpcomingEpisode?: boolean;
 }
 
 interface ListItemsGridProps {
@@ -32,9 +33,9 @@ export default function ListItemsGrid({ listId, items }: ListItemsGridProps) {
 	const isEnded = (item: ListItem) =>
 		item.media_type === 'tv' && isEndedToFinish(item.status, getWatchedCount(item.id), item.totalEpisodes);
 	const isReturning = (item: ListItem) =>
-		item.media_type === 'tv' && isWaitingForNewSeason(item.status, getWatchedCount(item.id), item.totalEpisodes);
+		item.media_type === 'tv' && isWaitingForNewSeason(item.status, item.hasUpcomingEpisode);
 	const isOngoing = (item: ListItem) =>
-		item.media_type === 'tv' && isOngoingRenewed(item.status, getWatchedCount(item.id), item.totalEpisodes);
+		item.media_type === 'tv' && isOngoingRenewed(item.status, item.hasUpcomingEpisode);
 
 	const counts = useMemo(
 		() => ({

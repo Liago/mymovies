@@ -13,6 +13,7 @@ import SeriesStatusFilter from '@/components/SeriesStatusFilter';
 interface ShowInfo {
 	status: string | null;
 	totalEpisodes: number | null;
+	hasUpcomingEpisode: boolean;
 }
 
 export default function FollowingPage() {
@@ -50,7 +51,18 @@ export default function FollowingPage() {
 			try {
 				const results = await actionGetFollowedShowsInfo(ids);
 				if (!cancelled) {
-					setInfo(new Map(results.map((r) => [r.id, { status: r.status, totalEpisodes: r.totalEpisodes }])));
+					setInfo(
+					new Map(
+						results.map((r) => [
+							r.id,
+							{
+								status: r.status,
+								totalEpisodes: r.totalEpisodes,
+								hasUpcomingEpisode: r.hasUpcomingEpisode,
+							},
+						])
+					)
+				);
 				}
 			} catch (err) {
 				console.error('Error loading followed shows info:', err);
@@ -72,11 +84,11 @@ export default function FollowingPage() {
 	};
 	const isReturning = (id: number) => {
 		const meta = info.get(id);
-		return isWaitingForNewSeason(meta?.status, getWatchedCount(id), meta?.totalEpisodes);
+		return isWaitingForNewSeason(meta?.status, meta?.hasUpcomingEpisode);
 	};
 	const isOngoing = (id: number) => {
 		const meta = info.get(id);
-		return isOngoingRenewed(meta?.status, getWatchedCount(id), meta?.totalEpisodes);
+		return isOngoingRenewed(meta?.status, meta?.hasUpcomingEpisode);
 	};
 
 	const counts = useMemo(
