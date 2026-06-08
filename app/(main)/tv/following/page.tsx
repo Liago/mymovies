@@ -6,7 +6,7 @@ import { ArrowLeft, Tv } from 'lucide-react';
 import { useTracker } from '@/context/TrackerContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { actionGetFollowedShowsInfo } from '@/app/actions';
-import { isEndedToFinish, isWaitingForNewSeason, type SeriesFilterMode } from '@/lib/tv-status';
+import { isEndedToFinish, isWaitingForNewSeason, isOngoingRenewed, type SeriesFilterMode } from '@/lib/tv-status';
 import TVCardWithProgress from '@/components/TVCardWithProgress';
 import SeriesStatusFilter from '@/components/SeriesStatusFilter';
 
@@ -74,11 +74,16 @@ export default function FollowingPage() {
 		const meta = info.get(id);
 		return isWaitingForNewSeason(meta?.status, getWatchedCount(id), meta?.totalEpisodes);
 	};
+	const isOngoing = (id: number) => {
+		const meta = info.get(id);
+		return isOngoingRenewed(meta?.status, getWatchedCount(id), meta?.totalEpisodes);
+	};
 
 	const counts = useMemo(
 		() => ({
 			ended: shows.filter((s) => isEnded(s.id)).length,
 			returning: shows.filter((s) => isReturning(s.id)).length,
+			ongoing: shows.filter((s) => isOngoing(s.id)).length,
 		}),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[shows, info, getWatchedCount]
@@ -89,6 +94,8 @@ export default function FollowingPage() {
 			? shows.filter((s) => isEnded(s.id))
 			: mode === 'returning'
 			? shows.filter((s) => isReturning(s.id))
+			: mode === 'ongoing'
+			? shows.filter((s) => isOngoing(s.id))
 			: shows;
 
 	const loading = isLoading || infoLoading;
@@ -151,6 +158,8 @@ function EmptyState({ mode }: { mode: SeriesFilterMode }) {
 			? { title: t('following.no_ended'), desc: t('following.no_ended_desc') }
 			: mode === 'returning'
 			? { title: t('following.no_returning'), desc: t('following.no_returning_desc') }
+			: mode === 'ongoing'
+			? { title: t('following.no_ongoing'), desc: t('following.no_ongoing_desc') }
 			: { title: t('following.empty'), desc: t('following.empty_desc') };
 
 	return (

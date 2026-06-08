@@ -1,13 +1,13 @@
 'use client';
 
-import { LayoutGrid, CheckCheck, Hourglass } from 'lucide-react';
+import { LayoutGrid, CheckCheck, Hourglass, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import type { SeriesFilterMode } from '@/lib/tv-status';
 
 interface SeriesStatusFilterProps {
 	mode: SeriesFilterMode;
 	onChange: (mode: SeriesFilterMode) => void;
-	counts?: { ended: number; returning: number };
+	counts?: { ended: number; returning: number; ongoing: number };
 }
 
 /**
@@ -15,6 +15,7 @@ interface SeriesStatusFilterProps {
  *  - all: every series
  *  - ended: terminated series the user still has episodes left to watch
  *  - returning: completed series waiting for a new season
+ *  - ongoing: renewed series the user is still catching up on
  */
 export default function SeriesStatusFilter({ mode, onChange, counts }: SeriesStatusFilterProps) {
 	const { t } = useLanguage();
@@ -23,6 +24,7 @@ export default function SeriesStatusFilter({ mode, onChange, counts }: SeriesSta
 		{ value: 'all', label: t('following.filter_all'), icon: LayoutGrid },
 		{ value: 'ended', label: t('following.filter_ended'), icon: CheckCheck, count: counts?.ended },
 		{ value: 'returning', label: t('following.filter_returning'), icon: Hourglass, count: counts?.returning },
+		{ value: 'ongoing', label: t('following.filter_ongoing'), icon: RefreshCw, count: counts?.ongoing },
 	];
 
 	return (
@@ -52,6 +54,7 @@ export default function SeriesStatusFilter({ mode, onChange, counts }: SeriesSta
 			</div>
 			{mode === 'ended' && <p className="text-xs text-gray-500">{t('following.filter_ended_hint')}</p>}
 			{mode === 'returning' && <p className="text-xs text-gray-500">{t('following.filter_returning_hint')}</p>}
+			{mode === 'ongoing' && <p className="text-xs text-gray-500">{t('following.filter_ongoing_hint')}</p>}
 		</div>
 	);
 }
