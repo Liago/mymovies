@@ -547,7 +547,8 @@ export async function getTrending(mediaType: 'all' | 'movie' | 'tv' | 'person' =
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
-			`${BASE_URL}/trending/${mediaType}/${timeWindow}?api_key=${TMDB_API_KEY}&language=${language}`
+			`${BASE_URL}/trending/${mediaType}/${timeWindow}?api_key=${TMDB_API_KEY}&language=${language}`,
+			{ next: { revalidate: 300 } }
 		);
 		const data = await res.json();
 
@@ -584,7 +585,8 @@ export async function getTopRatedMovies(page: number = 1, language: string = 'it
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
-			`${BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+			`${BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`,
+			{ next: { revalidate: 300 } }
 		);
 		const data = await res.json();
 
@@ -630,7 +632,8 @@ export async function getNowPlayingMovies(page: number = 1, language: string = '
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
-			`${BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+			`${BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`,
+			{ next: { revalidate: 300 } }
 		);
 		const data = await res.json();
 
@@ -676,7 +679,8 @@ export async function getPopularTV(page: number = 1, language: string = 'it-IT')
 	if (!TMDB_API_KEY) return [];
 	try {
 		const res = await fetch(
-			`${BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`
+			`${BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&page=${page}&language=${language}`,
+			{ next: { revalidate: 300 } }
 		);
 		const data = await res.json();
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { fetchPersonDetailsById } from '@/app/actions';
 import { User, X, Calendar, MapPin, Briefcase, Star, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import Spinner from './Spinner';
 
 interface PersonCardProps {
 	personId?: number;
@@ -95,7 +96,7 @@ export default function PersonCard({ personId, name, role, profilePath }: Person
 					<div className="bg-zinc-950 border border-white/10 w-full max-w-6xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300">
 						{loading ? (
 							<div className="flex justify-center items-center p-12 min-h-[400px]">
-								<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+								<Spinner size={48} />
 							</div>
 						) : personDetails ? (
 							<>
