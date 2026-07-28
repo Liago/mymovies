@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Search, Film, Tv } from 'lucide-react';
 import Link from 'next/link';
 import { SearchResult } from '@/app/api/search/route';
+import Spinner from './Spinner';
 
 interface SearchOverlayProps {
 	isOpen: boolean;
@@ -122,7 +123,7 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 				<div className="max-w-6xl mx-auto">
 					{isLoading && (
 						<div className="flex justify-center py-12">
-							<div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
+							<Spinner size={40} />
 						</div>
 					)}
 
