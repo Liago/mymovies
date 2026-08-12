@@ -22,6 +22,7 @@ interface ShowInfo {
 	totalEpisodes: number | null;
 	hasUpcomingEpisode: boolean;
 	hasAired: boolean;
+	firstAirDate: string | null;
 }
 
 export default function FollowingPage() {
@@ -68,6 +69,7 @@ export default function FollowingPage() {
 								totalEpisodes: r.totalEpisodes,
 								hasUpcomingEpisode: r.hasUpcomingEpisode,
 								hasAired: r.hasAired,
+								firstAirDate: r.firstAirDate,
 							},
 						])
 					)
@@ -173,6 +175,7 @@ export default function FollowingPage() {
 								title={show.name}
 								poster={show.poster}
 								totalEpisodes={info.get(show.id)?.totalEpisodes ?? undefined}
+								firstAirDate={info.get(show.id)?.firstAirDate}
 							/>
 						))}
 					</div>

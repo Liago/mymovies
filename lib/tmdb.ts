@@ -1063,6 +1063,7 @@ export interface TVStatusInfo {
 	totalEpisodes: number | null;
 	hasUpcomingEpisode: boolean;
 	hasAired: boolean;
+	firstAirDate: string | null;
 }
 
 export async function getTVStatusAndEpisodeCount(id: number): Promise<TVStatusInfo | null> {
@@ -1077,6 +1078,7 @@ export async function getTVStatusAndEpisodeCount(id: number): Promise<TVStatusIn
 			totalEpisodes: countAiredEpisodes(data),
 			hasUpcomingEpisode: data.next_episode_to_air != null,
 			hasAired: hasStartedAiring(data),
+			firstAirDate: data.first_air_date ?? null,
 		};
 	} catch {
 		return null;

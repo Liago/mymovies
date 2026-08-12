@@ -344,6 +344,7 @@ export async function actionGetListDetails(listId: number) {
 				status: undefined as string | undefined,
 				hasUpcomingEpisode: undefined as boolean | undefined,
 				hasAired: undefined as boolean | undefined,
+				firstAirDate: undefined as string | undefined,
 			};
 
 			if (item.media_type === 'tv') {
@@ -352,6 +353,7 @@ export async function actionGetListDetails(listId: number) {
 				base.status = info?.status ?? undefined;
 				base.hasUpcomingEpisode = info?.hasUpcomingEpisode ?? undefined;
 				base.hasAired = info?.hasAired ?? undefined;
+				base.firstAirDate = info?.firstAirDate ?? undefined;
 			}
 
 			return base;
@@ -384,6 +386,7 @@ export async function actionGetFollowedShowsInfo(ids: number[]) {
 					totalEpisodes: info?.totalEpisodes ?? null,
 					hasUpcomingEpisode: info?.hasUpcomingEpisode ?? false,
 					hasAired: info?.hasAired ?? true,
+					firstAirDate: info?.firstAirDate ?? null,
 				};
 			})
 		);

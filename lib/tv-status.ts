@@ -48,6 +48,28 @@ export function isUpcoming(hasAired: boolean | null | undefined): boolean {
 }
 
 /**
+ * Formats a TMDB `first_air_date` (YYYY-MM-DD) as a short premiere label —
+ * "5 nov 2026" in Italian, "Nov 5, 2026" in English — for shows whose
+ * premiere is still ahead of us. Returns null for missing, unparsable or
+ * already-past dates, so callers can skip the badge without extra checks.
+ */
+export function formatUpcomingPremiere(
+	firstAirDate: string | null | undefined,
+	locale: string
+): string | null {
+	if (!firstAirDate) return null;
+
+	const premiere = Date.parse(firstAirDate);
+	if (Number.isNaN(premiere) || premiere <= Date.now()) return null;
+
+	return new Date(premiere).toLocaleDateString(locale, {
+		day: 'numeric',
+		month: 'short',
+		year: 'numeric',
+	});
+}
+
+/**
  * Returns true when a show should appear in the "ended series to finish" view:
  * it is terminated but the user still has episodes left to watch.
  */
