@@ -20,6 +20,7 @@ interface ShowInfo {
 	status: string | null;
 	totalEpisodes: number | null;
 	hasUpcomingEpisode: boolean;
+	hasAired: boolean;
 }
 
 export default function FollowingPage() {
@@ -65,6 +66,7 @@ export default function FollowingPage() {
 								status: r.status,
 								totalEpisodes: r.totalEpisodes,
 								hasUpcomingEpisode: r.hasUpcomingEpisode,
+									hasAired: r.hasAired,
 							},
 						])
 					)
@@ -98,7 +100,7 @@ export default function FollowingPage() {
 	};
 	const isInProgress = (id: number) => {
 		const meta = info.get(id);
-		return isWatching(getWatchedCount(id), meta?.totalEpisodes);
+		return isWatching(getWatchedCount(id), meta?.totalEpisodes, meta?.hasAired);
 	};
 
 	const counts = useMemo(

@@ -24,12 +24,17 @@ export function isFullyWatched(watched: number, total?: number | null): boolean 
 
 /**
  * Returns true when a show should appear in the "currently watching" view:
- * the user still has episodes left to watch, whatever the show's TMDB status
- * is. Shows whose episode count is unknown are kept in, since we cannot prove
- * they are complete.
+ * at least one episode has already aired and the user still has episodes left
+ * to watch, whatever the show's TMDB status is. Shows whose episode count is
+ * unknown are kept in, since we cannot prove they are complete; shows that
+ * have not premiered yet are excluded — there is nothing to watch.
  */
-export function isWatching(watched: number, total: number | null | undefined): boolean {
-	return !isFullyWatched(watched, total);
+export function isWatching(
+	watched: number,
+	total: number | null | undefined,
+	hasAired: boolean | null | undefined
+): boolean {
+	return hasAired !== false && !isFullyWatched(watched, total);
 }
 
 /**

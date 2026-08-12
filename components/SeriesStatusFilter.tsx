@@ -12,7 +12,8 @@ interface SeriesStatusFilterProps {
 
 /**
  * Segmented control that switches between:
- *  - watching: series with episodes still left to watch (default view)
+ *  - watching: already-airing series with episodes still left to watch
+ *    (default view; series that have not premiered yet are excluded)
  *  - all: every series
  *  - ended: terminated series the user still has episodes left to watch
  *  - returning: completed series waiting for a new season

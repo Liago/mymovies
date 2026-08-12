@@ -1062,6 +1062,7 @@ export interface TVStatusInfo {
 	status: string | null;
 	totalEpisodes: number | null;
 	hasUpcomingEpisode: boolean;
+	hasAired: boolean;
 }
 
 export async function getTVStatusAndEpisodeCount(id: number): Promise<TVStatusInfo | null> {
@@ -1075,6 +1076,7 @@ export async function getTVStatusAndEpisodeCount(id: number): Promise<TVStatusIn
 			status: data.status ?? null,
 			totalEpisodes: countAiredEpisodes(data),
 			hasUpcomingEpisode: data.next_episode_to_air != null,
+			hasAired: hasStartedAiring(data),
 		};
 	} catch {
 		return null;
@@ -1090,6 +1092,22 @@ interface TVDetailForCount {
 	seasons?: TVSeasonSummary[];
 	number_of_episodes?: number;
 	last_episode_to_air?: { season_number: number; episode_number: number } | null;
+	first_air_date?: string | null;
+}
+
+/**
+ * Returns true when at least one episode of the show has already been
+ * released. TMDB fills `last_episode_to_air` as soon as an episode has aired,
+ * so its absence means the show has not premiered yet — announced series get
+ * a full `seasons` array (and sometimes an episode count) months before the
+ * first episode exists. `first_air_date` is only used as a fallback for the
+ * rare records that have no `last_episode_to_air` despite being out.
+ */
+function hasStartedAiring(data: TVDetailForCount): boolean {
+	if (data.last_episode_to_air != null) return true;
+
+	const premiere = data.first_air_date ? Date.parse(data.first_air_date) : NaN;
+	return !Number.isNaN(premiere) && premiere <= Date.now();
 }
 
 /**
@@ -1113,6 +1131,10 @@ function countAiredEpisodes(data: TVDetailForCount): number | null {
 			.reduce((sum, s) => sum + (s.episode_count ?? 0), 0);
 		return beforeCurrent + last.episode_number;
 	}
+
+	// Nothing has aired yet (unreleased show): the announced seasons TMDB
+	// already lists must not be counted as available episodes.
+	if (!hasStartedAiring(data)) return 0;
 
 	// No aired-episode info: fall back to the sum of regular seasons (exclude
 	// Season 0), then to TMDB's raw count.

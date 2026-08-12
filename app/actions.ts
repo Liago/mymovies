@@ -343,6 +343,7 @@ export async function actionGetListDetails(listId: number) {
 				totalEpisodes: undefined as number | undefined,
 				status: undefined as string | undefined,
 				hasUpcomingEpisode: undefined as boolean | undefined,
+				hasAired: undefined as boolean | undefined,
 			};
 
 			if (item.media_type === 'tv') {
@@ -350,6 +351,7 @@ export async function actionGetListDetails(listId: number) {
 				base.totalEpisodes = info?.totalEpisodes ?? undefined;
 				base.status = info?.status ?? undefined;
 				base.hasUpcomingEpisode = info?.hasUpcomingEpisode ?? undefined;
+				base.hasAired = info?.hasAired ?? undefined;
 			}
 
 			return base;
@@ -381,6 +383,7 @@ export async function actionGetFollowedShowsInfo(ids: number[]) {
 					status: info?.status ?? null,
 					totalEpisodes: info?.totalEpisodes ?? null,
 					hasUpcomingEpisode: info?.hasUpcomingEpisode ?? false,
+					hasAired: info?.hasAired ?? true,
 				};
 			})
 		);
