@@ -6,7 +6,13 @@ import { ArrowLeft, Tv } from 'lucide-react';
 import { useTracker } from '@/context/TrackerContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { actionGetFollowedShowsInfo } from '@/app/actions';
-import { isEndedToFinish, isWaitingForNewSeason, isOngoingRenewed, type SeriesFilterMode } from '@/lib/tv-status';
+import {
+	isEndedToFinish,
+	isWaitingForNewSeason,
+	isOngoingRenewed,
+	isWatching,
+	type SeriesFilterMode,
+} from '@/lib/tv-status';
 import TVCardWithProgress from '@/components/TVCardWithProgress';
 import SeriesStatusFilter from '@/components/SeriesStatusFilter';
 
@@ -19,7 +25,7 @@ interface ShowInfo {
 export default function FollowingPage() {
 	const { watchedShows, getWatchedCount, isLoading } = useTracker();
 	const { t } = useLanguage();
-	const [mode, setMode] = useState<SeriesFilterMode>('all');
+	const [mode, setMode] = useState<SeriesFilterMode>('watching');
 	const [info, setInfo] = useState<Map<number, ShowInfo>>(new Map());
 	const [infoLoading, setInfoLoading] = useState(true);
 
@@ -90,9 +96,14 @@ export default function FollowingPage() {
 		const meta = info.get(id);
 		return isOngoingRenewed(meta?.status, meta?.hasUpcomingEpisode);
 	};
+	const isInProgress = (id: number) => {
+		const meta = info.get(id);
+		return isWatching(getWatchedCount(id), meta?.totalEpisodes);
+	};
 
 	const counts = useMemo(
 		() => ({
+			watching: shows.filter((s) => isInProgress(s.id)).length,
 			ended: shows.filter((s) => isEnded(s.id)).length,
 			returning: shows.filter((s) => isReturning(s.id)).length,
 			ongoing: shows.filter((s) => isOngoing(s.id)).length,
@@ -102,7 +113,9 @@ export default function FollowingPage() {
 	);
 
 	const visibleShows =
-		mode === 'ended'
+		mode === 'watching'
+			? shows.filter((s) => isInProgress(s.id))
+			: mode === 'ended'
 			? shows.filter((s) => isEnded(s.id))
 			: mode === 'returning'
 			? shows.filter((s) => isReturning(s.id))
@@ -166,7 +179,9 @@ function EmptyState({ mode }: { mode: SeriesFilterMode }) {
 	const { t } = useLanguage();
 
 	const { title, desc } =
-		mode === 'ended'
+		mode === 'watching'
+			? { title: t('following.no_watching'), desc: t('following.no_watching_desc') }
+			: mode === 'ended'
 			? { title: t('following.no_ended'), desc: t('following.no_ended_desc') }
 			: mode === 'returning'
 			? { title: t('following.no_returning'), desc: t('following.no_returning_desc') }
