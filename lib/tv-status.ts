@@ -23,6 +23,16 @@ export function isFullyWatched(watched: number, total?: number | null): boolean 
 }
 
 /**
+ * Returns true when a show should appear in the "currently watching" view:
+ * the user still has episodes left to watch, whatever the show's TMDB status
+ * is. Shows whose episode count is unknown are kept in, since we cannot prove
+ * they are complete.
+ */
+export function isWatching(watched: number, total: number | null | undefined): boolean {
+	return !isFullyWatched(watched, total);
+}
+
+/**
  * Returns true when a show should appear in the "ended series to finish" view:
  * it is terminated but the user still has episodes left to watch.
  */
@@ -60,4 +70,4 @@ export function isOngoingRenewed(
 	return isReturningStatus(status) && !!hasUpcomingEpisode;
 }
 
-export type SeriesFilterMode = 'all' | 'ended' | 'returning' | 'ongoing';
+export type SeriesFilterMode = 'watching' | 'all' | 'ended' | 'returning' | 'ongoing';

@@ -1,17 +1,18 @@
 'use client';
 
-import { LayoutGrid, CheckCheck, Hourglass, RefreshCw } from 'lucide-react';
+import { LayoutGrid, CheckCheck, Hourglass, RefreshCw, PlayCircle } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import type { SeriesFilterMode } from '@/lib/tv-status';
 
 interface SeriesStatusFilterProps {
 	mode: SeriesFilterMode;
 	onChange: (mode: SeriesFilterMode) => void;
-	counts?: { ended: number; returning: number; ongoing: number };
+	counts?: { watching: number; ended: number; returning: number; ongoing: number };
 }
 
 /**
  * Segmented control that switches between:
+ *  - watching: series with episodes still left to watch (default view)
  *  - all: every series
  *  - ended: terminated series the user still has episodes left to watch
  *  - returning: completed series waiting for a new season
@@ -21,6 +22,7 @@ export default function SeriesStatusFilter({ mode, onChange, counts }: SeriesSta
 	const { t } = useLanguage();
 
 	const buttons: { value: SeriesFilterMode; label: string; icon: typeof LayoutGrid; count?: number }[] = [
+		{ value: 'watching', label: t('following.filter_watching'), icon: PlayCircle, count: counts?.watching },
 		{ value: 'all', label: t('following.filter_all'), icon: LayoutGrid },
 		{ value: 'ended', label: t('following.filter_ended'), icon: CheckCheck, count: counts?.ended },
 		{ value: 'returning', label: t('following.filter_returning'), icon: Hourglass, count: counts?.returning },
@@ -52,6 +54,7 @@ export default function SeriesStatusFilter({ mode, onChange, counts }: SeriesSta
 					);
 				})}
 			</div>
+			{mode === 'watching' && <p className="text-xs text-gray-500">{t('following.filter_watching_hint')}</p>}
 			{mode === 'ended' && <p className="text-xs text-gray-500">{t('following.filter_ended_hint')}</p>}
 			{mode === 'returning' && <p className="text-xs text-gray-500">{t('following.filter_returning_hint')}</p>}
 			{mode === 'ongoing' && <p className="text-xs text-gray-500">{t('following.filter_ongoing_hint')}</p>}
