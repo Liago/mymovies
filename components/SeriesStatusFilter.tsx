@@ -1,13 +1,13 @@
 'use client';
 
-import { LayoutGrid, CheckCheck, Hourglass, RefreshCw, PlayCircle } from 'lucide-react';
+import { LayoutGrid, CheckCheck, Hourglass, RefreshCw, PlayCircle, CalendarClock } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import type { SeriesFilterMode } from '@/lib/tv-status';
 
 interface SeriesStatusFilterProps {
 	mode: SeriesFilterMode;
 	onChange: (mode: SeriesFilterMode) => void;
-	counts?: { watching: number; ended: number; returning: number; ongoing: number };
+	counts?: { watching: number; ended: number; returning: number; ongoing: number; upcoming: number };
 }
 
 /**
@@ -18,6 +18,7 @@ interface SeriesStatusFilterProps {
  *  - ended: terminated series the user still has episodes left to watch
  *  - returning: completed series waiting for a new season
  *  - ongoing: renewed series the user is still catching up on
+ *  - upcoming: series that have not premiered yet
  */
 export default function SeriesStatusFilter({ mode, onChange, counts }: SeriesStatusFilterProps) {
 	const { t } = useLanguage();
@@ -28,6 +29,7 @@ export default function SeriesStatusFilter({ mode, onChange, counts }: SeriesSta
 		{ value: 'ended', label: t('following.filter_ended'), icon: CheckCheck, count: counts?.ended },
 		{ value: 'returning', label: t('following.filter_returning'), icon: Hourglass, count: counts?.returning },
 		{ value: 'ongoing', label: t('following.filter_ongoing'), icon: RefreshCw, count: counts?.ongoing },
+		{ value: 'upcoming', label: t('following.filter_upcoming'), icon: CalendarClock, count: counts?.upcoming },
 	];
 
 	return (
@@ -59,6 +61,7 @@ export default function SeriesStatusFilter({ mode, onChange, counts }: SeriesSta
 			{mode === 'ended' && <p className="text-xs text-gray-500">{t('following.filter_ended_hint')}</p>}
 			{mode === 'returning' && <p className="text-xs text-gray-500">{t('following.filter_returning_hint')}</p>}
 			{mode === 'ongoing' && <p className="text-xs text-gray-500">{t('following.filter_ongoing_hint')}</p>}
+			{mode === 'upcoming' && <p className="text-xs text-gray-500">{t('following.filter_upcoming_hint')}</p>}
 		</div>
 	);
 }

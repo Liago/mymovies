@@ -9,6 +9,7 @@ import {
 	isWaitingForNewSeason,
 	isOngoingRenewed,
 	isWatching,
+	isUpcoming,
 	type SeriesFilterMode,
 } from '@/lib/tv-status';
 import ListItemCard from './ListItemCard';
@@ -40,9 +41,10 @@ export default function ListItemsGrid({ listId, items }: ListItemsGridProps) {
 	const isEnded = (item: ListItem) =>
 		item.media_type === 'tv' && isEndedToFinish(item.status, getWatchedCount(item.id), item.totalEpisodes);
 	const isReturning = (item: ListItem) =>
-		item.media_type === 'tv' && isWaitingForNewSeason(item.status, item.hasUpcomingEpisode);
+		item.media_type === 'tv' && isWaitingForNewSeason(item.status, item.hasUpcomingEpisode, item.hasAired);
 	const isOngoing = (item: ListItem) =>
-		item.media_type === 'tv' && isOngoingRenewed(item.status, item.hasUpcomingEpisode);
+		item.media_type === 'tv' && isOngoingRenewed(item.status, item.hasUpcomingEpisode, item.hasAired);
+	const isNotYetAired = (item: ListItem) => item.media_type === 'tv' && isUpcoming(item.hasAired);
 	const isInProgress = (item: ListItem) =>
 		item.media_type === 'tv' && isWatching(getWatchedCount(item.id), item.totalEpisodes, item.hasAired);
 
@@ -52,6 +54,7 @@ export default function ListItemsGrid({ listId, items }: ListItemsGridProps) {
 			ended: items.filter(isEnded).length,
 			returning: items.filter(isReturning).length,
 			ongoing: items.filter(isOngoing).length,
+			upcoming: items.filter(isNotYetAired).length,
 		}),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[items, getWatchedCount]
@@ -66,6 +69,8 @@ export default function ListItemsGrid({ listId, items }: ListItemsGridProps) {
 			? items.filter(isReturning)
 			: mode === 'ongoing'
 			? items.filter(isOngoing)
+			: mode === 'upcoming'
+			? items.filter(isNotYetAired)
 			: items;
 
 	const emptyText =
@@ -75,6 +80,8 @@ export default function ListItemsGrid({ listId, items }: ListItemsGridProps) {
 			? t('following.no_returning')
 			: mode === 'ongoing'
 			? t('following.no_ongoing')
+			: mode === 'upcoming'
+			? t('following.no_upcoming')
 			: t('following.no_ended');
 
 	return (
