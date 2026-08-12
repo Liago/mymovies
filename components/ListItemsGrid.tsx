@@ -26,6 +26,7 @@ interface ListItem {
 	status?: string;
 	hasUpcomingEpisode?: boolean;
 	hasAired?: boolean;
+	firstAirDate?: string | null;
 }
 
 interface ListItemsGridProps {
@@ -108,6 +109,7 @@ export default function ListItemsGrid({ listId, items }: ListItemsGridProps) {
 							year={item.year}
 							type={item.media_type}
 							totalEpisodes={item.totalEpisodes}
+							firstAirDate={item.firstAirDate}
 						/>
 					))}
 				</div>

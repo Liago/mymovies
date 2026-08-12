@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Star, Play } from 'lucide-react';
+import { Star, Play, CalendarClock } from 'lucide-react';
 import ActionButtons from './ActionButtons';
 
 interface MovieCardProps {
@@ -12,9 +12,15 @@ interface MovieCardProps {
 	year?: string;
 	type?: 'movie' | 'tv';
 	episodeProgress?: { watched: number; total: number };
+	/** Formatted premiere date, shown as a badge for titles not yet released. */
+	premiereLabel?: string | null;
 }
 
-export default function MovieCard({ id, title, poster, rating, year, type = 'movie', episodeProgress }: MovieCardProps) {
+export default function MovieCard({ id, title, poster, rating, year, type = 'movie', episodeProgress, premiereLabel }: MovieCardProps) {
+	// A title that has not aired yet cannot have progress, so the two badges
+	// never compete for the bottom strip — but keep progress the winner anyway.
+	const showPremiere = !!premiereLabel && !(episodeProgress && episodeProgress.watched > 0);
+
 	return (
 		<Link
 			href={`/${type === 'tv' ? 'tv' : 'movie'}/${id}`}
@@ -47,6 +53,16 @@ export default function MovieCard({ id, title, poster, rating, year, type = 'mov
 									style={{ width: `${Math.min((episodeProgress.watched / episodeProgress.total) * 100, 100)}%` }}
 								/>
 							</div>
+						</div>
+					</div>
+				)}
+
+				{/* Premiere Date Badge (titles not yet released) */}
+				{showPremiere && (
+					<div className="absolute bottom-0 left-0 right-0 z-10">
+						<div className="bg-black/80 backdrop-blur-sm px-2.5 py-1.5 flex items-center gap-1.5">
+							<CalendarClock size={12} className="text-primary flex-shrink-0" />
+							<span className="text-[11px] font-semibold text-white truncate">{premiereLabel}</span>
 						</div>
 					</div>
 				)}

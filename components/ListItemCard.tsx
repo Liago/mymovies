@@ -17,9 +17,10 @@ interface ListItemCardProps {
 	year?: string;
 	type: 'movie' | 'tv';
 	totalEpisodes?: number;
+	firstAirDate?: string | null;
 }
 
-export default function ListItemCard({ listId, id, title, poster, rating, year, type, totalEpisodes }: ListItemCardProps) {
+export default function ListItemCard({ listId, id, title, poster, rating, year, type, totalEpisodes, firstAirDate }: ListItemCardProps) {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const { removeFromList } = useLists();
 	const router = useRouter();
@@ -41,7 +42,7 @@ export default function ListItemCard({ listId, id, title, poster, rating, year, 
 
 	return (
 		<div className="relative group/item">
-			{type === 'tv' && totalEpisodes ? (
+			{type === 'tv' ? (
 				<TVCardWithProgress
 					id={id}
 					title={title}
@@ -49,6 +50,7 @@ export default function ListItemCard({ listId, id, title, poster, rating, year, 
 					rating={rating}
 					year={year}
 					totalEpisodes={totalEpisodes}
+					firstAirDate={firstAirDate}
 				/>
 			) : (
 				<MovieCard
