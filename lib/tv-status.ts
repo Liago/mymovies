@@ -24,12 +24,27 @@ export function isFullyWatched(watched: number, total?: number | null): boolean 
 
 /**
  * Returns true when a show should appear in the "currently watching" view:
- * the user still has episodes left to watch, whatever the show's TMDB status
- * is. Shows whose episode count is unknown are kept in, since we cannot prove
- * they are complete.
+ * at least one episode has already aired and the user still has episodes left
+ * to watch, whatever the show's TMDB status is. Shows whose episode count is
+ * unknown are kept in, since we cannot prove they are complete; shows that
+ * have not premiered yet are excluded — there is nothing to watch.
  */
-export function isWatching(watched: number, total: number | null | undefined): boolean {
-	return !isFullyWatched(watched, total);
+export function isWatching(
+	watched: number,
+	total: number | null | undefined,
+	hasAired: boolean | null | undefined
+): boolean {
+	return hasAired !== false && !isFullyWatched(watched, total);
+}
+
+/**
+ * Returns true when a show should appear in the "upcoming" view: it is
+ * followed (or listed) but no episode has aired yet, so there is nothing to
+ * watch — only a premiere to wait for. Shows with unknown airing info are
+ * left out, since we cannot claim they are unreleased.
+ */
+export function isUpcoming(hasAired: boolean | null | undefined): boolean {
+	return hasAired === false;
 }
 
 /**
@@ -48,26 +63,30 @@ export function isEndedToFinish(
  * Returns true when a show should appear in the "waiting for a new season"
  * view: the show is still returning but no next episode is scheduled on
  * TMDB, so the current season has finished airing and nothing concrete is
- * coming soon.
+ * coming soon. Shows that have never aired belong to the "upcoming" view
+ * instead — there is no previous season to have waited through.
  */
 export function isWaitingForNewSeason(
 	status: string | null | undefined,
-	hasUpcomingEpisode: boolean | null | undefined
+	hasUpcomingEpisode: boolean | null | undefined,
+	hasAired?: boolean | null
 ): boolean {
-	return isReturningStatus(status) && !hasUpcomingEpisode;
+	return isReturningStatus(status) && !hasUpcomingEpisode && !isUpcoming(hasAired);
 }
 
 /**
  * Returns true when a show should appear in the "ongoing & renewed" view:
  * the show is returning AND TMDB has a `next_episode_to_air` scheduled,
  * meaning more content is concretely on the way (mid-season or imminent
- * release). Independent of whether the user is caught up.
+ * release). Independent of whether the user is caught up. Shows whose very
+ * first episode is the scheduled one are "upcoming", not ongoing.
  */
 export function isOngoingRenewed(
 	status: string | null | undefined,
-	hasUpcomingEpisode: boolean | null | undefined
+	hasUpcomingEpisode: boolean | null | undefined,
+	hasAired?: boolean | null
 ): boolean {
-	return isReturningStatus(status) && !!hasUpcomingEpisode;
+	return isReturningStatus(status) && !!hasUpcomingEpisode && !isUpcoming(hasAired);
 }
 
-export type SeriesFilterMode = 'watching' | 'all' | 'ended' | 'returning' | 'ongoing';
+export type SeriesFilterMode = 'watching' | 'all' | 'ended' | 'returning' | 'ongoing' | 'upcoming';

@@ -11,6 +11,7 @@ import {
 	isWaitingForNewSeason,
 	isOngoingRenewed,
 	isWatching,
+	isUpcoming,
 	type SeriesFilterMode,
 } from '@/lib/tv-status';
 import TVCardWithProgress from '@/components/TVCardWithProgress';
@@ -20,6 +21,7 @@ interface ShowInfo {
 	status: string | null;
 	totalEpisodes: number | null;
 	hasUpcomingEpisode: boolean;
+	hasAired: boolean;
 }
 
 export default function FollowingPage() {
@@ -65,6 +67,7 @@ export default function FollowingPage() {
 								status: r.status,
 								totalEpisodes: r.totalEpisodes,
 								hasUpcomingEpisode: r.hasUpcomingEpisode,
+								hasAired: r.hasAired,
 							},
 						])
 					)
@@ -90,15 +93,16 @@ export default function FollowingPage() {
 	};
 	const isReturning = (id: number) => {
 		const meta = info.get(id);
-		return isWaitingForNewSeason(meta?.status, meta?.hasUpcomingEpisode);
+		return isWaitingForNewSeason(meta?.status, meta?.hasUpcomingEpisode, meta?.hasAired);
 	};
 	const isOngoing = (id: number) => {
 		const meta = info.get(id);
-		return isOngoingRenewed(meta?.status, meta?.hasUpcomingEpisode);
+		return isOngoingRenewed(meta?.status, meta?.hasUpcomingEpisode, meta?.hasAired);
 	};
+	const isNotYetAired = (id: number) => isUpcoming(info.get(id)?.hasAired);
 	const isInProgress = (id: number) => {
 		const meta = info.get(id);
-		return isWatching(getWatchedCount(id), meta?.totalEpisodes);
+		return isWatching(getWatchedCount(id), meta?.totalEpisodes, meta?.hasAired);
 	};
 
 	const counts = useMemo(
@@ -107,6 +111,7 @@ export default function FollowingPage() {
 			ended: shows.filter((s) => isEnded(s.id)).length,
 			returning: shows.filter((s) => isReturning(s.id)).length,
 			ongoing: shows.filter((s) => isOngoing(s.id)).length,
+			upcoming: shows.filter((s) => isNotYetAired(s.id)).length,
 		}),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[shows, info, getWatchedCount]
@@ -121,6 +126,8 @@ export default function FollowingPage() {
 			? shows.filter((s) => isReturning(s.id))
 			: mode === 'ongoing'
 			? shows.filter((s) => isOngoing(s.id))
+			: mode === 'upcoming'
+			? shows.filter((s) => isNotYetAired(s.id))
 			: shows;
 
 	const loading = isLoading || infoLoading;
@@ -187,6 +194,8 @@ function EmptyState({ mode }: { mode: SeriesFilterMode }) {
 			? { title: t('following.no_returning'), desc: t('following.no_returning_desc') }
 			: mode === 'ongoing'
 			? { title: t('following.no_ongoing'), desc: t('following.no_ongoing_desc') }
+			: mode === 'upcoming'
+			? { title: t('following.no_upcoming'), desc: t('following.no_upcoming_desc') }
 			: { title: t('following.empty'), desc: t('following.empty_desc') };
 
 	return (
