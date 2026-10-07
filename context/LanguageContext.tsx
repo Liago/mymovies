@@ -69,6 +69,13 @@ const translations: Record<Language, Record<string, string>> = {
 		'watchlist.filter_button': 'Filter',
 		'watchlist.filter_search': 'Search service…',
 		'watchlist.filter_done': 'Done',
+		'availability.stream': 'Stream',
+		'availability.rent': 'Rent',
+		'availability.buy': 'Buy',
+		'availability.stream_on': 'Streaming on',
+		'availability.rent_on': 'Rent on',
+		'availability.buy_on': 'Buy on',
+		'availability.rating': 'Average rating',
 	},
 	'it-IT': {
 		'nav.home': 'Home',
@@ -125,6 +132,13 @@ const translations: Record<Language, Record<string, string>> = {
 		'watchlist.filter_button': 'Filtra',
 		'watchlist.filter_search': 'Cerca servizio…',
 		'watchlist.filter_done': 'Fatto',
+		'availability.stream': 'Stream',
+		'availability.rent': 'Noleggio',
+		'availability.buy': 'Acquisto',
+		'availability.stream_on': 'In streaming su',
+		'availability.rent_on': 'Noleggio su',
+		'availability.buy_on': 'Acquisto su',
+		'availability.rating': 'Voto medio',
 	}
 };
 

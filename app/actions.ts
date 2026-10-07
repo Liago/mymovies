@@ -30,6 +30,12 @@ import {
 } from '@/lib/tmdb';
 import { addToWatchlist, markAsFavorite, rateMedia, deleteRating, getAccountStates, getUserLists, createList, addToList, getListDetails, deleteList, removeFromList, getFavorites } from '@/lib/tmdb-user';
 import { cookies } from 'next/headers';
+import {
+	availabilityKey,
+	summarizeAvailability,
+	type AvailabilityRequest,
+	type MediaAvailability,
+} from '@/lib/availability';
 
 // ... imports ...
 
@@ -290,6 +296,39 @@ function flattenProviders(data: WatchProviderData | null): WatchlistProviderRef[
 		}
 	}
 	return Array.from(seen.values());
+}
+
+const AVAILABILITY_BATCH_LIMIT = 60;
+
+/**
+ * Batched lookup used by poster cards to show streaming / rent / buy badges.
+ * Responses are cached by Next's fetch cache (see getMovieWatchProviders).
+ */
+export async function fetchAvailabilityBatch(
+	requests: AvailabilityRequest[]
+): Promise<Record<string, MediaAvailability | null>> {
+	if (!Array.isArray(requests)) return {};
+
+	const unique = new Map<string, AvailabilityRequest>();
+	for (const req of requests) {
+		if (unique.size >= AVAILABILITY_BATCH_LIMIT) break;
+		const id = Number(req?.id);
+		if (!Number.isInteger(id) || id <= 0) continue;
+		if (req.type !== 'movie' && req.type !== 'tv') continue;
+		unique.set(availabilityKey(req.type, id), { id, type: req.type });
+	}
+
+	const lang = await getLanguage();
+	const entries = await Promise.all(
+		Array.from(unique.entries()).map(async ([key, req]) => {
+			const data = req.type === 'tv'
+				? await getTVWatchProviders(req.id, lang)
+				: await getMovieWatchProviders(req.id, lang);
+			return [key, summarizeAvailability(data)] as const;
+		})
+	);
+
+	return Object.fromEntries(entries);
 }
 
 export async function actionGetListDetails(listId: number) {
