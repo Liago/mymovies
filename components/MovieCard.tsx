@@ -1,8 +1,12 @@
 'use client';
 
+import { useRef } from 'react';
 import Link from 'next/link';
 import { Star, Play, CalendarClock } from 'lucide-react';
 import ActionButtons from './ActionButtons';
+import AvailabilityBadges from './AvailabilityBadges';
+import { useAvailability } from '@/hooks/useAvailability';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface MovieCardProps {
 	id: number | string;
@@ -14,15 +18,40 @@ interface MovieCardProps {
 	episodeProgress?: { watched: number; total: number };
 	/** Formatted premiere date, shown as a badge for titles not yet released. */
 	premiereLabel?: string | null;
+	/** Show streaming / rent / buy badges on the poster (loaded lazily). */
+	showAvailability?: boolean;
 }
 
-export default function MovieCard({ id, title, poster, rating, year, type = 'movie', episodeProgress, premiereLabel }: MovieCardProps) {
+function ratingTone(rating: number): string {
+	if (rating >= 7) return 'text-emerald-400';
+	if (rating >= 5.5) return 'text-yellow-400';
+	return 'text-orange-400';
+}
+
+export default function MovieCard({
+	id,
+	title,
+	poster,
+	rating,
+	year,
+	type = 'movie',
+	episodeProgress,
+	premiereLabel,
+	showAvailability = true,
+}: MovieCardProps) {
+	const { t } = useLanguage();
+	const cardRef = useRef<HTMLAnchorElement>(null);
+	// Unreleased titles cannot be streamed, rented or bought yet: skip the lookup.
+	const availability = useAvailability(cardRef, type, id, showAvailability && !premiereLabel);
+
 	// A title that has not aired yet cannot have progress, so the two badges
 	// never compete for the bottom strip — but keep progress the winner anyway.
 	const showPremiere = !!premiereLabel && !(episodeProgress && episodeProgress.watched > 0);
+	const hasRating = typeof rating === 'number' && rating > 0;
 
 	return (
 		<Link
+			ref={cardRef}
 			href={`/${type === 'tv' ? 'tv' : 'movie'}/${id}`}
 			className="group relative block w-full outline-none"
 		>
@@ -39,6 +68,27 @@ export default function MovieCard({ id, title, poster, rating, year, type = 'mov
 						<span className="text-xs">No Image</span>
 					</div>
 				)}
+
+				{/* Average Rating Badge */}
+				{hasRating && (
+					<div
+						className="absolute top-1.5 left-1.5 md:top-2 md:left-2 z-10 pointer-events-none"
+						title={`${t('availability.rating')}: ${rating.toFixed(1)}/10`}
+					>
+						<div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/75 backdrop-blur-sm shadow-md">
+							<Star size={10} className={`${ratingTone(rating)} fill-current`} />
+							<span className="text-[10px] md:text-[11px] font-bold text-white tabular-nums leading-none">
+								{rating.toFixed(1)}
+							</span>
+						</div>
+					</div>
+				)}
+
+				{/* Streaming / Rent / Buy Badges */}
+				<AvailabilityBadges
+					availability={availability}
+					className="absolute top-1.5 right-1.5 md:top-2 md:right-2 z-10"
+				/>
 
 				{/* Episode Progress Badge */}
 				{episodeProgress && episodeProgress.watched > 0 && (
@@ -68,7 +118,7 @@ export default function MovieCard({ id, title, poster, rating, year, type = 'mov
 				)}
 
 				{/* Premium Glass Overlay on Hover */}
-				<div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 md:group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4">
+				<div className="absolute inset-0 z-20 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 md:group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4">
 					<div className="transform translate-y-4 md:group-hover:translate-y-0 transition-transform duration-300">
 						<div className="flex items-center justify-between mb-3 w-full">
 							<button className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center hover:bg-primary hover:text-white transition-colors flex-shrink-0"
@@ -96,7 +146,7 @@ export default function MovieCard({ id, title, poster, rating, year, type = 'mov
 						</h3>
 
 						<div className="flex items-center gap-2 text-[10px] font-medium text-gray-300">
-							{rating && (
+							{hasRating && (
 								<span className="text-green-400">{(rating * 10).toFixed(0)}% Match</span>
 							)}
 							<span className="px-1 py-0.5 border border-gray-600 rounded text-[9px] uppercase">{type}</span>

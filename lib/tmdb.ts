@@ -953,7 +953,8 @@ export async function getMovieWatchProviders(movieId: number, language: string =
 	if (!TMDB_API_KEY) return null;
 	try {
 		const res = await fetch(
-			`${BASE_URL}/movie/${movieId}/watch/providers?api_key=${TMDB_API_KEY}`
+			`${BASE_URL}/movie/${movieId}/watch/providers?api_key=${TMDB_API_KEY}`,
+			{ next: { revalidate: 21600 } }
 		);
 		const data = await res.json();
 
@@ -981,7 +982,8 @@ export async function getTVWatchProviders(tvId: number, language: string = 'it-I
 	if (!TMDB_API_KEY) return null;
 	try {
 		const res = await fetch(
-			`${BASE_URL}/tv/${tvId}/watch/providers?api_key=${TMDB_API_KEY}`
+			`${BASE_URL}/tv/${tvId}/watch/providers?api_key=${TMDB_API_KEY}`,
+			{ next: { revalidate: 21600 } }
 		);
 		const data = await res.json();
 
