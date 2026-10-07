@@ -28,6 +28,21 @@ export default function Navbar() {
 		return () => window.removeEventListener('scroll', handleScroll);
 	}, []);
 
+	// Lock page scroll and close with Escape while the mobile menu is open.
+	useEffect(() => {
+		if (!isMobileMenuOpen) return;
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') setIsMobileMenuOpen(false);
+		};
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+		document.addEventListener('keydown', onKey);
+		return () => {
+			document.body.style.overflow = previousOverflow;
+			document.removeEventListener('keydown', onKey);
+		};
+	}, [isMobileMenuOpen]);
+
 	// Close menus when clicking outside
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -267,106 +282,114 @@ export default function Navbar() {
 						</button>
 					</div>
 
-					{/* Mobile Menu Overlay */}
-					<div className={`fixed inset-0 bg-black/95 z-40 flex flex-col items-center justify-center gap-8 lg:hidden transition-all duration-500 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
-						{navLinks.map((link) => (
-							<Link
-								key={link.name}
-								href={link.href}
-								className="text-3xl font-bold text-white hover:text-primary transition-colors"
-								onClick={() => setIsMobileMenuOpen(false)}
-							>
-								{link.name}
-							</Link>
-						))}
-
-						{/* Mobile Login/Logout */}
-						<div className="mt-8 pt-8 border-t border-white/10 w-64 text-center">
-							{!hasMounted ? (
-								<div className="w-36 h-12 rounded-full bg-gray-800 animate-pulse mx-auto" />
-							) : isLoggedIn && user ? (
-								<div className="flex flex-col items-center gap-3">
-									<div className="text-gray-400 text-sm mb-2">
-										Ciao, <span className="text-white">{user.username}</span>
-									</div>
-
-									{/* Profile Links */}
-									<Link
-										href="/profile"
-										className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full"
-										onClick={() => setIsMobileMenuOpen(false)}
-									>
-										<User size={18} />
-										Il mio profilo
-									</Link>
-									<Link
-										href="/profile/favorites"
-										className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full"
-										onClick={() => setIsMobileMenuOpen(false)}
-									>
-										<Heart size={18} />
-										Preferiti
-									</Link>
-									<Link
-										href="/profile/watchlist"
-										className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full"
-										onClick={() => setIsMobileMenuOpen(false)}
-									>
-										<Bookmark size={18} />
-										Watchlist
-									</Link>
-									<Link
-										href="/profile/lists"
-										className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full mb-2"
-										onClick={() => setIsMobileMenuOpen(false)}
-									>
-										<List size={18} />
-										Le Mie Liste
-									</Link>
-									<Link
-										href="/history"
-										className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full mb-2"
-										onClick={() => setIsMobileMenuOpen(false)}
-									>
-										<History size={18} />
-										Cronologia
-									</Link>
-									<Link
-										href="/tracker"
-										className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full mb-2"
-										onClick={() => setIsMobileMenuOpen(false)}
-									>
-										<CheckCircle2 size={18} />
-										Tracker
-									</Link>
-
-									<button
-										onClick={() => {
-											handleLogout();
-											setIsMobileMenuOpen(false);
-										}}
-										className="flex items-center gap-2 px-6 py-3 rounded-full border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors mt-2"
-									>
-										<LogOut size={18} />
-										Esci
-									</button>
-								</div>
-							) : (
-								<button
-									onClick={() => {
-										handleLogin();
-										setIsMobileMenuOpen(false);
-									}}
-									className="flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white font-medium hover:opacity-90 transition-opacity mx-auto"
-								>
-									<LogIn size={18} />
-									Accedi con TMDB
-								</button>
-							)}
-						</div>
-					</div>
 				</div>
 			</nav>
+
+			{/* Mobile Menu Overlay */}
+			{/* Rendered outside <nav>: the nav's backdrop-filter (applied on scroll) would
+			    otherwise become the containing block of this fixed overlay and clip it. */}
+			<div
+				className={`fixed inset-0 bg-black/95 backdrop-blur-sm z-40 lg:hidden overflow-y-auto overscroll-contain transition-all duration-500 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}
+				aria-hidden={!isMobileMenuOpen}
+			>
+				<div className="min-h-full flex flex-col items-center justify-center gap-6 px-6 pt-28 pb-16">
+					{navLinks.map((link) => (
+						<Link
+							key={link.name}
+							href={link.href}
+							className="text-2xl sm:text-3xl font-bold text-white hover:text-primary transition-colors"
+							onClick={() => setIsMobileMenuOpen(false)}
+						>
+							{link.name}
+						</Link>
+					))}
+
+					{/* Mobile Login/Logout */}
+					<div className="mt-8 pt-8 border-t border-white/10 w-64 text-center">
+						{!hasMounted ? (
+							<div className="w-36 h-12 rounded-full bg-gray-800 animate-pulse mx-auto" />
+						) : isLoggedIn && user ? (
+							<div className="flex flex-col items-center gap-3">
+								<div className="text-gray-400 text-sm mb-2">
+									Ciao, <span className="text-white">{user.username}</span>
+								</div>
+
+								{/* Profile Links */}
+								<Link
+									href="/profile"
+									className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full"
+									onClick={() => setIsMobileMenuOpen(false)}
+								>
+									<User size={18} />
+									Il mio profilo
+								</Link>
+								<Link
+									href="/profile/favorites"
+									className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full"
+									onClick={() => setIsMobileMenuOpen(false)}
+								>
+									<Heart size={18} />
+									Preferiti
+								</Link>
+								<Link
+									href="/profile/watchlist"
+									className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full"
+									onClick={() => setIsMobileMenuOpen(false)}
+								>
+									<Bookmark size={18} />
+									Watchlist
+								</Link>
+								<Link
+									href="/profile/lists"
+									className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full mb-2"
+									onClick={() => setIsMobileMenuOpen(false)}
+								>
+									<List size={18} />
+									Le Mie Liste
+								</Link>
+								<Link
+									href="/history"
+									className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full mb-2"
+									onClick={() => setIsMobileMenuOpen(false)}
+								>
+									<History size={18} />
+									Cronologia
+								</Link>
+								<Link
+									href="/tracker"
+									className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full mb-2"
+									onClick={() => setIsMobileMenuOpen(false)}
+								>
+									<CheckCircle2 size={18} />
+									Tracker
+								</Link>
+
+								<button
+									onClick={() => {
+										handleLogout();
+										setIsMobileMenuOpen(false);
+									}}
+									className="flex items-center gap-2 px-6 py-3 rounded-full border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors mt-2"
+								>
+									<LogOut size={18} />
+									Esci
+								</button>
+							</div>
+						) : (
+							<button
+								onClick={() => {
+									handleLogin();
+									setIsMobileMenuOpen(false);
+								}}
+								className="flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white font-medium hover:opacity-90 transition-opacity mx-auto"
+							>
+								<LogIn size={18} />
+								Accedi con TMDB
+							</button>
+						)}
+					</div>
+				</div>
+			</div>
 
 			{/* Search Overlay */}
 			<SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
