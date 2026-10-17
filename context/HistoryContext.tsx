@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { useAuth } from './AuthContext';
 import {
 	syncLocalHistory,
@@ -102,5 +103,17 @@ export function useHistory() {
 	if (context === undefined) {
 		throw new Error('useHistory must be used within a HistoryProvider');
 	}
-	return context;
+	// Durante l'idratazione restituisce lo stato iniziale (come sul server):
+	// i provider leggono localStorage/API prima che le pagine in Suspense si idratino.
+	const hydrated = useMounted();
+	return useMemo(
+		() =>
+			hydrated
+				? context
+				: {
+					...context,
+					history: [],
+				},
+		[hydrated, context]
+	);
 }

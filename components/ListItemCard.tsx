@@ -67,13 +67,14 @@ export default function ListItemCard({ listId, id, title, poster, rating, year, 
 			<button
 				onClick={handleDelete}
 				disabled={isDeleting}
-				className="absolute top-2 right-2 z-20 w-7 h-7 rounded-full bg-red-500/90 hover:bg-red-600 text-white flex items-center justify-center transition-all opacity-100 md:opacity-0 md:group-hover/item:opacity-100 disabled:opacity-50 shadow-lg"
+				className="absolute top-2 left-2 z-20 w-8 h-8 rounded-full glass text-fg flex items-center justify-center transition-opacity opacity-100 md:opacity-0 md:group-hover/item:opacity-100 focus-visible:opacity-100 disabled:opacity-50"
 				title="Rimuovi dalla lista"
+				aria-label={`Rimuovi ${title} dalla lista`}
 			>
 				{isDeleting ? (
-					<div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+					<div className="w-3 h-3 border-2 border-fg border-t-transparent rounded-full animate-spin" />
 				) : (
-					<X size={16} strokeWidth={3} />
+					<X size={16} strokeWidth={2.5} />
 				)}
 			</button>
 		</div>

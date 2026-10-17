@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { useAuth } from './AuthContext';
 
 export interface RatingItem {
@@ -115,5 +116,19 @@ export function useRatings() {
 	if (!context) {
 		throw new Error('useRatings must be used within RatingsProvider');
 	}
-	return context;
+	// Durante l'idratazione restituisce lo stato iniziale (come sul server):
+	// i provider leggono localStorage/API prima che le pagine in Suspense si idratino.
+	const hydrated = useMounted();
+	return useMemo(
+		() =>
+			hydrated
+				? context
+				: {
+					...context,
+					ratings: [],
+					getRating: () => null,
+					isLoading: true,
+				},
+		[hydrated, context]
+	);
 }

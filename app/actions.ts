@@ -40,6 +40,7 @@ import {
 // ... imports ...
 
 import { createClient } from '@/lib/supabase/server';
+import { tmdbImage } from '@/lib/format';
 async function getLanguage() {
 	const cookieStore = await cookies();
 	const lang = cookieStore.get('app_language')?.value;
@@ -375,7 +376,7 @@ export async function actionGetListDetails(listId: number) {
 			const base = {
 				id: item.media_id,
 				title: item.title,
-				poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+				poster: tmdbImage(item.poster_path),
 				media_type: item.media_type,
 				rating: 0,
 				year: '',
@@ -573,4 +574,41 @@ export async function fetchTVRecommendations(tvId: number, page: number = 1) {
 export async function fetchTVSeasonDetails(tvId: number, seasonNumber: number) {
 	const lang = await getLanguage();
 	return await getTVSeasonDetails(tvId, seasonNumber, lang);
+}
+
+// Revamp: catalogo, progressi serie e calendario episodi
+
+export async function fetchCatalogPage(list: string, type: string, genre: number | null, page: number = 1) {
+	const { getCatalog, isCatalogList } = await import('@/lib/tmdb-catalog');
+	const safeList = isCatalogList(list) ? list : 'trending';
+	const safeType = type === 'tv' ? 'tv' : 'movie';
+	const safeGenre = genre && Number.isInteger(genre) && genre > 0 ? genre : null;
+	const safePage = Number.isInteger(page) && page > 0 && page <= 500 ? page : 1;
+	const lang = await getLanguage();
+	return await getCatalog(safeList, safeType, safeGenre, safePage, lang);
+}
+
+export async function fetchShowsProgress(ids: number[]) {
+	if (!Array.isArray(ids) || ids.length === 0) return [];
+	const { getShowProgressInfo } = await import('@/lib/tmdb-shows');
+	const lang = await getLanguage();
+	const valid = Array.from(new Set(ids.map(Number).filter((id) => Number.isInteger(id) && id > 0))).slice(0, 60);
+	const results = await Promise.all(valid.map((id) => getShowProgressInfo(id, lang)));
+	return results.filter((r): r is NonNullable<typeof r> => r !== null);
+}
+
+export async function fetchEpisodeInfo(showId: number, season: number, episode: number) {
+	if (![showId, season, episode].every((n) => Number.isInteger(n) && n >= 0)) return null;
+	const { getEpisodeInfo } = await import('@/lib/tmdb-shows');
+	const lang = await getLanguage();
+	return await getEpisodeInfo(showId, season, episode, lang);
+}
+
+export async function fetchCalendarEpisodes(ids: number[], from: string, to: string) {
+	const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+	if (!Array.isArray(ids) || !dateRe.test(from) || !dateRe.test(to)) return { inRange: [], later: [] };
+	const { getCalendarEpisodes } = await import('@/lib/tmdb-shows');
+	const lang = await getLanguage();
+	const valid = Array.from(new Set(ids.map(Number).filter((id) => Number.isInteger(id) && id > 0)));
+	return await getCalendarEpisodes(valid, from, to, lang);
 }

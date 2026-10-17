@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { useAuth } from './AuthContext';
 
 export interface FavoriteItem {
@@ -117,5 +118,19 @@ export function useFavorites() {
 	if (!context) {
 		throw new Error('useFavorites must be used within FavoritesProvider');
 	}
-	return context;
+	// Durante l'idratazione restituisce lo stato iniziale (come sul server):
+	// i provider leggono localStorage/API prima che le pagine in Suspense si idratino.
+	const hydrated = useMounted();
+	return useMemo(
+		() =>
+			hydrated
+				? context
+				: {
+					...context,
+					favorites: [],
+					isFavorite: () => false,
+					isLoading: true,
+				},
+		[hydrated, context]
+	);
 }

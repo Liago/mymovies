@@ -3,5 +3,5 @@ export default function MainLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	return <main className="pt-20 min-h-screen">{children}</main>;
+	return <div className="min-h-screen">{children}</div>;
 }

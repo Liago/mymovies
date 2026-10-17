@@ -1,15 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { ChevronLeft, Plus, Trash2, Rss, ExternalLink, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, Rss, ExternalLink, Check } from 'lucide-react';
 import { POPULAR_CINEMA_FEEDS } from '@/lib/rss-feeds';
 import { useRSS } from '@/context/RSSContext';
+import PageShell from '@/components/ui/PageShell';
+import PageHeader from '@/components/ui/PageHeader';
+import Segmented from '@/components/ui/Segmented';
+import BackButton from '@/components/BackButton';
+import { formatDate } from '@/lib/format';
+
+const field =
+	'w-full h-11 bg-bg2 border border-transparent rounded-[12px] px-3.5 text-[14px] font-semibold text-fg placeholder:text-fg3 outline-none focus:border-acc transition-colors';
+
+type Panel = 'mine' | 'popular' | 'custom';
 
 export default function RSSFeedsPage() {
 	const { feeds, addFeed, removeFeed, isSubscribed } = useRSS();
-	const [showAddForm, setShowAddForm] = useState(false);
-	const [showPopularFeeds, setShowPopularFeeds] = useState(false);
+	const [panel, setPanel] = useState<Panel>('mine');
 	const [newFeed, setNewFeed] = useState({ name: '', url: '', description: '', category: '' });
 	const [error, setError] = useState('');
 
@@ -19,7 +27,7 @@ export default function RSSFeedsPage() {
 
 		try {
 			if (!newFeed.name || !newFeed.url) {
-				setError('Name and URL are required');
+				setError('Nome e URL sono obbligatori');
 				return;
 			}
 
@@ -27,7 +35,7 @@ export default function RSSFeedsPage() {
 			try {
 				new URL(newFeed.url);
 			} catch {
-				setError('Invalid URL format');
+				setError('URL non valido');
 				return;
 			}
 
@@ -39,14 +47,14 @@ export default function RSSFeedsPage() {
 			});
 
 			setNewFeed({ name: '', url: '', description: '', category: '' });
-			setShowAddForm(false);
+			setPanel('mine');
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Failed to add feed');
+			setError(err instanceof Error ? err.message : 'Impossibile aggiungere il feed');
 		}
 	};
 
-	const handleRemoveFeed = async (id: string) => {
-		if (confirm('Are you sure you want to remove this feed?')) {
+	const handleRemoveFeed = async (id: string, name: string) => {
+		if (confirm(`Rimuovere il feed «${name}»?`)) {
 			await removeFeed(id);
 		}
 	};
@@ -60,244 +68,153 @@ export default function RSSFeedsPage() {
 				category: feed.category
 			});
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Failed to add feed');
+			setError(err instanceof Error ? err.message : 'Impossibile aggiungere il feed');
 		}
 	};
 
 	return (
-		<main className="min-h-screen bg-black text-white pt-24 pb-12 px-6">
-			<div className="max-w-4xl mx-auto">
-				{/* Header */}
-				<div className="mb-8">
-					<Link
-						href="/profile"
-						className="inline-flex items-center gap-2 text-zinc-400 hover:text-white mb-6 transition-colors group"
-					>
-						<ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-						<span>Back to Profile</span>
-					</Link>
+		<PageShell width="narrow">
+			<PageHeader
+				eyebrow="Notizie"
+				leading={<BackButton variant="plain" fallbackHref="/profile" />}
+				title="Feed RSS"
+				subtitle="Le fonti che alimentano la pagina Notizie"
+			/>
 
-					<div className="flex items-center gap-4 mb-4">
-						<div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-							<Rss size={32} className="text-white" />
-						</div>
-						<div>
-							<h1 className="text-4xl font-bold">RSS Feeds</h1>
-							<p className="text-zinc-400 mt-1">Manage your cinema news sources</p>
-						</div>
+			<Segmented
+				ariaLabel="Sezione"
+				items={[
+					{ key: 'mine', label: `I tuoi feed (${feeds.length})`, active: panel === 'mine', onClick: () => setPanel('mine') },
+					{ key: 'popular', label: 'Popolari', active: panel === 'popular', onClick: () => setPanel('popular') },
+					{ key: 'custom', label: 'Aggiungi', active: panel === 'custom', onClick: () => setPanel('custom') },
+				]}
+				className="self-start"
+			/>
+
+			{error && (
+				<div className="px-4 py-3 rounded-[14px] bg-red-500/10 text-red-500 text-[14px] font-semibold">{error}</div>
+			)}
+
+			{panel === 'custom' && (
+				<form onSubmit={handleAddFeed} className="p-5 rounded-[22px] bg-card border border-line flex flex-col gap-3">
+					<h2 className="m-0 text-[18px] font-bold">Aggiungi un feed</h2>
+					<input
+						type="text"
+						value={newFeed.name}
+						onChange={(e) => setNewFeed({ ...newFeed, name: e.target.value })}
+						className={field}
+						placeholder="Nome *, es. Il mio blog di cinema"
+					/>
+					<input
+						type="url"
+						value={newFeed.url}
+						onChange={(e) => setNewFeed({ ...newFeed, url: e.target.value })}
+						className={field}
+						placeholder="URL del feed *, es. https://example.com/feed/"
+					/>
+					<input
+						type="text"
+						value={newFeed.description}
+						onChange={(e) => setNewFeed({ ...newFeed, description: e.target.value })}
+						className={field}
+						placeholder="Descrizione (facoltativa)"
+					/>
+					<input
+						type="text"
+						value={newFeed.category}
+						onChange={(e) => setNewFeed({ ...newFeed, category: e.target.value })}
+						className={field}
+						placeholder="Categoria (facoltativa), es. Recensioni"
+					/>
+					<div className="flex gap-2.5 mt-1">
+						<button type="submit" className="h-11 px-5 rounded-full bg-fg text-bg text-[14px] font-bold flex items-center gap-2 hover:opacity-90">
+							<Plus size={16} />
+							Aggiungi feed
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setPanel('mine');
+								setError('');
+							}}
+							className="h-11 px-5 rounded-full bg-bg2 text-[14px] font-bold hover:opacity-80"
+						>
+							Annulla
+						</button>
 					</div>
-				</div>
+				</form>
+			)}
 
-				{/* Add Feed Button */}
-				<div className="flex gap-4 mb-8">
-					<button
-						onClick={() => setShowAddForm(!showAddForm)}
-						className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/80 rounded-xl font-semibold transition-colors"
-					>
-						<Plus size={20} />
-						Add Custom Feed
-					</button>
-					<button
-						onClick={() => setShowPopularFeeds(!showPopularFeeds)}
-						className="flex items-center gap-2 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-semibold transition-colors"
-					>
-						<Rss size={20} />
-						Popular Feeds
-					</button>
-				</div>
-
-				{/* Error Message */}
-				{error && (
-					<div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400">
-						{error}
-					</div>
-				)}
-
-				{/* Add Feed Form */}
-				{showAddForm && (
-					<div className="mb-8 p-6 bg-zinc-900 border border-white/10 rounded-2xl">
-						<h2 className="text-xl font-bold mb-4">Add Custom RSS Feed</h2>
-						<form onSubmit={handleAddFeed} className="space-y-4">
-							<div>
-								<label className="block text-sm font-medium text-zinc-400 mb-2">
-									Feed Name *
-								</label>
-								<input
-									type="text"
-									value={newFeed.name}
-									onChange={(e) => setNewFeed({ ...newFeed, name: e.target.value })}
-									className="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:border-primary focus:outline-none"
-									placeholder="e.g., My Favorite Movie Blog"
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium text-zinc-400 mb-2">
-									RSS Feed URL *
-								</label>
-								<input
-									type="url"
-									value={newFeed.url}
-									onChange={(e) => setNewFeed({ ...newFeed, url: e.target.value })}
-									className="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:border-primary focus:outline-none"
-									placeholder="https://example.com/feed/"
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium text-zinc-400 mb-2">
-									Description (optional)
-								</label>
-								<input
-									type="text"
-									value={newFeed.description}
-									onChange={(e) => setNewFeed({ ...newFeed, description: e.target.value })}
-									className="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:border-primary focus:outline-none"
-									placeholder="Brief description"
-								/>
-							</div>
-							<div>
-								<label className="block text-sm font-medium text-zinc-400 mb-2">
-									Category (optional)
-								</label>
-								<input
-									type="text"
-									value={newFeed.category}
-									onChange={(e) => setNewFeed({ ...newFeed, category: e.target.value })}
-									className="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:border-primary focus:outline-none"
-									placeholder="e.g., News, Reviews, Interviews"
-								/>
-							</div>
-							<div className="flex gap-4">
-								<button
-									type="submit"
-									className="px-6 py-2 bg-primary hover:bg-primary/80 rounded-lg font-semibold transition-colors"
-								>
-									Add Feed
-								</button>
+			{panel === 'popular' && (
+				<div className="flex flex-col gap-2.5">
+					{POPULAR_CINEMA_FEEDS.map((feed) => {
+						const subscribed = isSubscribed(feed.url);
+						return (
+							<div key={feed.url} className="flex items-center gap-4 p-4 rounded-[18px] bg-card border border-line">
+								<span className="flex-1 min-w-0 flex flex-col gap-0.5">
+									<span className="text-[15px] font-bold">{feed.name}</span>
+									<span className="text-[13px] font-medium text-fg3">{feed.description}</span>
+								</span>
 								<button
 									type="button"
-									onClick={() => {
-										setShowAddForm(false);
-										setError('');
-									}}
-									className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg font-semibold transition-colors"
+									onClick={() => handleAddPopularFeed(feed)}
+									disabled={subscribed}
+									className={`shrink-0 h-10 px-4 rounded-full text-[13px] font-bold flex items-center gap-1.5 ${
+										subscribed ? 'bg-acc-soft text-acc cursor-default' : 'bg-fg text-bg hover:opacity-90'
+									}`}
 								>
-									Cancel
+									{subscribed ? <Check size={15} /> : <Plus size={15} />}
+									{subscribed ? 'Aggiunto' : 'Aggiungi'}
 								</button>
 							</div>
-						</form>
-					</div>
-				)}
-
-				{/* Popular Feeds */}
-				{showPopularFeeds && (
-					<div className="mb-8 p-6 bg-zinc-900 border border-white/10 rounded-2xl">
-						<h2 className="text-xl font-bold mb-4">Popular Cinema News Feeds</h2>
-						<div className="space-y-3">
-							{POPULAR_CINEMA_FEEDS.map((feed, index) => {
-								const subscribed = isSubscribed(feed.url);
-								return (
-									<div
-										key={index}
-										className="flex items-center justify-between p-4 bg-black/50 rounded-xl border border-white/5 hover:border-white/20 transition-colors"
-									>
-										<div className="flex-1">
-											<h3 className="font-semibold text-white">{feed.name}</h3>
-											<p className="text-sm text-zinc-400">{feed.description}</p>
-											{feed.category && (
-												<span className="inline-block mt-2 px-2 py-1 bg-primary/20 text-primary text-xs rounded-full">
-													{feed.category}
-												</span>
-											)}
-										</div>
-										<button
-											onClick={() => handleAddPopularFeed(feed)}
-											disabled={subscribed}
-											className={`ml-4 px-4 py-2 rounded-lg font-semibold transition-colors ${subscribed
-													? 'bg-green-600/20 text-green-400 cursor-not-allowed'
-													: 'bg-primary hover:bg-primary/80 text-white'
-												}`}
-										>
-											{subscribed ? (
-												<span className="flex items-center gap-2">
-													<CheckCircle size={16} />
-													Subscribed
-												</span>
-											) : (
-												<span className="flex items-center gap-2">
-													<Plus size={16} />
-													Add
-												</span>
-											)}
-										</button>
-									</div>
-								);
-							})}
-						</div>
-					</div>
-				)}
-
-				{/* Feeds List */}
-				<div className="space-y-4">
-					<h2 className="text-2xl font-bold mb-4">
-						Your Feeds ({feeds.length})
-					</h2>
-
-					{feeds.length === 0 ? (
-						<div className="text-center py-12">
-							<Rss size={64} className="mx-auto text-zinc-700 mb-4" />
-							<p className="text-zinc-500 text-lg">No RSS feeds yet</p>
-							<p className="text-zinc-600 text-sm mt-2">
-								Add custom feeds or choose from popular sources
-							</p>
-						</div>
-					) : (
-						feeds.map((feed) => (
-							<div
-								key={feed.id}
-								className="p-6 bg-zinc-900 border border-white/10 rounded-2xl hover:border-white/20 transition-colors group"
-							>
-								<div className="flex items-start justify-between">
-									<div className="flex-1">
-										<div className="flex items-center gap-3 mb-2">
-											<Rss size={20} className="text-primary" />
-											<h3 className="text-xl font-bold text-white">{feed.name}</h3>
-										</div>
-										{feed.description && (
-											<p className="text-zinc-400 mb-2">{feed.description}</p>
-										)}
-										<div className="flex items-center gap-4 text-sm text-zinc-500">
-											<a
-												href={feed.url}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="flex items-center gap-1 hover:text-primary transition-colors"
-											>
-												<ExternalLink size={14} />
-												View Feed
-											</a>
-											{feed.category && (
-												<span className="px-2 py-1 bg-primary/20 text-primary rounded-full">
-													{feed.category}
-												</span>
-											)}
-											<span className="text-xs">
-												Added {feed.added_at ? new Date(feed.added_at).toLocaleDateString() : 'N/A'}
-											</span>
-										</div>
-									</div>
-									<button
-										onClick={() => handleRemoveFeed(feed.id)}
-										className="ml-4 p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-										title="Remove feed"
-									>
-										<Trash2 size={20} />
-									</button>
-								</div>
-							</div>
-						))
-					)}
+						);
+					})}
 				</div>
-			</div>
-		</main>
+			)}
+
+			{panel === 'mine' &&
+				(feeds.length === 0 ? (
+					<div className="flex flex-col items-center text-center gap-3 py-14">
+						<span className="w-16 h-16 rounded-full bg-bg2 flex items-center justify-center text-fg3">
+							<Rss size={28} />
+						</span>
+						<h2 className="m-0 text-[20px] font-bold">Nessun feed</h2>
+						<p className="m-0 max-w-sm text-[14px] font-medium text-fg3">Scegli tra le fonti popolari o aggiungi l’URL di un feed RSS.</p>
+						<button type="button" onClick={() => setPanel('popular')} className="mt-2 h-11 px-5 rounded-full bg-fg text-bg text-[14px] font-bold">
+							Vedi i feed popolari
+						</button>
+					</div>
+				) : (
+					<div className="flex flex-col gap-2.5">
+						{feeds.map((feed) => (
+							<div key={feed.id} className="flex items-center gap-4 p-4 rounded-[18px] bg-card border border-line">
+								<span className="w-10 h-10 shrink-0 rounded-xl bg-bg2 flex items-center justify-center">
+									<Rss size={18} className="text-acc" />
+								</span>
+								<span className="flex-1 min-w-0 flex flex-col gap-0.5">
+									<span className="text-[15px] font-bold truncate">{feed.name}</span>
+									<span className="text-[12px] font-semibold text-fg3 flex items-center gap-2 flex-wrap">
+										<a href={feed.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-fg">
+											<ExternalLink size={12} />
+											Apri feed
+										</a>
+										{feed.category && <span>· {feed.category}</span>}
+										{feed.added_at && <span>· aggiunto il {formatDate(feed.added_at, { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+									</span>
+								</span>
+								<button
+									type="button"
+									onClick={() => handleRemoveFeed(feed.id, feed.name)}
+									className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-fg3 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+									title="Rimuovi feed"
+									aria-label={`Rimuovi ${feed.name}`}
+								>
+									<Trash2 size={18} />
+								</button>
+							</div>
+						))}
+					</div>
+				))}
+		</PageShell>
 	);
 }

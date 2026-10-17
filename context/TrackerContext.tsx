@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { useAuth } from './AuthContext';
 
 // Key format: "tvId:seasonNumber:episodeNumber"
@@ -28,6 +29,9 @@ interface TrackerContextType {
 }
 
 const TrackerContext = createContext<TrackerContextType | undefined>(undefined);
+
+const EMPTY_EPISODES = new Set<EpisodeKey>();
+const EMPTY_SHOWS = new Map<number, ShowMetadata>();
 
 export function TrackerProvider({ children }: { children: React.ReactNode }) {
 	const { user } = useAuth();
@@ -346,5 +350,22 @@ export function useTracker() {
 	if (context === undefined) {
 		throw new Error('useTracker must be used within a TrackerProvider');
 	}
-	return context;
+	// Durante l'idratazione restituisce lo stato iniziale (come sul server):
+	// i provider leggono localStorage/API prima che le pagine in Suspense si idratino.
+	const hydrated = useMounted();
+	return useMemo(
+		() =>
+			hydrated
+				? context
+				: {
+					...context,
+					watchedEpisodes: EMPTY_EPISODES,
+					watchedShows: EMPTY_SHOWS,
+					isWatched: () => false,
+					getWatchedCount: () => 0,
+					isTracked: () => false,
+					isLoading: true,
+				},
+		[hydrated, context]
+	);
 }

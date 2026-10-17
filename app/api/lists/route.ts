@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { tmdbImage } from '@/lib/format';
 
 export async function GET() {
 	try {
@@ -33,16 +34,28 @@ export async function GET() {
 		// For each list, count items separately
 		const listsWithCounts = await Promise.all(
 			(userLists || []).map(async (list) => {
-				const { count } = await supabase
-					.from('list_items')
-					.select('*', { count: 'exact', head: true })
-					.eq('list_id', list.id);
+				const [{ count }, { data: previewRows }] = await Promise.all([
+					supabase
+						.from('list_items')
+						.select('*', { count: 'exact', head: true })
+						.eq('list_id', list.id),
+					// Primi poster per l'anteprima a mosaico nel profilo
+					supabase
+						.from('list_items')
+						.select('poster_path')
+						.eq('list_id', list.id)
+						.order('added_at', { ascending: false })
+						.limit(4)
+				]);
 
 				return {
 					id: list.id,
 					name: list.name,
 					description: list.description,
-					count: count || 0
+					count: count || 0,
+					previews: (previewRows || [])
+						.map((row: { poster_path: string | null }) => tmdbImage(row.poster_path, 'w185'))
+						.filter(Boolean)
 				};
 			})
 		);

@@ -33,12 +33,12 @@ function CallbackContent() {
 	return (
 		<div className="text-center">
 			{error ? (
-				<div className="text-red-400 text-lg">{error}</div>
+				<div className="text-red-500 text-[16px] font-semibold">{error}</div>
 			) : (
 				<>
-					<Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
-					<p className="text-white text-lg">Autenticazione in corso...</p>
-					<p className="text-gray-400 text-sm mt-2">Stai per essere reindirizzato</p>
+					<Loader2 className="w-12 h-12 text-acc animate-spin mx-auto mb-4" />
+					<p className="text-fg text-[17px] font-bold">Autenticazione in corso...</p>
+					<p className="text-fg3 text-[14px] font-medium mt-2">Stai per essere reindirizzato</p>
 				</>
 			)}
 		</div>
@@ -48,15 +48,15 @@ function CallbackContent() {
 function LoadingFallback() {
 	return (
 		<div className="text-center">
-			<Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
-			<p className="text-white text-lg">Caricamento...</p>
+			<Loader2 className="w-12 h-12 text-acc animate-spin mx-auto mb-4" />
+			<p className="text-fg text-[17px] font-bold">Caricamento...</p>
 		</div>
 	);
 }
 
 export default function TMDBCallbackPage() {
 	return (
-		<div className="min-h-screen bg-black flex items-center justify-center">
+		<div className="min-h-screen bg-bg flex items-center justify-center px-4">
 			<Suspense fallback={<LoadingFallback />}>
 				<CallbackContent />
 			</Suspense>

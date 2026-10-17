@@ -1,22 +1,24 @@
-import { getMovieDetail } from '@/lib/omdb';
-import { getMovieDetailTMDb, getMovieTrailerTMDb, getMovieTrailer, getMovieReviews, getMovieDetailByImdbId, getMovieWatchProviders } from '@/lib/tmdb';
+import { getMovieDetail, type MovieData } from '@/lib/omdb';
+import { getMovieDetailTMDb, getMovieTrailerTMDb, getMovieTrailer, getMovieReviews, getMovieDetailByImdbId, getMovieWatchProviders, type WatchProviderData } from '@/lib/tmdb';
 import { notFound } from 'next/navigation';
-import { Play, ChevronLeft, Calendar, Clock, Film } from 'lucide-react';
-import Link from 'next/link'; // Still used elsewhere if needed, or remove if unused. Kept for safety.
-import PersonCard from '@/components/PersonCard';
-import TrailerButton from '@/components/TrailerButton';
-import ReviewsButton from '@/components/ReviewsButton';
-import Navbar from '@/components/Navbar';
-import ActionButtons from '@/components/ActionButtons';
-import { fetchAccountStates, fetchSimilarMovies, fetchMovieRecommendations } from '@/app/actions';
+import { ArrowUpRight } from 'lucide-react';
+import { fetchSimilarMovies, fetchMovieRecommendations } from '@/app/actions';
 import { cookies } from 'next/headers';
-import MovieCarousel from '@/components/MovieCarousel';
 import { Metadata } from 'next';
+import PersonCard from '@/components/PersonCard';
 import HistoryTracker from '@/components/HistoryTracker';
-import PosterImage from '@/components/PosterImage';
 import BackButton from '@/components/BackButton';
-import WatchProviders from '@/components/WatchProviders';
 import AwardsSection from '@/components/AwardsSection';
+import DetailHero from '@/components/detail/DetailHero';
+import DetailTabs, { type DetailTab } from '@/components/detail/DetailTabs';
+import HeroActions from '@/components/detail/HeroActions';
+import RatingTiles, { toRatingValues } from '@/components/detail/RatingTiles';
+import FactGrid from '@/components/detail/FactGrid';
+import WhereToWatch, { primaryStreaming } from '@/components/detail/WhereToWatch';
+import UserRating from '@/components/detail/UserRating';
+import ReviewList, { type Review } from '@/components/detail/ReviewList';
+import PosterGrid from '@/components/detail/PosterGrid';
+import { countryName, formatRuntime, languageName, yearOf } from '@/lib/format';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
 	const { id } = await params;
@@ -37,13 +39,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 	if (!movie) {
 		return {
-			title: 'Movie Not Found',
-			description: 'The requested movie could not be found.'
+			title: 'Film non trovato - CineScope',
+			description: 'Il film richiesto non è stato trovato.'
 		};
 	}
 
 	const title = `${movie.title} - CineScope`;
-	const description = movie.description || `Read reviews and watch trailers for ${movie.title} on CineScope.`;
+	const description = movie.description || `Trailer, voti e dove guardare ${movie.title} su CineScope.`;
 	const poster = movie.poster ? (movie.poster.startsWith('http') ? movie.poster : `https://image.tmdb.org/t/p/w500${movie.poster}`) : '/placeholder-movie.jpg';
 
 	return {
@@ -71,6 +73,88 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 	};
 }
 
+interface MovieView {
+	tmdbId: number | null;
+	imdbId: string | null;
+	title: string;
+	description: string;
+	poster: string | null;
+	backdrop: string | null;
+	releaseDate: string;
+	runtime: number | null;
+	genres: string[];
+	director: string | null;
+	screenplay: string | null;
+	country: string | null;
+	language: string | null;
+	budget: string | null;
+	revenue: string | null;
+	awards: string | null;
+	rating: Parameters<typeof toRatingValues>[0];
+	actors: { id?: number; name: string; character?: string; profilePath?: string | null }[];
+}
+
+type TmdbMovie = NonNullable<Awaited<ReturnType<typeof getMovieDetailTMDb>>>;
+
+interface SimilarItem {
+	id: number;
+	title: string;
+	poster: string | null;
+	year?: string;
+	rating?: number;
+	type?: 'movie' | 'tv';
+}
+
+/** Normalizza i dati TMDB in un'unica forma per la pagina. */
+function fromTmdb(movie: TmdbMovie): MovieView {
+	const countries = movie.countryCodes.map((c: string) => countryName(c)).filter(Boolean) as string[];
+	const director = movie.director?.name;
+
+	return {
+		tmdbId: movie.id,
+		imdbId: movie.imdbId,
+		title: movie.title,
+		description: movie.description || '',
+		poster: movie.poster,
+		backdrop: movie.backdrop || movie.poster?.replace('w500', 'original') || null,
+		releaseDate: movie.releaseDate || '',
+		runtime: movie.runtime,
+		genres: movie.genres,
+		director: director && director !== 'N/A' ? director : null,
+		screenplay: movie.screenplay.length ? movie.screenplay.join(', ') : movie.writer,
+		country: countries.length ? countries.slice(0, 2).join(', ') : movie.country,
+		language: languageName(movie.originalLanguage) || movie.languages?.split(',')[0] || null,
+		budget: movie.budget,
+		revenue: movie.revenue || (movie.boxOffice !== 'N/A' ? movie.boxOffice : null),
+		awards: movie.awards,
+		rating: movie.rating,
+		actors: movie.actors,
+	};
+}
+
+/** Fallback quando il titolo esiste solo su OMDb (id IMDb non trovato su TMDB). */
+function fromOmdb(movie: MovieData): MovieView {
+	return {
+		tmdbId: null,
+		imdbId: movie.id,
+		title: movie.title,
+		description: movie.description || '',
+		poster: movie.poster || null,
+		backdrop: movie.poster || null,
+		releaseDate: movie.releaseDate || String(movie.year || ''),
+		runtime: parseInt(movie.duration) || null,
+		genres: movie.genre,
+		director: movie.director && movie.director !== 'N/A' ? movie.director : null,
+		screenplay: null,
+		country: null,
+		language: null,
+		budget: movie.budget !== 'N/A' ? movie.budget : null,
+		revenue: movie.boxOffice !== 'N/A' ? movie.boxOffice : null,
+		awards: null,
+		rating: movie.rating,
+		actors: movie.actors.map((name) => ({ name })),
+	};
+}
 
 export default async function MovieDetail({ params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
@@ -79,20 +163,18 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 
 	const isTMDbId = /^\d+$/.test(id);
 
-	let movie;
-	let trailerUrl = null;
-	let accountStates = null;
-	let similarMovies: any[] = [];
-	let recommendations: any[] = [];
-	let reviews: any = { results: [], totalResults: 0 };
-	let watchProviders: any = null;
+	let movie: TmdbMovie | MovieData | null;
+	let trailerUrl: string | null = null;
+	let similarMovies: SimilarItem[] = [];
+	let recommendations: SimilarItem[] = [];
+	let reviews: { results: Review[]; totalResults: number } = { results: [], totalResults: 0 };
+	let watchProviders: WatchProviderData | null = null;
 
 	if (isTMDbId) {
 		const movieId = parseInt(id);
-		[movie, trailerUrl, accountStates, similarMovies, recommendations, reviews, watchProviders] = await Promise.all([
+		[movie, trailerUrl, similarMovies, recommendations, reviews, watchProviders] = await Promise.all([
 			getMovieDetailTMDb(movieId, lang),
 			getMovieTrailerTMDb(movieId, lang),
-			fetchAccountStates('movie', movieId),
 			fetchSimilarMovies(movieId),
 			fetchMovieRecommendations(movieId),
 			getMovieReviews(movieId, 1, lang),
@@ -104,10 +186,9 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 
 		if (movie) {
 			// Found in TMDB! Fetch rich data using the resolved TMDB ID
-			const movieId = (movie as any).id;
-			[trailerUrl, accountStates, similarMovies, recommendations, reviews, watchProviders] = await Promise.all([
+			const movieId = movie.id;
+			[trailerUrl, similarMovies, recommendations, reviews, watchProviders] = await Promise.all([
 				getMovieTrailerTMDb(movieId, lang),
-				fetchAccountStates('movie', movieId),
 				fetchSimilarMovies(movieId),
 				fetchMovieRecommendations(movieId),
 				getMovieReviews(movieId, 1, lang),
@@ -124,288 +205,143 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 		notFound();
 	}
 
-	const backdropUrl = (movie as any).backdrop || movie.poster?.replace('w500', 'original') || '';
+	const view = typeof movie.id === 'number' ? fromTmdb(movie as TmdbMovie) : fromOmdb(movie as MovieData);
+	const year = yearOf(view.releaseDate);
+	const runtime = formatRuntime(view.runtime);
+	const ratings = toRatingValues(view.rating);
+	const streaming = primaryStreaming(watchProviders);
 
-	return (
-		<main className="min-h-screen bg-black text-white">
-			{/* Immersive Background */}
-			<div className="fixed inset-0 z-0">
-				<img
-					src={backdropUrl}
-					alt={movie.title}
-					className="w-full h-full object-cover opacity-50 blur-xl scale-105"
-				/>
-				<div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
-				<div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black" />
-			</div>
+	// Consigliati + simili, senza duplicati
+	const seen = new Set<number>();
+	const similar = [...recommendations, ...similarMovies]
+		.filter((m) => (seen.has(m.id) ? false : (seen.add(m.id), true)))
+		.slice(0, 18);
 
-			<div className="relative z-10">
-
-				<div className="max-w-7xl mx-auto px-6 md:px-12 py-12 pt-32">
-					<BackButton fallbackHref="/discovery" label="Back to Discovery" />
-
-					<div className="grid lg:grid-cols-[350px,1fr] gap-12 items-start">
-						{/* Poster */}
-						<div className="w-full max-w-[350px] mx-auto lg:mx-0">
-							<div className="aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl shadow-purple-900/20 bg-zinc-900 border border-white/10 relative group">
-								{movie.poster ? (
-									<PosterImage
-										src={movie.poster}
-										alt={movie.title}
-									/>
-								) : (
-									<div className="w-full h-full flex items-center justify-center text-zinc-700">
-										<Film size={64} />
-									</div>
-								)}
-								{/* Shine effect */}
-								<div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-							</div>
-						</div>
-
-						{/* Info */}
-						<div className="space-y-8">
-							<div>
-								<div className="flex flex-wrap items-center gap-3 mb-4">
-									{movie.releaseDate && (
-										<span className="px-3 py-1 rounded-full border border-white/20 bg-white/5 text-xs font-semibold text-zinc-300">
-											{movie.releaseDate.split('-')[0]}
-										</span>
-									)}
-									<span className="px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-xs font-semibold text-primary uppercase tracking-wider">
-										{(movie as any).type || 'Movie'}
-									</span>
-								</div>
-
-								<h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight tracking-tight">
-									{movie.title}
-								</h1>
-
-								<HistoryTracker
-									id={isTMDbId ? parseInt(id) : id}
-									title={movie.title}
-									poster={movie.poster || null}
-									type="movie"
-								/>
-
-								<div className="flex flex-wrap items-center gap-6 text-sm text-zinc-400 font-medium">
-									{/* IMDb Rating */}
-									<div className="flex items-center gap-2">
-										<svg width="40" height="20" viewBox="0 0 64 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<rect width="64" height="32" rx="4" fill="#F5C518" />
-											<text x="32" y="22" fontSize="16" fontWeight="bold" fontFamily="Arial, sans-serif" fill="#000" textAnchor="middle">IMDb</text>
-										</svg>
-										<span className="text-lg font-bold text-white">{typeof movie.rating.imdb === 'number' ? movie.rating.imdb.toFixed(1) : movie.rating.imdb}</span>
-									</div>
-
-									{/* Rotten Tomatoes Rating */}
-									{movie.rating.rottenTomatoes !== null && movie.rating.rottenTomatoes !== undefined && (
-										<div className="flex items-center gap-2">
-											<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-												<path d="M12 2C12 2 10.5 0.5 9 1C7.5 1.5 8 3 8 3C5 3 3 5.5 3 8.5C3 12.5 6 16 9 18.5C10 19.5 11 21 12 22C13 21 14 19.5 15 18.5C18 16 21 12.5 21 8.5C21 5.5 19 3 16 3C16 3 16.5 1.5 15 1C13.5 0.5 12 2 12 2Z" fill="#FA320A" />
-												<ellipse cx="12" cy="7" rx="2" ry="1.5" fill="#8BC34A" transform="rotate(-15 12 7)" />
-											</svg>
-											<span className="text-lg font-bold text-white">{movie.rating.rottenTomatoes}%</span>
-										</div>
-									)}
-
-									{/* Metascore Rating */}
-									{(movie.rating as any).metascore && (
-										<div className="flex items-center gap-2">
-											<div className="w-10 h-6 rounded flex items-center justify-center bg-yellow-600 text-white font-bold text-sm">
-												M
-											</div>
-											<span className="text-lg font-bold text-white">{(movie.rating as any).metascore}</span>
-										</div>
-									)}
-
-									<div className="flex items-center gap-2">
-										<Clock size={18} />
-										<span>{movie.duration}</span>
-									</div>
-									<div className="flex items-center gap-2">
-										<Calendar size={18} />
-										<span>{movie.releaseDate?.split('-')[0] || 'N/A'}</span>
-									</div>
-								</div>
-							</div>
-
-							<div className="flex flex-wrap gap-4 items-center">
-								{trailerUrl && <TrailerButton trailerUrl={trailerUrl} />}
-								{isTMDbId && (
-									<>
-										<ReviewsButton
-											reviews={reviews.results}
-											title={movie.title}
-											count={reviews.totalResults}
-										/>
-										<ActionButtons
-											mediaType="movie"
-											mediaId={parseInt(id)}
-											title={movie.title}
-											poster={movie.poster}
-											initialState={accountStates}
-											showText={true}
-										/>
-									</>
-								)}
-							</div>
-
-							<div className="border-t border-white/10 pt-8">
-								<h2 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-4">
-									Synopsis
-								</h2>
-								<p className="text-lg md:text-xl text-zinc-300 leading-relaxed font-light">
-									{movie.description}
-								</p>
-							</div>
-
-							{/* Awards Section */}
-							{(movie as any).awards && (
-								<AwardsSection
-									awards={(movie as any).awards}
-									imdbId={(movie as any).imdbId}
-									tmdbId={(movie as any).id}
-									lang={lang}
-								/>
-							)}
-
-							{/* Additional Info */}
-							{((movie as any).writer || (movie as any).country || (movie as any).languages) && (
-								<div className="border-t border-white/10 pt-8">
-									<h2 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-4">
-										Additional Information
-									</h2>
-									<div className="space-y-4">
-										{(movie as any).writer && (
-											<div>
-												<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
-													Writer
-												</h3>
-												<p className="text-zinc-300">{(movie as any).writer}</p>
-											</div>
-										)}
-										{(movie as any).country && (
-											<div>
-												<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
-													Country
-												</h3>
-												<p className="text-zinc-300">{(movie as any).country}</p>
-											</div>
-										)}
-										{(movie as any).languages && (
-											<div>
-												<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
-													Languages
-												</h3>
-												<p className="text-zinc-300">{(movie as any).languages}</p>
-											</div>
-										)}
-									</div>
-								</div>
-							)}
-
-							{/* Where to Watch */}
-							{watchProviders && (
-								<WatchProviders providers={watchProviders} lang={lang} />
-							)}
-
-							{/* Details Grid */}
-							<div className="space-y-8 pt-8 border-t border-white/10">
-								{/* Director Section */}
-								<div>
-									<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">
-										Director
-									</h3>
-									{(movie as any).director?.id ? (
-										<PersonCard
-											personId={(movie as any).director.id}
-											name={(movie as any).director.name}
-											role="Director"
-											profilePath={(movie as any).director.profilePath}
-										/>
-									) : (
-										<p className="text-white font-medium">{typeof movie.director === 'string' ? movie.director : (movie as any).director?.name || 'N/A'}</p>
-									)}
-								</div>
-
-								{/* Financial Stats Section */}
-								{((movie as any).budget || (movie as any).revenue || (movie.boxOffice && movie.boxOffice !== 'N/A')) && (
-									<div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
-										{(movie as any).budget && (
-											<div>
-												<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
-													Budget
-												</h3>
-												<p className="text-2xl font-bold text-white">{(movie as any).budget}</p>
-											</div>
-										)}
-
-										{(movie as any).revenue && (
-											<div>
-												<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
-													Revenue
-												</h3>
-												<p className="text-2xl font-bold text-white">{(movie as any).revenue}</p>
-											</div>
-										)}
-
-										{movie.boxOffice && movie.boxOffice !== 'N/A' && (
-											<div>
-												<h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">
-													Box Office
-												</h3>
-												<p className="text-2xl font-bold text-white">{movie.boxOffice}</p>
-											</div>
-										)}
-									</div>
-								)}
-							</div>
-						</div>
+	const overview = (
+		<>
+			{view.description && (
+				<p className="m-0 text-[15px] md:text-[19px] leading-[1.55] md:leading-[1.6] font-medium text-fg2 md:text-fg max-w-[760px] text-pretty">
+					{view.description}
+				</p>
+			)}
+			<FactGrid
+				facts={[
+					{ label: 'Regia', value: view.director },
+					{ label: 'Sceneggiatura', value: view.screenplay },
+					{ label: 'Paese', value: view.country },
+					{ label: 'Lingua', value: view.language },
+					{ label: 'Budget', value: view.budget },
+					{ label: 'Incassi', value: view.revenue },
+				]}
+			/>
+			{view.actors.length > 0 && (
+				<div>
+					<h3 className="m-0 mb-3.5 text-[18px] md:text-[20px] font-bold">Cast principale</h3>
+					<div className="grid grid-cols-3 md:grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-4">
+						{view.actors.slice(0, 12).map((actor, i) => (
+							<PersonCard
+								key={`${actor.id ?? actor.name}-${i}`}
+								personId={actor.id}
+								name={actor.name}
+								role={actor.character || ''}
+								profilePath={actor.profilePath}
+								size={88}
+							/>
+						))}
 					</div>
 				</div>
-			</div>
-
-			{/* Cast Section */}
-			{movie.actors && movie.actors.length > 0 && (
-				<section className="relative z-10 bg-zinc-950 border-t border-white/5">
-					<div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
-						<h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
-							<span>Cast & Crew</span>
-							<div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-						</h2>
-						<div className="flex gap-8 overflow-x-auto pb-8 scrollbar-hide">
-							{movie.actors.map((actor: any, index: number) => (
-								<PersonCard
-									key={index}
-									personId={actor.id}
-									name={actor.name || actor}
-									role={actor.character || 'Actor'}
-									profilePath={actor.profilePath}
-								/>
-							))}
-						</div>
-					</div>
-				</section>
 			)}
+		</>
+	);
 
-			{/* Recommendations Section */}
-			{isTMDbId && recommendations && recommendations.length > 0 && (
-				<section className="relative z-10 bg-black border-t border-white/5">
-					<div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
-						<MovieCarousel title="You May Also Like" movies={recommendations.slice(0, 12)} />
-					</div>
-				</section>
-			)}
+	const tabs: DetailTab[] = [{ key: 'overview', label: 'Panoramica', content: overview }];
+	if (view.awards) {
+		tabs.push({
+			key: 'awards',
+			label: 'Premi',
+			content: <AwardsSection awards={view.awards} imdbId={view.imdbId} tmdbId={view.tmdbId} lang={lang} />,
+		});
+	}
+	if (view.tmdbId) {
+		tabs.push({ key: 'reviews', label: 'Recensioni', content: <ReviewList reviews={reviews.results} /> });
+	}
+	if (similar.length) {
+		tabs.push({ key: 'similar', label: 'Simili', content: <PosterGrid items={similar} /> });
+	}
 
-			{/* Similar Movies Section */}
-			{isTMDbId && similarMovies && similarMovies.length > 0 && (
-				<section className="relative z-10 bg-zinc-950 border-t border-white/5">
-					<div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
-						<MovieCarousel title="Similar Movies" movies={similarMovies.slice(0, 12)} />
-					</div>
-				</section>
-			)}
-		</main>
+	return (
+		<>
+			<HistoryTracker id={view.tmdbId ?? id} title={view.title} poster={view.poster} type="movie" />
+
+			<DetailHero
+				variant="movie"
+				backdrop={view.backdrop}
+				back={<BackButton fallbackHref="/catalogo/trending?type=movie" variant="pill" />}
+				mobileBack={<BackButton fallbackHref="/esplora" variant="round" />}
+				title={view.title}
+				mobileMeta={[year, runtime, view.genres[0]].filter(Boolean).join(' · ')}
+				chips={['Film', year, runtime, view.genres[0], view.director].filter(Boolean) as string[]}
+				actions={
+					view.tmdbId ? (
+						<HeroActions
+							variant="hero"
+							mediaType="movie"
+							mediaId={view.tmdbId}
+							title={view.title}
+							poster={view.poster}
+							trailerUrl={trailerUrl}
+						/>
+					) : null
+				}
+				ratings={<RatingTiles ratings={ratings} variant="hero" />}
+			/>
+
+			<DetailTabs
+				tabs={tabs}
+				mobileIntro={
+					<>
+						<RatingTiles ratings={ratings} variant="cards" />
+						{view.tmdbId && (
+							<HeroActions
+								variant="mobile"
+								mediaType="movie"
+								mediaId={view.tmdbId}
+								title={view.title}
+								poster={view.poster}
+								trailerUrl={trailerUrl}
+							/>
+						)}
+						{streaming && (
+							<a
+								href={watchProviders?.link || '#'}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex items-center gap-3 p-3 rounded-[16px] bg-card border border-line"
+							>
+								{streaming.logo ? (
+									<img src={streaming.logo} alt="" className="w-[38px] h-[38px] rounded-[10px] object-cover" />
+								) : (
+									<span className="w-[38px] h-[38px] rounded-[10px] bg-ph1" />
+								)}
+								<span className="flex-1 flex flex-col min-w-0">
+									<span className="text-[14px] font-bold">Guarda su {streaming.name}</span>
+									<span className="text-[12px] font-semibold text-fg3 truncate">
+										Incluso{streaming.others.length ? ` · anche su ${streaming.others.join(', ')}` : ''}
+									</span>
+								</span>
+								<ArrowUpRight size={18} className="text-fg3" />
+							</a>
+						)}
+					</>
+				}
+				aside={
+					<WhereToWatch providers={watchProviders} title="Dove guardarlo">
+						{view.tmdbId && (
+							<UserRating mediaType="movie" mediaId={view.tmdbId} title={view.title} poster={view.poster} />
+						)}
+					</WhereToWatch>
+				}
+			/>
+		</>
 	);
 }

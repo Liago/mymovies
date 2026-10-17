@@ -1,36 +1,125 @@
-import { fetchTrending, fetchTopRatedMovies, fetchNowPlayingMovies, fetchPopularTV } from "@/app/actions";
-import HeroSection from "@/components/HeroSection";
-import MovieCarousel from "@/components/MovieCarousel";
+import { cookies } from "next/headers";
+import { fetchTrending, fetchNowPlayingMovies, fetchPopularTV } from "@/app/actions";
+import {
+	getMovieDetailTMDb,
+	getMovieTrailerTMDb,
+	getMovieWatchProviders,
+	getTVDetailTMDb,
+	getTVTrailerTMDb,
+	getTVWatchProviders,
+	type WatchProviderData,
+} from "@/lib/tmdb";
+import { getStreamingPicks } from "@/lib/tmdb-catalog";
+import { STREAMING_SERVICES } from "@/lib/services";
+import { formatRating, formatRuntime } from "@/lib/format";
+import HeroCarousel, { type HeroSlide } from "@/components/home/HeroCarousel";
+import UpNextRow from "@/components/home/UpNextRow";
+import StreamingRow from "@/components/home/StreamingRow";
+import WeeklyChart from "@/components/home/WeeklyChart";
+import PosterRow from "@/components/home/PosterRow";
 
-export default async function Home() {
-	const [trending, topRated, nowPlaying, popularTV] = await Promise.all([
-		fetchTrending('all', 'week'),
-		fetchTopRatedMovies(),
+interface TrendingItem {
+	id: number;
+	title: string;
+	poster: string | null;
+	backdrop?: string | null;
+	overview?: string;
+	year?: string;
+	rating?: number;
+	type: 'movie' | 'tv' | 'person';
+}
+
+function firstProvider(data: WatchProviderData | null) {
+	const p = [...(data?.flatrate || []), ...(data?.free || []), ...(data?.ads || [])].sort(
+		(a, b) => a.display_priority - b.display_priority
+	)[0];
+	if (!p) return { service: null, serviceLogo: null };
+	const name = STREAMING_SERVICES.find((s) => s.providerId === p.provider_id)?.name ?? p.provider_name;
+	return {
+		service: `Su ${name}`,
+		serviceLogo: p.logo_path ? `https://image.tmdb.org/t/p/w92${p.logo_path}` : null,
+	};
+}
+
+async function buildSlide(item: TrendingItem, index: number, lang: string): Promise<HeroSlide> {
+	const rank = `N°${index + 1} IN TENDENZA`;
+
+	if (item.type === 'tv') {
+		const [detail, trailerUrl, providers] = await Promise.all([
+			getTVDetailTMDb(item.id, lang),
+			getTVTrailerTMDb(item.id, lang),
+			getTVWatchProviders(item.id, lang),
+		]);
+		const imdb = formatRating(detail?.rating?.imdb);
+		const seasons = detail?.seasons;
+		return {
+			id: item.id,
+			type: 'tv',
+			title: item.title,
+			kicker: index === 0 ? rank : `SERIE · ${rank}`,
+			chips: [
+				'Serie',
+				item.year,
+				seasons ? `${seasons} ${seasons === 1 ? 'stagione' : 'stagioni'}` : null,
+				imdb ? `IMDb ${imdb}` : null,
+			].filter(Boolean) as string[],
+			meta: [detail?.genres?.[0], item.year, imdb ? `IMDb ${imdb}` : null].filter(Boolean).join(' · '),
+			overview: item.overview || detail?.description || '',
+			backdrop: item.backdrop || null,
+			poster: item.poster,
+			trailerUrl,
+			...firstProvider(providers),
+		};
+	}
+
+	const [detail, trailerUrl, providers] = await Promise.all([
+		getMovieDetailTMDb(item.id, lang),
+		getMovieTrailerTMDb(item.id, lang),
+		getMovieWatchProviders(item.id, lang),
+	]);
+	const imdb = formatRating(detail?.rating?.imdb);
+	return {
+		id: item.id,
+		type: 'movie',
+		title: item.title,
+		kicker: index === 0 ? rank : `FILM · ${rank}`,
+		chips: ['Film', item.year, formatRuntime(detail?.runtime), imdb ? `IMDb ${imdb}` : null].filter(Boolean) as string[],
+		meta: [detail?.genres?.[0], item.year, imdb ? `IMDb ${imdb}` : null].filter(Boolean).join(' · '),
+		overview: item.overview || detail?.description || '',
+		backdrop: item.backdrop || null,
+		poster: item.poster,
+		trailerUrl,
+		...firstProvider(providers),
+	};
+}
+
+export default async function Home({ searchParams }: { searchParams: Promise<{ svc?: string }> }) {
+	const { svc } = await searchParams;
+	const cookieStore = await cookies();
+	const lang = cookieStore.get('app_language')?.value === 'en-US' ? 'en-US' : 'it-IT';
+
+	const [trending, nowPlaying, popularTV, streamingPicks] = await Promise.all([
+		fetchTrending('all', 'week') as Promise<TrendingItem[]>,
 		fetchNowPlayingMovies(),
-		fetchPopularTV()
+		fetchPopularTV(),
+		getStreamingPicks(lang),
 	]);
 
-	const heroItem = trending[0];
-	const trendingItems = trending.slice(1, 15);
-	const topRatedMovies = topRated.slice(0, 15);
-	const nowPlayingMovies = nowPlaying.slice(0, 15);
-	const popularTVShows = popularTV.slice(0, 15);
+	const titles = trending.filter((t): t is TrendingItem & { type: 'movie' | 'tv' } => t.type === 'movie' || t.type === 'tv');
+	const heroItems = [...titles.filter((t) => t.backdrop), ...titles.filter((t) => !t.backdrop)].slice(0, 3);
+	const slides = await Promise.all(heroItems.map((item, i) => buildSlide(item, i, lang)));
 
 	return (
-		<main className="min-h-screen bg-black text-white pb-20">
-			{/* Hero Section */}
-			<HeroSection item={heroItem} />
+		<>
+			<HeroCarousel slides={slides} />
 
-			{/* Content Sections */}
-			<div className="relative z-10 -mt-32 md:-mt-48 space-y-8">
-				<MovieCarousel title="Trending This Week" movies={trendingItems} viewAllLink="/trending" />
-
-				<MovieCarousel title="Now Playing in Theaters" movies={nowPlayingMovies} viewAllLink="/now-playing" />
-
-				<MovieCarousel title="Top Rated Movies" movies={topRatedMovies} viewAllLink="/top-rated" />
-
-				<MovieCarousel title="Popular TV Shows" movies={popularTVShows} viewAllLink="/tv" />
-			</div>
-		</main>
+			<main className="pt-5 md:pt-2 pb-36 md:pb-[120px] flex flex-col gap-[26px] md:gap-11">
+				<UpNextRow />
+				<StreamingRow items={streamingPicks} initialService={svc} />
+				<WeeklyChart items={titles.slice(0, 10)} />
+				<PosterRow title="Al cinema" href="/catalogo/now-playing" items={nowPlaying.slice(0, 15)} />
+				<PosterRow title="Serie popolari" href="/catalogo/trending?type=tv" items={popularTV.slice(0, 15)} />
+			</main>
+		</>
 	);
 }

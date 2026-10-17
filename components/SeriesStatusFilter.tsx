@@ -34,7 +34,7 @@ export default function SeriesStatusFilter({ mode, onChange, counts }: SeriesSta
 
 	return (
 		<div className="flex flex-col gap-2">
-			<div className="inline-flex flex-wrap items-center gap-1 p-1 rounded-full bg-white/5 border border-white/10 self-start">
+			<div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
 				{buttons.map(({ value, label, icon: Icon, count }) => {
 					const active = mode === value;
 					return (
@@ -42,14 +42,14 @@ export default function SeriesStatusFilter({ mode, onChange, counts }: SeriesSta
 							key={value}
 							type="button"
 							onClick={() => onChange(value)}
-							className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-								active ? 'bg-primary text-white shadow-lg shadow-primary/25' : 'text-gray-400 hover:text-white'
+							className={`shrink-0 h-[38px] flex items-center gap-2 px-4 rounded-full text-[13px] md:text-[14px] font-bold whitespace-nowrap transition-colors ${
+								active ? 'bg-fg text-bg' : 'bg-bg2 text-fg2 hover:text-fg'
 							}`}
 						>
 							<Icon size={15} />
 							{label}
 							{typeof count === 'number' && (
-								<span className={`text-xs px-1.5 py-0.5 rounded-full ${active ? 'bg-white/20' : 'bg-white/10'}`}>
+								<span className={`text-[11px] px-1.5 py-0.5 rounded-full ${active ? 'bg-bg/20' : 'bg-card'}`}>
 									{count}
 								</span>
 							)}
@@ -57,11 +57,11 @@ export default function SeriesStatusFilter({ mode, onChange, counts }: SeriesSta
 					);
 				})}
 			</div>
-			{mode === 'watching' && <p className="text-xs text-gray-500">{t('following.filter_watching_hint')}</p>}
-			{mode === 'ended' && <p className="text-xs text-gray-500">{t('following.filter_ended_hint')}</p>}
-			{mode === 'returning' && <p className="text-xs text-gray-500">{t('following.filter_returning_hint')}</p>}
-			{mode === 'ongoing' && <p className="text-xs text-gray-500">{t('following.filter_ongoing_hint')}</p>}
-			{mode === 'upcoming' && <p className="text-xs text-gray-500">{t('following.filter_upcoming_hint')}</p>}
+			{mode === 'watching' && <p className="text-[12px] font-medium text-fg3">{t('following.filter_watching_hint')}</p>}
+			{mode === 'ended' && <p className="text-[12px] font-medium text-fg3">{t('following.filter_ended_hint')}</p>}
+			{mode === 'returning' && <p className="text-[12px] font-medium text-fg3">{t('following.filter_returning_hint')}</p>}
+			{mode === 'ongoing' && <p className="text-[12px] font-medium text-fg3">{t('following.filter_ongoing_hint')}</p>}
+			{mode === 'upcoming' && <p className="text-[12px] font-medium text-fg3">{t('following.filter_upcoming_hint')}</p>}
 		</div>
 	);
 }
