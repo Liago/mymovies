@@ -30,10 +30,6 @@ export const metadata: Metadata = {
 		statusBarStyle: "black-translucent",
 		title: "CineScope",
 	},
-	icons: {
-		icon: "/icon",
-		apple: "/apple-icon",
-	},
 };
 
 export const viewport: Viewport = {
