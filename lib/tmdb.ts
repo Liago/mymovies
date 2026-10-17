@@ -304,14 +304,25 @@ export async function getMovieDetailTMDb(id: number, language: string = 'it-IT')
 			rating: {
 				imdb: imdbRating,
 				rottenTomatoes: rottenTomatoesRating,
-				metascore
+				metascore,
+				tmdb: data.vote_average || null
 			},
-			actors: data.credits?.cast?.slice(0, 8).map((c: any) => ({
+			actors: data.credits?.cast?.slice(0, 12).map((c: any) => ({
 				id: c.id,
 				name: c.name,
 				character: c.character,
 				profilePath: c.profile_path
 			})) || [],
+			runtime: data.runtime || null,
+			genres: data.genres?.map((g: any) => g.name) || [],
+			tagline: data.tagline || null,
+			originalLanguage: data.original_language || null,
+			countryCodes: data.production_countries?.map((c: any) => c.iso_3166_1) || [],
+			screenplay: data.credits?.crew
+				?.filter((c: any) => c.job === 'Screenplay' || c.job === 'Writer')
+				.map((c: any) => c.name)
+				.filter((name: string, i: number, all: string[]) => all.indexOf(name) === i)
+				.slice(0, 3) || [],
 			director: {
 				id: directorData?.id || null,
 				name: directorData?.name || 'N/A',
@@ -453,14 +464,37 @@ export async function getTVDetailTMDb(id: number, language: string = 'it-IT') {
 			rating: {
 				imdb: imdbRating,
 				rottenTomatoes: rottenTomatoesRating,
-				metascore
+				metascore,
+				tmdb: data.vote_average || null
 			},
-			actors: data.credits?.cast?.slice(0, 8).map((c: any) => ({
+			actors: data.credits?.cast?.slice(0, 12).map((c: any) => ({
 				id: c.id,
 				name: c.name,
 				character: c.character,
 				profilePath: c.profile_path
 			})) || [],
+			seasonsList: (data.seasons || [])
+				.filter((s: any) => s.season_number > 0)
+				.map((s: any) => ({
+					seasonNumber: s.season_number,
+					episodeCount: s.episode_count || 0,
+					name: s.name,
+					airDate: s.air_date || null
+				})),
+			lastEpisodeToAir: data.last_episode_to_air
+				? { season: data.last_episode_to_air.season_number, episode: data.last_episode_to_air.episode_number }
+				: null,
+			nextEpisodeToAir: data.next_episode_to_air
+				? {
+					season: data.next_episode_to_air.season_number,
+					episode: data.next_episode_to_air.episode_number,
+					name: data.next_episode_to_air.name,
+					airDate: data.next_episode_to_air.air_date
+				}
+				: null,
+			networks: data.networks?.map((n: any) => n.name) || [],
+			episodeRunTime: data.episode_run_time?.[0] || data.last_episode_to_air?.runtime || null,
+			originalLanguage: data.original_language || null,
 			creators: data.created_by?.map((c: any) => c.name).join(', ') || 'N/A',
 			genres: data.genres?.map((g: any) => g.name) || [],
 			awards,
@@ -569,6 +603,8 @@ export async function getTrending(mediaType: 'all' | 'movie' | 'tv' | 'person' =
 				id: item.id,
 				title: item.title || item.name,
 				poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+				backdrop: item.backdrop_path ? `https://image.tmdb.org/t/p/w1280${item.backdrop_path}` : null,
+				overview: item.overview || '',
 				year: (item.release_date || item.first_air_date || '').split('-')[0],
 				rating: item.vote_average,
 				type: type === 'movie' ? 'movie' : 'tv'

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { useAuth } from './AuthContext';
 import { POPULAR_CINEMA_FEEDS } from '@/lib/rss-feeds';
 
@@ -137,5 +138,19 @@ export function useRSS() {
 	if (!context) {
 		throw new Error('useRSS must be used within RSSProvider');
 	}
-	return context;
+	// Durante l'idratazione restituisce lo stato iniziale (come sul server):
+	// i provider leggono localStorage/API prima che le pagine in Suspense si idratino.
+	const hydrated = useMounted();
+	return useMemo(
+		() =>
+			hydrated
+				? context
+				: {
+					...context,
+					feeds: [],
+					isSubscribed: () => false,
+					isLoading: true,
+				},
+		[hydrated, context]
+	);
 }

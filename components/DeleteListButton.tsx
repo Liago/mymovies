@@ -15,7 +15,7 @@ export default function DeleteListButton({ listId }: { listId: number }) {
 		setIsDeleting(true);
 		try {
 			await deleteList(listId);
-			router.push('/profile/lists');
+			router.push('/profile?tab=liste');
 			router.refresh();
 		} catch (error) {
 			console.error('Error deleting list:', error);
@@ -28,31 +28,34 @@ export default function DeleteListButton({ listId }: { listId: number }) {
 	if (!isConfirming) {
 		return (
 			<button
+				type="button"
 				onClick={() => setIsConfirming(true)}
-				className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+				className="h-10 px-4 rounded-full bg-bg2 text-red-500 text-[13px] font-bold flex items-center gap-2 hover:opacity-80"
 			>
-				<Trash2 size={18} />
-				Elimina Lista
+				<Trash2 size={15} />
+				Elimina lista
 			</button>
 		);
 	}
 
 	return (
-		<div className="flex items-center gap-3 bg-red-500/10 px-4 py-2 rounded-lg border border-red-500/30">
-			<span className="text-sm text-red-400">Sei sicuro?</span>
+		<div className="flex items-center gap-2 h-10 pl-4 pr-1 rounded-full bg-red-500/10">
+			<span className="text-[13px] font-bold text-red-500">Eliminare la lista?</span>
 			<button
+				type="button"
 				onClick={handleDelete}
 				disabled={isDeleting}
-				className="px-3 py-1 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 transition-colors disabled:opacity-50"
+				className="h-8 px-3 rounded-full bg-red-500 text-white text-[13px] font-bold disabled:opacity-50"
 			>
-				{isDeleting ? 'Eliminazione...' : 'Sì'}
+				{isDeleting ? 'Eliminazione…' : 'Elimina'}
 			</button>
 			<button
+				type="button"
 				onClick={() => setIsConfirming(false)}
 				disabled={isDeleting}
-				className="px-3 py-1 rounded-lg border border-white/10 text-gray-400 text-sm hover:bg-white/5 transition-colors disabled:opacity-50"
+				className="h-8 px-3 rounded-full bg-card text-fg text-[13px] font-bold disabled:opacity-50"
 			>
-				No
+				Annulla
 			</button>
 		</div>
 	);

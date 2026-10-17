@@ -2,13 +2,13 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
 	return {
-		name: 'MyMovies - Scopri film e serie TV',
-		short_name: 'MyMovies',
-		description: 'Esplora migliaia di film e serie TV. Trova il contenuto perfetto per te.',
+		name: 'CineScope - Scopri film e serie TV',
+		short_name: 'CineScope',
+		description: 'Trova subito cosa guardare, segui le tue serie e scopri dove vedere film e serie TV.',
 		start_url: '/',
 		display: 'standalone',
-		background_color: '#050505',
-		theme_color: '#050505',
+		background_color: '#0e0e10',
+		theme_color: '#0e0e10',
 		icons: [
 			{
 				src: '/icon',

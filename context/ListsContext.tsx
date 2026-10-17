@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { useAuth } from './AuthContext';
 
 export interface ListItem {
@@ -17,6 +18,8 @@ export interface UserList {
 	description: string | null;
 	count: number;
 	items?: ListItem[];
+	/** URL dei primi poster, per l'anteprima a mosaico. */
+	previews?: string[];
 }
 
 interface ListsContextType {
@@ -209,6 +212,21 @@ export function ListsProvider({ children }: { children: React.ReactNode }) {
 
 export function useLists() {
 	const context = useContext(ListsContext);
-	if (!context) throw new Error('useLists must be used within ListsProvider');
-	return context;
+	if (!context) {
+		throw new Error('useLists must be used within ListsProvider');
+	}
+	// Durante l'idratazione restituisce lo stato iniziale (come sul server):
+	// i provider leggono localStorage/API prima che le pagine in Suspense si idratino.
+	const hydrated = useMounted();
+	return useMemo(
+		() =>
+			hydrated
+				? context
+				: {
+					...context,
+					lists: [],
+					isLoading: true,
+				},
+		[hydrated, context]
+	);
 }

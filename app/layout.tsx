@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Suspense } from "react";
+import { Figtree } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import MobileTabBar from "@/components/MobileTabBar";
+import ThemeProvider from "@/components/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { HistoryProvider } from "@/context/HistoryContext";
@@ -12,27 +15,20 @@ import { RatingsProvider } from "@/context/RatingsContext";
 import { ListsProvider } from "@/context/ListsContext";
 import { RSSProvider } from "@/context/RSSContext";
 
-const inter = Inter({
+const figtree = Figtree({
 	subsets: ["latin"],
-	weight: ["300", "400", "500", "600"],
-	variable: "--font-inter",
-	display: "swap",
-});
-
-const spaceGrotesk = Space_Grotesk({
-	subsets: ["latin"],
-	weight: ["300", "400", "500", "600", "700"],
-	variable: "--font-space-grotesk",
+	weight: ["400", "500", "600", "700", "800"],
+	variable: "--font-figtree",
 	display: "swap",
 });
 
 export const metadata: Metadata = {
-	title: "MyMovies - Scopri film e serie TV",
-	description: "Esplora migliaia di film e serie TV. Trova il contenuto perfetto per te.",
+	title: "CineScope - Scopri film e serie TV",
+	description: "Trova subito cosa guardare, segui le tue serie e scopri dove vedere film e serie TV.",
 	appleWebApp: {
 		capable: true,
 		statusBarStyle: "black-translucent",
-		title: "MyMovies",
+		title: "CineScope",
 	},
 	icons: {
 		icon: "/icon",
@@ -41,7 +37,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-	themeColor: "#050505",
+	themeColor: [
+		{ media: "(prefers-color-scheme: light)", color: "#f5f5f3" },
+		{ media: "(prefers-color-scheme: dark)", color: "#0e0e10" },
+	],
+	viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -50,28 +50,33 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="it" className={`${inter.variable} ${spaceGrotesk.variable} bg-black`}>
-			<body className="antialiased bg-black text-white selection:bg-primary/30">
-				<LanguageProvider>
-					<AuthProvider>
-						<HistoryProvider>
-							<TrackerProvider>
-								<FavoritesProvider>
-									<WatchlistProvider>
-										<ListsProvider>
-											<RatingsProvider>
-												<RSSProvider>
-													<Navbar />
-													{children}
-												</RSSProvider>
-											</RatingsProvider>
-										</ListsProvider>
-									</WatchlistProvider>
-								</FavoritesProvider>
-							</TrackerProvider>
-						</HistoryProvider>
-					</AuthProvider>
-				</LanguageProvider>
+		<html lang="it" className={figtree.variable} suppressHydrationWarning>
+			<body className="antialiased bg-bg text-fg">
+				<ThemeProvider>
+					<LanguageProvider>
+						<AuthProvider>
+							<HistoryProvider>
+								<TrackerProvider>
+									<FavoritesProvider>
+										<WatchlistProvider>
+											<ListsProvider>
+												<RatingsProvider>
+													<RSSProvider>
+														<Suspense fallback={null}>
+															<Navbar />
+														</Suspense>
+														{children}
+														<MobileTabBar />
+													</RSSProvider>
+												</RatingsProvider>
+											</ListsProvider>
+										</WatchlistProvider>
+									</FavoritesProvider>
+								</TrackerProvider>
+							</HistoryProvider>
+						</AuthProvider>
+					</LanguageProvider>
+				</ThemeProvider>
 			</body>
 		</html>
 	);

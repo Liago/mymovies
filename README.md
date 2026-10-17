@@ -46,39 +46,30 @@
 
 ## ✨ Funzionalità
 
-### 🏠 Homepage
-- **Hero Section** dinamica con il film trending del momento
-- **Caroselli interattivi** per:
-  - Trending Movies
-  - Popular TV Shows  
-  - New Releases
-- Pulsante "Watch Trailer" per visualizzare i trailer in modal
-- Link "More Info" per accedere ai dettagli
+Interfaccia "Nativa" (ispirata ad Apple TV / Letterboxd) in tema **chiaro e scuro**, con accento ambra e navigazione ridotta: header con pill **Home · Film · Serie TV · Esplora** su desktop, tab bar in vetro **Home · Esplora · Timeline · Tracker · Profilo** su mobile.
 
-### 🔎 Sistema di Ricerca
-- Overlay di ricerca a tutto schermo attivabile dalla navbar
-- Ricerca debounced per ottimizzare le chiamate API
-- Risultati in tempo reale con poster, tipo e descrizione
-- Chiusura con tasto ESC o click sul pulsante close
+### 🏠 Home
+- Hero a carosello con i primi 3 titoli di tendenza (autoplay 8s, pausa al passaggio del mouse)
+- **Prossimi episodi** dal tracker, con pulsante "visto" rapido
+- **Incluso nei tuoi abbonamenti** (Netflix, Prime Video, Disney+, NOW, Apple TV+) con filtro per servizio
+- **Classifica della settimana**, **Al cinema**, **Serie popolari**
 
-### 🎬 Pagina Dettaglio Film
-- Backdrop blur immersivo con poster del film
-- Informazioni dettagliate: titolo, anno, durata, rating IMDb
-- Sinossi completa
-- Box Office e Rotten Tomatoes (quando disponibili)
-- Sezione Cast & Crew con foto degli attori
-- Pulsante per riprodurre il trailer
+### 🔎 Ricerca
+- Modale da header (anche con ⌘K / Ctrl+K), filtri Tutto · Film · Serie TV · Persone
+- Su mobile la ricerca è nella tab **Esplora**, insieme al catalogo
 
-### 📺 Pagina Dettaglio Serie TV
-- Layout simile ai film con adattamenti specifici
-- Informazioni su: numero stagioni, episodi, status
-- Elenco generi con badge stilizzati
-- Nome dei creatori della serie
+### 🎬 Schede Film e Serie
+- Hero con voti IMDb / Rotten Tomatoes / Metacritic / TMDB e azioni (Trailer, Watchlist, Preferito, Lista, Tracker)
+- Tab sticky: Panoramica · Premi · Recensioni · Simili (film), Episodi · Panoramica · Cast · Simili (serie)
+- Colonna "Dove guardarlo" (JustWatch) e "Il tuo voto"
+- Serie: stagioni e episodi da spuntare direttamente nella pagina, riquadro "Prossimo episodio"
 
-### 📄 Pagine Lista
-- `/movies` - Tutti i film con paginazione "Load More"
-- `/tv` - Tutte le serie TV con paginazione
-- `/new-releases` - Film in uscita
+### 📚 Catalogo, Timeline, Tracker, Profilo, Notizie
+- `/catalogo/[list]` unico per Di tendenza, Più votati, Al cinema, In uscita con `?type=movie|tv&genre=`
+- Timeline della settimana delle serie seguite, filtrabile per giorno
+- Tracker con statistiche e progressi (In corso · Da iniziare · Completate)
+- Profilo con Watchlist, Preferiti, Liste e Voti; impostazioni per tema, lingua dei contenuti, feed RSS e logout
+- Notizie dai feed RSS dell'utente
 
 ---
 
@@ -93,8 +84,7 @@
 | **Lucide React** | 0.555.0 | Libreria di icone |
 
 ### Font
-- **Space Grotesk** - Font per titoli e heading
-- **Inter** - Font per il body text
+- **Figtree** (400–800) via `next/font/google`, unica famiglia per titoli e testo
 
 ---
 
@@ -104,43 +94,39 @@
 movie-ratings/
 ├── app/
 │   ├── (main)/                    # Route group con layout condiviso
-│   │   ├── discovery/             # Pagina discovery
-│   │   ├── movie/
-│   │   │   └── [id]/             # Dettaglio film (dinamico)
-│   │   │       └── page.tsx
-│   │   ├── movies/               # Lista tutti i film
-│   │   ├── new-releases/         # Film in uscita
-│   │   ├── news/                 # Pagina news
-│   │   └── tv/
-│   │       ├── [id]/             # Dettaglio serie TV (dinamico)
-│   │       │   └── page.tsx
-│   │       └── page.tsx          # Lista serie TV
-│   ├── api/
-│   │   └── search/
-│   │       └── route.ts          # API Route per la ricerca
+│   │   ├── catalogo/[list]/      # Catalogo unico (liste × tipo × genere)
+│   │   ├── esplora/              # Ricerca + catalogo (mobile)
+│   │   ├── movie/[id]/           # Scheda film
+│   │   ├── tv/[id]/              # Scheda serie con episodi
+│   │   ├── timeline/             # Episodi della settimana
+│   │   ├── tracker/              # Progressi delle serie
+│   │   ├── profile/              # Profilo, liste, feed RSS
+│   │   ├── history/              # Cronologia
+│   │   └── news/                 # Notizie RSS
+│   ├── api/                      # API Routes (ricerca, tracker, liste…)
 │   ├── actions.ts                # Server Actions
-│   ├── globals.css               # Stili globali e design tokens
-│   ├── layout.tsx                # Root layout
-│   └── page.tsx                  # Homepage
+│   ├── globals.css               # Design token (chiaro/scuro) e utility
+│   ├── layout.tsx                # Root layout (tema, font, provider)
+│   └── page.tsx                  # Home
 │
 ├── components/
-│   ├── ConditionalLayout.tsx     # Layout condizionale
-│   ├── HeroSection.tsx           # Sezione hero homepage
-│   ├── InfiniteMovieGrid.tsx     # Griglia con caricamento infinito
-│   ├── MovieCard.tsx             # Card singolo film/serie
-│   ├── MovieCarousel.tsx         # Carosello orizzontale
-│   ├── Navbar.tsx                # Barra di navigazione
-│   ├── PersonCard.tsx            # Card attore/regista
-│   ├── PlayButton.tsx            # Pulsante play
-│   ├── SearchBar.tsx             # Barra di ricerca (legacy)
-│   ├── SearchOverlay.tsx         # Overlay ricerca full-screen
-│   ├── Sidebar.tsx               # Sidebar navigazione
-│   ├── TrailerButton.tsx         # Pulsante per trailer
-│   └── TrailerModal.tsx          # Modal video trailer
+│   ├── ui/                       # Primitive: Artwork, Segmented, PageShell, PageHeader, StatCard, HScroll…
+│   ├── home/                     # Hero carosello e righe della Home
+│   ├── detail/                   # Hero, tab, episodi, "Dove guardarlo" delle schede
+│   ├── catalog/                  # Griglia e filtri del catalogo, ricerca di Esplora
+│   ├── timeline/ tracker/ news/ profile/
+│   ├── Navbar.tsx                # Header desktop con popover Esplora
+│   ├── MobileTabBar.tsx          # Tab bar mobile
+│   ├── SearchOverlay.tsx         # Modale di ricerca (⌘K)
+│   ├── MovieCard.tsx             # Poster con badge voto/servizio
+│   └── PersonCard.tsx / PersonModal.tsx
 │
 ├── lib/
 │   ├── omdb.ts                   # Client API OMDb
-│   └── tmdb.ts                   # Client API TMDb
+│   ├── tmdb.ts                   # Client API TMDb
+│   ├── tmdb-catalog.ts           # Catalogo e titoli inclusi negli abbonamenti
+│   ├── tmdb-shows.ts             # Progressi serie, episodi, calendario
+│   └── progress.ts / format.ts   # Calcolo progressi e formattazione (it-IT)
 │
 ├── public/                       # Asset statici
 │   ├── file.svg
@@ -257,70 +243,20 @@ OMDB_API_KEY=your_omdb_api_key_here
 
 ## 🧩 Componenti
 
-### Core Components
-
-#### `HeroSection`
-Sezione hero a tutto schermo con:
-- Immagine backdrop in background con effetti gradient
-- Titolo e rating del film
-- Pulsanti "Watch Trailer" e "More Info"
-- Animazioni di entrata
-
-```tsx
-<HeroSection item={heroMovie} />
-```
-
-#### `MovieCarousel`
-Carosello orizzontale scorrevole:
-- Titolo della sezione
-- Controlli di navigazione left/right
-- Link "View All" opzionale
-- Snap scroll per mobile
-
-```tsx
-<MovieCarousel 
-  title="Trending Movies" 
-  movies={movies} 
-  viewAllLink="/movies" 
-/>
-```
-
-#### `MovieCard`
-Card singola per film/serie:
-- Poster con aspect ratio 2:3
-- Badge rating con colore dinamico
-- Hover effects con scale e glow
-- Link alla pagina dettaglio
-
-#### `SearchOverlay`
-Overlay ricerca full-screen:
-- Input con icona di ricerca
-- Debounce 350ms sulle query
-- Griglia risultati responsive
-- Chiusura con ESC o click
-
-#### `Navbar`
-Barra navigazione sticky:
-- Logo CineScope con gradient
-- Links navigazione desktop
-- Menu hamburger mobile
-- Pulsanti search e notifiche
-- Effetto blur on scroll
-
-#### `TrailerModal`
-Modal per riproduzione trailer:
-- Embed YouTube responsive
-- Chiusura con click esterno o X
-- Backdrop blur
-
-### UI Components
+### Componenti principali
 
 | Componente | Descrizione |
 |------------|-------------|
-| `PersonCard` | Card attore con foto da TMDb |
-| `TrailerButton` | Pulsante styled per aprire trailer |
-| `PlayButton` | Pulsante play circolare |
-| `InfiniteMovieGrid` | Griglia con infinite scroll |
+| `Navbar` | Logo, pill Home · Film · Serie TV · Esplora, ricerca, tema, avatar |
+| `MobileTabBar` | Tab bar in vetro sotto i 768px |
+| `SearchOverlay` | Ricerca TMDB `search/multi` con debounce 250ms e filtri |
+| `HeroCarousel` | Hero della Home con autoplay |
+| `DetailHero` / `DetailTabs` | Hero e tab sticky delle schede film/serie |
+| `SeasonEpisodes` / `NextEpisodeBox` | Episodi da spuntare e prossimo episodio |
+| `WhereToWatch` / `UserRating` | Disponibilità JustWatch e voto dell'utente |
+| `MovieCard` | Poster 2:3 con badge in vetro (voto, servizio) |
+| `ui/Segmented` | Segmented control, chip e tab sottolineati |
+| `ui/Artwork` | Immagine TMDB con placeholder a righe |
 
 ---
 
@@ -330,13 +266,17 @@ Modal per riproduzione trailer:
 
 | Route | File | Descrizione |
 |-------|------|-------------|
-| `/` | `app/page.tsx` | Homepage con hero e caroselli |
-| `/movies` | `app/(main)/movies/page.tsx` | Lista film paginata |
-| `/tv` | `app/(main)/tv/page.tsx` | Lista serie TV paginata |
-| `/movie/[id]` | `app/(main)/movie/[id]/page.tsx` | Dettaglio film |
-| `/tv/[id]` | `app/(main)/tv/[id]/page.tsx` | Dettaglio serie TV |
-| `/new-releases` | `app/(main)/new-releases/page.tsx` | Film in uscita |
-| `/discovery` | `app/(main)/discovery/page.tsx` | Pagina discovery |
+| `/` | `app/page.tsx` | Home |
+| `/catalogo/[list]` | `app/(main)/catalogo/[list]/page.tsx` | Catalogo (`trending`, `top-rated`, `now-playing`, `upcoming`) |
+| `/esplora` | `app/(main)/esplora/page.tsx` | Ricerca + catalogo (tab mobile) |
+| `/movie/[id]` | `app/(main)/movie/[id]/page.tsx` | Scheda film |
+| `/tv/[id]` | `app/(main)/tv/[id]/page.tsx` | Scheda serie con episodi |
+| `/timeline` | `app/(main)/timeline/page.tsx` | Episodi della settimana |
+| `/tracker` | `app/(main)/tracker/page.tsx` | Progressi delle serie |
+| `/profile` | `app/(main)/profile/page.tsx` | Profilo e libreria (`?tab=watchlist\|preferiti\|liste\|voti`) |
+| `/news` | `app/(main)/news/page.tsx` | Notizie dai feed RSS |
+
+Le vecchie URL (`/trending`, `/movies`, `/tv`, `/top-rated`, `/now-playing`, `/new-releases`, `/discovery`, `/tv/following`, `/profile/watchlist`, `/profile/favorites`, `/profile/lists`) reindirizzano alle nuove pagine (`next.config.ts`).
 
 ### API Routes
 
@@ -368,28 +308,23 @@ npm run lint
 
 Il progetto utilizza un design system definito in `globals.css`:
 
-#### Colori Principali
+#### Token (`app/globals.css`)
+I colori sono variabili CSS su `:root` (chiaro) e `.dark` (scuro), esposte a Tailwind come `bg-bg`, `bg-bg2`, `bg-card`, `text-fg`, `text-fg2`, `text-fg3`, `border-line`, `bg-acc`, `text-accfg`, `bg-acc-soft`, `bg-ph1`, `bg-ph2`.
+
 ```css
---background: #050505;       /* Sfondo principale */
---foreground: #ffffff;       /* Testo principale */
---primary: #6366f1;          /* Accent primario (indigo) */
---secondary: #a855f7;        /* Accent secondario (purple) */
---surface-1: #0f0f12;        /* Surface scura */
---surface-2: #18181b;        /* Surface chiara */
+--bg: #0e0e10 / #f5f5f3;      /* sfondo pagina (scuro / chiaro) */
+--card: #18181b / #ffffff;    /* card e pannelli */
+--acc: oklch(0.78 0.15 70) / oklch(0.68 0.16 70); /* ambra */
 ```
+
+L'accento si cambia con `--acc-hue` (70 Ambra, 50 Arancio, 28 Rosso). Il tema è gestito da `next-themes` (classe `dark` su `<html>`, default = preferenza di sistema).
 
 #### Classi Utility
-- `.glass-panel` - Effetto glassmorphism
-- `.text-gradient` - Testo con gradient bianco/grigio
-- `.text-gradient-primary` - Testo con gradient primary/secondary
-- `.animate-fade-in` - Animazione fade in
-- `.animate-slide-up` - Animazione slide up
-
-#### Transizioni
-```css
---transition-fast: 200ms cubic-bezier(0.16, 1, 0.3, 1);
---transition-smooth: 400ms cubic-bezier(0.16, 1, 0.3, 1);
-```
+- `glass` - vetro di header, tab bar e badge
+- `glass-on-image` - pulsanti sopra le immagini
+- `hero-fade` / `hero-fade-strong` - sfumatura del backdrop verso lo sfondo
+- `placeholder-stripes` - skeleton delle immagini
+- `kicker`, `no-scrollbar`, `animate-fade-in`, `animate-pop-in`
 
 ### Path Aliases
 

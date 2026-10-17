@@ -10,13 +10,13 @@ export async function GET() {
 					display: 'flex',
 					alignItems: 'center',
 					justifyContent: 'center',
-					background: '#6366f1',
-					color: '#ffffff',
+					background: '#f0a73a',
+					color: '#1b1408',
 					fontSize: 280,
-					fontWeight: 700,
+					fontWeight: 800,
 				}}
 			>
-				M
+				c
 			</div>
 		),
 		{ width: 512, height: 512 }

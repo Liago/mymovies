@@ -1,399 +1,177 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
-import { Menu, X, Search, Bell, LogIn, LogOut, User, Globe, Heart, Bookmark, List, History, CheckCircle2 } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { ChevronDown, LogIn, Search } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import SearchOverlay from './SearchOverlay';
+import ThemeToggle from './ThemeToggle';
+import UserAvatar from './UserAvatar';
 import { useAuth } from '@/context/AuthContext';
-import { useLanguage } from '@/context/LanguageContext';
+import { EXPLORE_ITEMS, isHeroPage } from '@/lib/navigation';
+import { cn } from '@/lib/cn';
 
+const roundButton =
+	'w-[42px] h-[42px] rounded-full border border-line glass text-fg flex items-center justify-center transition-opacity duration-150 hover:opacity-80';
+
+/**
+ * Header desktop: logo, pill di navigazione in vetro con il popover "Esplora",
+ * ricerca (anche con ⌘K), tema e avatar. Sotto i 768px è sostituito dalla
+ * tab bar mobile.
+ */
 export default function Navbar() {
-	const [isScrolled, setIsScrolled] = useState(false);
-	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const pathname = usePathname() || '/';
+	const searchParams = useSearchParams();
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
-	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-	const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
-	const userMenuRef = useRef<HTMLDivElement>(null);
-	const langMenuRef = useRef<HTMLDivElement>(null);
+	// Il popover resta aperto solo sulla pagina in cui è stato aperto
+	const [exploreOpenAt, setExploreOpenAt] = useState<string | null>(null);
+	const exploreRef = useRef<HTMLDivElement>(null);
+	const { isLoggedIn, user, isLoading, hasMounted, login } = useAuth();
 
-	const { isLoggedIn, user, avatarUrl, isLoading, hasMounted, login, logout } = useAuth();
-	const { language, setLanguage } = useLanguage();
+	const routeKey = `${pathname}?${searchParams?.toString() ?? ''}`;
+	const isExploreOpen = exploreOpenAt === routeKey;
+	const setIsExploreOpen = useCallback(
+		(open: boolean | ((prev: boolean) => boolean)) =>
+			setExploreOpenAt((prev) => {
+				const next = typeof open === 'function' ? open(prev === routeKey) : open;
+				return next ? routeKey : null;
+			}),
+		[routeKey]
+	);
+	const onHero = isHeroPage(pathname);
+	const catalogType = pathname.startsWith('/catalogo') ? (searchParams?.get('type') === 'tv' ? 'tv' : 'movie') : null;
 
-	useEffect(() => {
-		const handleScroll = () => {
-			setIsScrolled(window.scrollY > 20);
-		};
-		window.addEventListener('scroll', handleScroll);
-		return () => window.removeEventListener('scroll', handleScroll);
-	}, []);
-
-	// Lock page scroll and close with Escape while the mobile menu is open.
-	useEffect(() => {
-		if (!isMobileMenuOpen) return;
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === 'Escape') setIsMobileMenuOpen(false);
-		};
-		const previousOverflow = document.body.style.overflow;
-		document.body.style.overflow = 'hidden';
-		document.addEventListener('keydown', onKey);
-		return () => {
-			document.body.style.overflow = previousOverflow;
-			document.removeEventListener('keydown', onKey);
-		};
-	}, [isMobileMenuOpen]);
-
-	// Close menus when clicking outside
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-				setIsUserMenuOpen(false);
-			}
-			if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
-				setIsLangMenuOpen(false);
-			}
-		};
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => document.removeEventListener('mousedown', handleClickOutside);
-	}, []);
-
-	const navLinks = [
-		{ name: 'Home', href: '/' },
-		{ name: 'Trending', href: '/trending' },
-		{ name: 'Movies', href: '/movies' },
-		{ name: 'TV Shows', href: '/tv' },
-		{ name: language === 'it-IT' ? 'Timeline' : 'Timeline', href: '/timeline' },
-		{ name: 'Top Rated', href: '/top-rated' },
-		{ name: 'Now Playing', href: '/now-playing' },
-		{ name: 'New Releases', href: '/new-releases' },
-		{ name: 'News', href: '/news' },
+	const mainNav = [
+		{ label: 'Home', href: '/', active: pathname === '/' },
+		{ label: 'Film', href: '/catalogo/trending?type=movie', active: pathname.startsWith('/movie/') || catalogType === 'movie' },
+		{ label: 'Serie TV', href: '/catalogo/trending?type=tv', active: pathname.startsWith('/tv/') || catalogType === 'tv' },
 	];
 
-	const handleLogin = async () => {
-		await login();
-	};
+	// Click fuori / Esc chiudono il popover Esplora
+	useEffect(() => {
+		if (!isExploreOpen) return;
+		const onPointer = (e: MouseEvent) => {
+			if (exploreRef.current && !exploreRef.current.contains(e.target as Node)) setIsExploreOpen(false);
+		};
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') setIsExploreOpen(false);
+		};
+		document.addEventListener('mousedown', onPointer);
+		document.addEventListener('keydown', onKey);
+		return () => {
+			document.removeEventListener('mousedown', onPointer);
+			document.removeEventListener('keydown', onKey);
+		};
+	}, [isExploreOpen, setIsExploreOpen]);
 
-	const handleLogout = async () => {
-		await logout();
-		setIsUserMenuOpen(false);
-	};
+	// Scorciatoia ⌘K / Ctrl+K per la ricerca
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+				e.preventDefault();
+				setIsExploreOpen(false);
+				setIsSearchOpen(true);
+			}
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	}, [setIsExploreOpen]);
+
+	const closeSearch = useCallback(() => setIsSearchOpen(false), []);
 
 	return (
 		<>
-			<nav
-				className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 border-b ${isScrolled
-					? 'bg-black/60 backdrop-blur-xl border-white/5 py-3'
-					: 'bg-transparent border-transparent py-6'
-					}`}
-			>
-				<div className="max-w-[1920px] mx-auto px-6 lg:px-12 flex items-center justify-between">
-					{/* Logo */}
-					<Link href="/" className="flex items-center gap-1 z-50 group">
-						<div className="relative">
-							<div className="absolute -inset-2 bg-gradient-to-r from-primary to-purple-600 rounded-full opacity-20 group-hover:opacity-40 blur-lg transition-opacity duration-500" />
-							<span className="relative text-2xl lg:text-3xl font-bold tracking-tighter text-white">
-								CINE<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">SCOPE</span>
-							</span>
-						</div>
-					</Link>
+			<header className="hidden md:grid absolute top-0 inset-x-0 z-50 px-8 py-[18px] grid-cols-[1fr_auto_1fr] items-center gap-4">
+				<Link
+					href="/"
+					className={cn(
+						'justify-self-start flex items-center gap-1.5 text-[22px] font-extrabold tracking-[-0.03em] transition-opacity hover:opacity-80',
+						onHero ? 'text-white' : 'text-fg'
+					)}
+				>
+					cinescope
+					<span className="w-[7px] h-[7px] rounded-full bg-acc" />
+				</Link>
 
-					{/* Desktop Navigation */}
-					<div className="hidden lg:flex items-center gap-10">
-						{navLinks.map((link) => (
-							<Link
-								key={link.name}
-								href={link.href}
-								className="text-sm font-medium text-gray-400 hover:text-white transition-colors tracking-wide relative group"
-							>
-								{link.name}
-								<span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full" />
-							</Link>
-						))}
-					</div>
-
-					{/* Actions */}
-					<div className="hidden lg:flex items-center gap-5">
-						{/* Search Button */}
-						<button
-							onClick={() => setIsSearchOpen(true)}
-							className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/10 hover:border-primary/30"
-							aria-label="Open search"
-						>
-							<Search size={18} />
-						</button>
-
-						{/* Notifications */}
-						<button className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/10 relative">
-							<Bell size={18} />
-							<span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-						</button>
-
-						{/* Language Switcher */}
-						<div className="relative" ref={langMenuRef}>
-							<button
-								onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-								className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/10 flex items-center gap-2"
-								aria-label="Select language"
-							>
-								<Globe size={18} />
-								<span className="text-xs font-bold uppercase">{language === 'it-IT' ? 'IT' : 'EN'}</span>
-							</button>
-
-							{isLangMenuOpen && (
-								<div className="absolute right-0 mt-2 w-32 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-xl overflow-hidden">
-									<button
-										onClick={() => {
-											setLanguage('it-IT');
-											setIsLangMenuOpen(false);
-										}}
-										className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 transition-colors ${language === 'it-IT' ? 'text-primary font-bold bg-white/5' : 'text-gray-300'}`}
-									>
-										🇮🇹 Italiano
-									</button>
-									<button
-										onClick={() => {
-											setLanguage('en-US');
-											setIsLangMenuOpen(false);
-										}}
-										className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 transition-colors ${language === 'en-US' ? 'text-primary font-bold bg-white/5' : 'text-gray-300'}`}
-									>
-										🇺🇸 English
-									</button>
-								</div>
-							)}
-						</div>
-
-						{/* User Avatar / Login Button */}
-						{!hasMounted || isLoading ? (
-							<div className="w-9 h-9 rounded-full bg-gray-800 animate-pulse" />
-						) : isLoggedIn && user ? (
-							<div className="relative" ref={userMenuRef}>
-								<button
-									onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-									className="flex items-center gap-2 group"
-								>
-									{avatarUrl ? (
-										<Image
-											src={avatarUrl}
-											alt={user.username}
-											width={36}
-											height={36}
-											className="rounded-full border-2 border-white/10 hover:border-primary/50 transition-colors"
-										/>
-									) : (
-										<div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-purple-600 border border-white/10 flex items-center justify-center text-xs font-bold text-white hover:border-primary/50 transition-colors cursor-pointer shadow-lg shadow-black/50">
-											{user.username.slice(0, 2).toUpperCase()}
-										</div>
-									)}
-								</button>
-
-								{/* Dropdown Menu */}
-								{isUserMenuOpen && (
-									<div className="absolute right-0 mt-2 w-56 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl shadow-black/50 overflow-hidden">
-										<div className="px-4 py-3 border-b border-white/10">
-											<p className="text-sm font-medium text-white">{user.name || user.username}</p>
-											<p className="text-xs text-gray-400">@{user.username}</p>
-										</div>
-										<div className="py-1">
-											<Link
-												href="/profile"
-												className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
-												onClick={() => setIsUserMenuOpen(false)}
-											>
-												<User size={16} />
-												Il mio profilo
-											</Link>
-											<Link
-												href="/profile/favorites"
-												className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
-												onClick={() => setIsUserMenuOpen(false)}
-											>
-												<Heart size={16} />
-												Preferiti
-											</Link>
-											<Link
-												href="/profile/watchlist"
-												className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
-												onClick={() => setIsUserMenuOpen(false)}
-											>
-												<Bookmark size={16} />
-												Watchlist
-											</Link>
-											<Link
-												href="/profile/lists"
-												className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/10"
-												onClick={() => setIsUserMenuOpen(false)}
-											>
-												<List size={16} />
-												Le Mie Liste
-											</Link>
-											<Link
-												href="/history"
-												className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/10"
-												onClick={() => setIsUserMenuOpen(false)}
-											>
-												<History size={16} />
-												Cronologia
-											</Link>
-											<Link
-												href="/tracker"
-												className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/10"
-												onClick={() => setIsUserMenuOpen(false)}
-											>
-												<CheckCircle2 size={16} />
-												Tracker
-											</Link>
-											<button
-												onClick={handleLogout}
-												className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-white/5 hover:text-red-300 transition-colors"
-											>
-												<LogOut size={16} />
-												Esci
-											</button>
-										</div>
-									</div>
-								)}
-							</div>
-						) : (
-							<button
-								onClick={handleLogin}
-								className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-lg shadow-primary/25"
-							>
-								<LogIn size={16} />
-								Accedi
-							</button>
-						)}
-					</div>
-
-					{/* Mobile Menu Button */}
-					<div className="lg:hidden flex items-center gap-3">
-						<button
-							onClick={() => setIsSearchOpen(true)}
-							className="p-2 text-white"
-							aria-label="Open search"
-						>
-							<Search size={22} />
-						</button>
-						<button
-							className="text-white z-50 p-2"
-							onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-						>
-							{isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-						</button>
-					</div>
-
-				</div>
-			</nav>
-
-			{/* Mobile Menu Overlay */}
-			{/* Rendered outside <nav>: the nav's backdrop-filter (applied on scroll) would
-			    otherwise become the containing block of this fixed overlay and clip it. */}
-			<div
-				className={`fixed inset-0 bg-black/95 backdrop-blur-sm z-40 lg:hidden overflow-y-auto overscroll-contain transition-all duration-500 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}
-				aria-hidden={!isMobileMenuOpen}
-			>
-				<div className="min-h-full flex flex-col items-center justify-center gap-6 px-6 pt-28 pb-16">
-					{navLinks.map((link) => (
+				<nav className="relative flex gap-0.5 p-1 rounded-full glass border border-line text-[14px] font-semibold" ref={exploreRef}>
+					{mainNav.map((item) => (
 						<Link
-							key={link.name}
-							href={link.href}
-							className="text-2xl sm:text-3xl font-bold text-white hover:text-primary transition-colors"
-							onClick={() => setIsMobileMenuOpen(false)}
+							key={item.label}
+							href={item.href}
+							aria-current={item.active ? 'page' : undefined}
+							className={cn(
+								'px-[18px] py-[9px] rounded-full whitespace-nowrap transition-colors duration-150',
+								item.active ? 'bg-fg text-bg' : 'text-fg hover:bg-bg2/70'
+							)}
 						>
-							{link.name}
+							{item.label}
 						</Link>
 					))}
-
-					{/* Mobile Login/Logout */}
-					<div className="mt-8 pt-8 border-t border-white/10 w-64 text-center">
-						{!hasMounted ? (
-							<div className="w-36 h-12 rounded-full bg-gray-800 animate-pulse mx-auto" />
-						) : isLoggedIn && user ? (
-							<div className="flex flex-col items-center gap-3">
-								<div className="text-gray-400 text-sm mb-2">
-									Ciao, <span className="text-white">{user.username}</span>
-								</div>
-
-								{/* Profile Links */}
-								<Link
-									href="/profile"
-									className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full"
-									onClick={() => setIsMobileMenuOpen(false)}
-								>
-									<User size={18} />
-									Il mio profilo
-								</Link>
-								<Link
-									href="/profile/favorites"
-									className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full"
-									onClick={() => setIsMobileMenuOpen(false)}
-								>
-									<Heart size={18} />
-									Preferiti
-								</Link>
-								<Link
-									href="/profile/watchlist"
-									className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full"
-									onClick={() => setIsMobileMenuOpen(false)}
-								>
-									<Bookmark size={18} />
-									Watchlist
-								</Link>
-								<Link
-									href="/profile/lists"
-									className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full mb-2"
-									onClick={() => setIsMobileMenuOpen(false)}
-								>
-									<List size={18} />
-									Le Mie Liste
-								</Link>
-								<Link
-									href="/history"
-									className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full mb-2"
-									onClick={() => setIsMobileMenuOpen(false)}
-								>
-									<History size={18} />
-									Cronologia
-								</Link>
-								<Link
-									href="/tracker"
-									className="flex items-center gap-3 px-6 py-2.5 text-base text-gray-300 hover:text-white transition-colors w-full mb-2"
-									onClick={() => setIsMobileMenuOpen(false)}
-								>
-									<CheckCircle2 size={18} />
-									Tracker
-								</Link>
-
-								<button
-									onClick={() => {
-										handleLogout();
-										setIsMobileMenuOpen(false);
-									}}
-									className="flex items-center gap-2 px-6 py-3 rounded-full border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors mt-2"
-								>
-									<LogOut size={18} />
-									Esci
-								</button>
-							</div>
-						) : (
-							<button
-								onClick={() => {
-									handleLogin();
-									setIsMobileMenuOpen(false);
-								}}
-								className="flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary to-purple-600 text-white font-medium hover:opacity-90 transition-opacity mx-auto"
-							>
-								<LogIn size={18} />
-								Accedi con TMDB
-							</button>
+					<button
+						type="button"
+						onClick={() => setIsExploreOpen((v) => !v)}
+						aria-expanded={isExploreOpen}
+						aria-haspopup="true"
+						className={cn(
+							'px-4 py-[9px] rounded-full flex items-center gap-1.5 text-fg transition-colors duration-150',
+							isExploreOpen ? 'bg-bg2' : 'hover:bg-bg2/70'
 						)}
-					</div>
-				</div>
-			</div>
+					>
+						Esplora
+						<ChevronDown size={14} className={cn('transition-transform duration-200', isExploreOpen && 'rotate-180')} />
+					</button>
 
-			{/* Search Overlay */}
-			<SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+					{isExploreOpen && (
+						<div className="animate-pop-in absolute top-[calc(100%+10px)] left-1/2 -translate-x-1/2 w-[560px] p-3 grid grid-cols-2 gap-1.5 bg-card border border-line rounded-[22px] shadow-popover">
+							{EXPLORE_ITEMS.map(({ label, description, href, icon: Icon }) => (
+								<Link
+									key={label}
+									href={href}
+									onClick={() => setIsExploreOpen(false)}
+									className="flex items-center gap-3 p-2.5 rounded-[14px] transition-colors duration-150 hover:bg-bg2"
+								>
+									<span className="w-10 h-10 shrink-0 rounded-xl bg-bg2 flex items-center justify-center">
+										<Icon size={18} className="text-acc" />
+									</span>
+									<span className="flex flex-col">
+										<span className="text-[14px] font-semibold text-fg">{label}</span>
+										<span className="text-[12px] font-medium text-fg3">{description}</span>
+									</span>
+								</Link>
+							))}
+						</div>
+					)}
+				</nav>
+
+				<div className="justify-self-end flex items-center gap-2">
+					<button
+						type="button"
+						onClick={() => setIsSearchOpen(true)}
+						className={roundButton}
+						aria-label="Cerca (⌘K)"
+						title="Cerca (⌘K)"
+					>
+						<Search size={18} />
+					</button>
+					<ThemeToggle className={roundButton} />
+					{!hasMounted || isLoading ? (
+						<span className="w-[42px] h-[42px] rounded-full bg-ph1 animate-pulse" />
+					) : isLoggedIn && user ? (
+						<UserAvatar size={42} />
+					) : (
+						<button
+							type="button"
+							onClick={() => login()}
+							className="h-[42px] px-4 rounded-full bg-acc text-accfg text-[14px] font-bold flex items-center gap-2 transition-opacity hover:opacity-80"
+						>
+							<LogIn size={16} />
+							Accedi
+						</button>
+					)}
+				</div>
+			</header>
+
+			<SearchOverlay isOpen={isSearchOpen} onClose={closeSearch} />
 		</>
 	);
 }
-

@@ -87,17 +87,19 @@ export default function ListItemsGrid({ listId, items }: ListItemsGridProps) {
 
 	return (
 		<div>
-			<div className="mb-8">
+			<div className="mb-6">
 				<SeriesStatusFilter mode={mode} onChange={setMode} counts={counts} />
 			</div>
 
 			{visibleItems.length === 0 ? (
-				<div className="text-center py-16 bg-white/5 rounded-2xl border border-white/10 border-dashed">
-					<List size={40} className="mx-auto text-gray-600 mb-4" />
-					<p className="text-gray-400">{emptyText}</p>
+				<div className="flex flex-col items-center text-center gap-3 py-14">
+					<span className="w-16 h-16 rounded-full bg-bg2 flex items-center justify-center text-fg3">
+						<List size={28} />
+					</span>
+					<p className="m-0 text-[14px] font-semibold text-fg3">{emptyText}</p>
 				</div>
 			) : (
-				<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+				<div className="grid grid-cols-3 md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-x-2.5 gap-y-3.5 md:gap-x-[18px] md:gap-y-[22px]">
 					{visibleItems.map((item) => (
 						<ListItemCard
 							key={`${item.media_type}-${item.id}`}

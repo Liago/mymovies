@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { syncUserProfile } from '@/app/actions/user-data';
 
 interface TMDBUserData {
@@ -238,6 +239,22 @@ export function useAuth() {
 	if (context === undefined) {
 		throw new Error('useAuth must be used within an AuthProvider');
 	}
-	return context;
+	// Durante l'idratazione restituisce lo stato iniziale (come sul server):
+	// i provider leggono localStorage/API prima che le pagine in Suspense si idratino.
+	const hydrated = useMounted();
+	return useMemo(
+		() =>
+			hydrated
+				? context
+				: {
+					...context,
+					isLoggedIn: false,
+					user: null,
+					avatarUrl: null,
+					isLoading: true,
+					hasMounted: false,
+				},
+		[hydrated, context]
+	);
 }
 

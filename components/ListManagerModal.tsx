@@ -1,4 +1,8 @@
-import { useState, useEffect } from 'react';
+'use client';
+
+import { useMounted } from '@/hooks/useMounted';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Check } from 'lucide-react';
 import { useLists } from '@/context/ListsContext';
 
@@ -11,12 +15,26 @@ interface ListManagerModalProps {
 	poster: string | null;
 }
 
+const field =
+	'w-full h-11 bg-bg2 border border-transparent rounded-[12px] px-3.5 text-[14px] font-semibold text-fg placeholder:text-fg3 outline-none focus:border-acc transition-colors';
+
+/** Salvataggio di un titolo in una delle liste dell'utente (o in una nuova). */
 export default function ListManagerModal({ isOpen, onClose, mediaType, mediaId, title, poster }: ListManagerModalProps) {
 	const { lists, createList, addToList, isLoading } = useLists();
 	const [isCreating, setIsCreating] = useState(false);
 	const [newListName, setNewListName] = useState('');
 	const [newListDesc, setNewListDesc] = useState('');
 	const [addedLists, setAddedLists] = useState<number[]>([]);
+	const mounted = useMounted();
+
+	useEffect(() => {
+		if (!isOpen) return;
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') onClose();
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	}, [isOpen, onClose]);
 
 	const handleCreateList = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -43,91 +61,95 @@ export default function ListManagerModal({ isOpen, onClose, mediaType, mediaId, 
 		setAddedLists(prev => [...prev, listId]);
 	};
 
-	if (!isOpen) return null;
+	if (!isOpen || !mounted) return null;
 
-	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-			<div className="w-full max-w-md bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
-				{/* Header */}
-				<div className="flex items-center justify-between p-4 border-b border-white/10">
-					<h3 className="text-lg font-bold text-white">Save to List</h3>
+	return createPortal(
+		<div
+			className="fixed inset-0 z-[200] flex items-start justify-center pt-[90px] px-4 bg-black/40 backdrop-blur-[8px] animate-fade-in"
+			onClick={onClose}
+			role="dialog"
+			aria-modal="true"
+			aria-label="Salva in una lista"
+		>
+			<div
+				className="w-[min(460px,100%)] bg-card text-fg border border-line rounded-[24px] shadow-modal overflow-hidden animate-pop-in"
+				onClick={(e) => e.stopPropagation()}
+			>
+				<div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-line">
+					<div className="min-w-0">
+						<h3 className="m-0 text-[18px] font-bold">Salva in una lista</h3>
+						<p className="m-0 text-[13px] font-medium text-fg3 truncate">{title}</p>
+					</div>
 					<button
+						type="button"
 						onClick={onClose}
-						className="p-1 hover:bg-white/10 rounded-full transition-colors"
+						className="w-9 h-9 shrink-0 rounded-full bg-bg2 flex items-center justify-center hover:opacity-80"
+						aria-label="Chiudi"
 					>
-						<X size={20} className="text-gray-400" />
+						<X size={18} />
 					</button>
 				</div>
 
-				{/* Content */}
-				<div className="p-4 max-h-[60vh] overflow-y-auto">
-					{/* Create New List Form */}
-					<form onSubmit={handleCreateList} className="mb-6 p-4 rounded-xl bg-white/5 border border-white/5">
-						<h4 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
-							<Plus size={16} /> Create New List
-						</h4>
-						<div className="space-y-3">
-							<input
-								type="text"
-								placeholder="List Name"
-								value={newListName}
-								onChange={(e) => setNewListName(e.target.value)}
-								className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary/50"
-								required
-							/>
-							<input
-								type="text"
-								placeholder="Description (optional)"
-								value={newListDesc}
-								onChange={(e) => setNewListDesc(e.target.value)}
-								className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary/50"
-							/>
-							<button
-								type="submit"
-								disabled={isCreating || !newListName.trim()}
-								className="w-full bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold py-2 rounded-lg transition-colors"
-							>
-								{isCreating ? 'Creating...' : 'Create List'}
-							</button>
-						</div>
-					</form>
-
-					{/* Lists */}
-					<div className="space-y-2">
+				<div className="p-4 max-h-[60vh] overflow-y-auto flex flex-col gap-4">
+					<div className="flex flex-col gap-2">
 						{isLoading ? (
-							<div className="text-center py-8 text-gray-500">Loading lists...</div>
+							<div className="py-6 text-center text-[14px] font-semibold text-fg3">Caricamento liste…</div>
 						) : lists.length === 0 ? (
-							<div className="text-center py-8 text-gray-500">No lists found. Create one!</div>
+							<div className="py-6 text-center text-[14px] font-semibold text-fg3">Non hai ancora liste: creane una qui sotto.</div>
 						) : (
 							lists.map((list) => {
 								const isAdded = addedLists.includes(list.id) || list.items?.some(i => i.id === mediaId);
 								return (
 									<button
 										key={list.id}
+										type="button"
 										onClick={() => handleAddToList(list.id)}
 										disabled={isAdded}
-										className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 disabled:opacity-50 disabled:cursor-default group transition-all"
+										className="w-full flex items-center justify-between gap-3 p-3 rounded-[14px] bg-bg2 text-left transition-opacity hover:opacity-80 disabled:hover:opacity-100 disabled:cursor-default"
 									>
-										<div className="text-left">
-											<div className="font-semibold text-white">{list.name}</div>
-											<div className="text-xs text-gray-400">{list.count} items</div>
-										</div>
-										{isAdded ? (
-											<div className="bg-green-500/20 text-green-500 p-1.5 rounded-full">
-												<Check size={16} />
-											</div>
-										) : (
-											<div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/10 p-1.5 rounded-full text-white">
-												<Plus size={16} />
-											</div>
-										)}
+										<span className="min-w-0">
+											<span className="block text-[15px] font-bold truncate">{list.name}</span>
+											<span className="text-[12px] font-semibold text-fg3">{list.count} titoli</span>
+										</span>
+										<span
+											className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center ${isAdded ? 'bg-acc text-accfg' : 'bg-card text-fg'}`}
+										>
+											{isAdded ? <Check size={16} /> : <Plus size={16} />}
+										</span>
 									</button>
 								);
 							})
 						)}
 					</div>
+
+					<form onSubmit={handleCreateList} className="flex flex-col gap-2.5 pt-4 border-t border-line">
+						<span className="text-[12px] font-bold text-fg3">Nuova lista</span>
+						<input
+							type="text"
+							placeholder="Nome della lista"
+							value={newListName}
+							onChange={(e) => setNewListName(e.target.value)}
+							className={field}
+							required
+						/>
+						<input
+							type="text"
+							placeholder="Descrizione (facoltativa)"
+							value={newListDesc}
+							onChange={(e) => setNewListDesc(e.target.value)}
+							className={field}
+						/>
+						<button
+							type="submit"
+							disabled={isCreating || !newListName.trim()}
+							className="h-11 rounded-full bg-fg text-bg text-[14px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-opacity hover:opacity-90"
+						>
+							{isCreating ? 'Creazione…' : 'Crea lista'}
+						</button>
+					</form>
 				</div>
 			</div>
-		</div>
+		</div>,
+		document.body
 	);
 }
