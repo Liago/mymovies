@@ -573,7 +573,25 @@ export async function fetchTVRecommendations(tvId: number, page: number = 1) {
 
 export async function fetchTVSeasonDetails(tvId: number, seasonNumber: number) {
 	const lang = await getLanguage();
-	return await getTVSeasonDetails(tvId, seasonNumber, lang);
+	const season = await getTVSeasonDetails(tvId, seasonNumber, lang);
+	if (!season || lang === 'en-US') return season;
+
+	// Le trame non tradotte arrivano vuote: le completa con quelle in inglese
+	const missing = !season.overview || season.episodes.some((e: { overview?: string }) => !e.overview);
+	if (!missing) return season;
+	const fallback = await getTVSeasonDetails(tvId, seasonNumber, 'en-US');
+	if (!fallback) return season;
+	const byNumber = new Map<number, string>(
+		fallback.episodes.map((e: { episodeNumber: number; overview?: string }) => [e.episodeNumber, e.overview || ''])
+	);
+	return {
+		...season,
+		overview: season.overview || fallback.overview,
+		episodes: season.episodes.map((e: { episodeNumber: number; overview?: string }) => ({
+			...e,
+			overview: e.overview || byNumber.get(e.episodeNumber) || '',
+		})),
+	};
 }
 
 // Revamp: catalogo, progressi serie e calendario episodi
