@@ -1,6 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/server';
+import { fetchAllRows } from '@/lib/supabase/fetch-all';
 import { HistoryItem } from '@/context/HistoryContext';
 
 // Types matching the context state
@@ -505,10 +506,15 @@ export async function getTrackerData(tmdbId: number) {
 		throw new Error(`Failed to fetch tracked shows: ${showsError.message}`);
 	}
 
-	const { data: episodes, error: episodesError } = await supabase.from('watched_episodes').select('*').eq('user_id', tmdbId);
-	if (episodesError) {
+	let episodes: { show_id: number; season_number: number; episode_number: number }[];
+	try {
+		// Paginazione: oltre 1000 righe Supabase tronca la risposta
+		episodes = await fetchAllRows((from, to) =>
+			supabase.from('watched_episodes').select('show_id, season_number, episode_number').eq('user_id', tmdbId).order('id').range(from, to)
+		);
+	} catch (episodesError) {
 		console.error('Error fetching watched episodes:', episodesError);
-		throw new Error(`Failed to fetch watched episodes: ${episodesError.message}`);
+		throw new Error(`Failed to fetch watched episodes: ${(episodesError as { message?: string })?.message}`);
 	}
 
 	const parsedShows = new Map<number, ShowMetadata>();

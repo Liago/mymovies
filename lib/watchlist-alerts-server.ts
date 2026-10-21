@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { getMovieWatchProviders, getTVWatchProviders } from '@/lib/tmdb';
 import { getLatestAiredEpisode } from '@/lib/tmdb-shows';
 import { WATCH_REGION } from '@/lib/services';
+import { fetchAllRows } from '@/lib/supabase/fetch-all';
 import type { AvailabilityMediaType } from '@/lib/availability';
 import {
 	ALERT_CHECK_INTERVAL_MS,
@@ -315,13 +316,17 @@ export async function checkTrackedEpisodes(
 	if (!withNews.length) return [];
 
 	// Niente avviso per un episodio già segnato come visto (es. visto altrove)
-	const { data: watched } = await supabase
-		.from('watched_episodes')
-		.select('show_id, season_number, episode_number')
-		.eq('user_id', userId)
-		.in('show_id', withNews.map((c) => c.show.show_id));
+	const watched = await fetchAllRows((from, to) =>
+		supabase
+			.from('watched_episodes')
+			.select('show_id, season_number, episode_number')
+			.eq('user_id', userId)
+			.in('show_id', withNews.map((c) => c.show.show_id))
+			.order('id')
+			.range(from, to)
+	);
 	const watchedKeys = new Set(
-		((watched ?? []) as { show_id: number; season_number: number; episode_number: number }[]).map(
+		(watched as { show_id: number; season_number: number; episode_number: number }[]).map(
 			(w) => `${w.show_id}:${w.season_number}:${w.episode_number}`
 		)
 	);
