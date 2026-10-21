@@ -31,7 +31,7 @@ export default function MobileTabBar() {
 						<span className="relative">
 							<Icon size={20} />
 							{href === '/profile' && unreadCount > 0 && (
-								<span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-acc ring-2 ring-bg" aria-label="Nuovi avvisi watchlist" />
+								<span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-acc ring-2 ring-bg" aria-label="Nuovi avvisi" />
 							)}
 						</span>
 						<span className="text-[10px] font-bold">{label}</span>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { checkWatchlistAvailability, INTERACTIVE_CHECK_LIMIT, toWatchlistAlert, type AlertRow } from '@/lib/watchlist-alerts-server';
+import { checkUserAlerts, INTERACTIVE_CHECK_LIMIT, toWatchlistAlert, type AlertRow } from '@/lib/watchlist-alerts-server';
 
 export const maxDuration = 60;
 
@@ -51,7 +51,7 @@ export async function GET() {
 	}
 }
 
-// POST: controlla la disponibilità dei titoli in watchlist e restituisce gli avvisi
+// POST: controlla watchlist e serie seguite e restituisce gli avvisi
 export async function POST() {
 	try {
 		const tmdbId = await getAuthenticatedTmdbId();
@@ -59,7 +59,7 @@ export async function POST() {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		const fresh = await checkWatchlistAvailability(createAdminClient(), tmdbId, { limit: INTERACTIVE_CHECK_LIMIT });
+		const fresh = await checkUserAlerts(createAdminClient(), tmdbId, { limit: INTERACTIVE_CHECK_LIMIT });
 
 		return NextResponse.json({ fresh, alerts: await listAlerts(tmdbId) });
 	} catch (error) {

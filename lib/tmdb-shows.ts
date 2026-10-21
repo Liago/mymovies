@@ -94,6 +94,29 @@ export async function getShowProgressInfo(id: number, language: string = 'it-IT'
 	};
 }
 
+export interface LatestAiredEpisode {
+	name: string;
+	poster: string | null;
+	provider: string | null;
+	episode: { season: number; episode: number; name: string; airDate: string | null } | null;
+}
+
+/** Ultimo episodio andato in onda di una serie (per gli avvisi dei nuovi episodi). */
+export async function getLatestAiredEpisode(id: number, language: string = 'it-IT'): Promise<LatestAiredEpisode | null> {
+	const [data, provider] = await Promise.all([tvDetails(id, language), tvProvider(id, language)]);
+	if (!data) return null;
+
+	const last = data.last_episode_to_air;
+	return {
+		name: data.name,
+		poster: data.poster_path ?? null,
+		provider: provider ?? data.networks?.[0]?.name ?? null,
+		episode: last
+			? { season: last.season_number, episode: last.episode_number, name: last.name, airDate: last.air_date }
+			: null,
+	};
+}
+
 export interface EpisodeInfo {
 	showId: number;
 	season: number;
