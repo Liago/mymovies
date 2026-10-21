@@ -1,8 +1,12 @@
 import type { WatchProvider, WatchProviderData } from '@/lib/tmdb';
 import type { AvailabilityMediaType, AvailabilityProvider } from '@/lib/availability';
+import { episodeCode } from '@/lib/format';
 
 /**
- * Logica (isomorfa) degli avvisi di disponibilità della watchlist.
+ * Logica (isomorfa) degli avvisi: disponibilità dei titoli in watchlist e
+ * nuovi episodi andati in onda delle serie seguite.
+ *
+ * Disponibilità.
  *
  * Per ogni titolo si conserva una "fotografia" dei provider per categoria
  * e l'insieme dei provider già segnalati. Un avviso nasce solo quando:
@@ -20,6 +24,11 @@ export const ALERT_KINDS: AlertKind[] = ['stream', 'rent', 'buy'];
 /** Ogni quanto un titolo può essere ricontrollato. */
 export const ALERT_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
+/** Ogni quanto una serie seguita può essere ricontrollata per i nuovi episodi. */
+export const EPISODE_CHECK_INTERVAL_MS = 3 * 60 * 60 * 1000;
+
+export type AlertSource = 'availability' | 'episode';
+
 export type AvailabilitySnapshot = Record<AlertKind, AvailabilityProvider[]>;
 
 /** Id dei provider già segnalati (o presenti nella fotografia di base), per categoria. */
@@ -32,8 +41,26 @@ export interface AlertChange {
 	providers: Partial<Record<AlertKind, AvailabilityProvider[]>>;
 }
 
+export interface EpisodeRef {
+	season: number;
+	episode: number;
+}
+
+export interface AiredEpisode extends EpisodeRef {
+	name: string;
+	airDate: string | null;
+}
+
+/** Dettaglio di un avviso "nuovo episodio": l'ultimo uscito e quanti ne sono usciti dall'ultimo controllo. */
+export interface EpisodeAlertInfo extends AiredEpisode {
+	newCount: number;
+	provider: string | null;
+}
+
 export interface WatchlistAlert extends AlertChange {
 	id: string;
+	source: AlertSource;
+	episode: EpisodeAlertInfo | null;
 	mediaId: number;
 	mediaType: AvailabilityMediaType;
 	title: string;
@@ -150,8 +177,45 @@ function joinNames(providers: AvailabilityProvider[] | undefined, max = 2): stri
 	return `${names.slice(0, max).join(', ')} e altri ${names.length - max}`;
 }
 
-/** Testo breve dell'avviso, es. "Ora in streaming su Netflix · anche a noleggio". */
-export function describeAlert(alert: AlertChange): string {
+function compareEpisodes(a: EpisodeRef, b: EpisodeRef): number {
+	return a.season - b.season || a.episode - b.episode;
+}
+
+/**
+ * Nuovi episodi andati in onda rispetto all'ultimo registrato.
+ * Il primo controllo (nessun episodio registrato) fa da base: nessun avviso.
+ */
+export function diffEpisodes(previous: EpisodeRef | null, latest: AiredEpisode | null): { newCount: number } | null {
+	if (!previous || !latest || compareEpisodes(latest, previous) <= 0) return null;
+	// Nella stessa stagione si contano gli episodi; con una nuova stagione quelli usciti finora
+	const newCount = latest.season === previous.season ? latest.episode - previous.episode : latest.episode;
+	return { newCount: Math.max(1, newCount) };
+}
+
+/** Unisce un nuovo episodio a un avviso non ancora letto della stessa serie. */
+export function mergeEpisodes(base: EpisodeAlertInfo, extra: EpisodeAlertInfo): EpisodeAlertInfo {
+	const latest = compareEpisodes(extra, base) >= 0 ? extra : base;
+	return { ...latest, newCount: base.newCount + extra.newCount, provider: extra.provider ?? base.provider };
+}
+
+/** Testo breve di un nuovo episodio, es. "Nuovo episodio S2 · E5 «Titolo» su Netflix". */
+export function describeEpisode(info: EpisodeAlertInfo): string {
+	const code = episodeCode(info.season, info.episode);
+	const name = info.name && !/^(episodio|episode) \d+$/i.test(info.name) ? ` «${info.name}»` : '';
+	const where = info.provider ? ` su ${info.provider}` : '';
+	return info.newCount > 1
+		? `${info.newCount} nuovi episodi, l'ultimo ${code}${name}${where}`
+		: `Nuovo episodio ${code}${name}${where}`;
+}
+
+/** Testo breve di un avviso di qualsiasi tipo. */
+export function describeAlert(alert: Pick<WatchlistAlert, 'source' | 'episode' | 'kinds' | 'providers'>): string {
+	if (alert.source === 'episode' && alert.episode) return describeEpisode(alert.episode);
+	return describeAvailability(alert);
+}
+
+/** Testo breve della disponibilità, es. "Ora in streaming su Netflix · a noleggio su Apple TV". */
+export function describeAvailability(alert: AlertChange): string {
 	const parts: string[] = [];
 	for (const kind of alert.kinds) {
 		const names = joinNames(alert.providers[kind]);

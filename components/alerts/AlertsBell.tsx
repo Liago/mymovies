@@ -26,7 +26,7 @@ export default function AlertsBell({ className, align = 'right' }: { className?:
 		};
 	}, [open]);
 
-	const label = unreadCount ? `Avvisi watchlist (${unreadCount} non letti)` : 'Avvisi watchlist';
+	const label = unreadCount ? `Avvisi (${unreadCount} non letti)` : 'Avvisi';
 
 	return (
 		<div className="relative" ref={ref}>
@@ -50,7 +50,7 @@ export default function AlertsBell({ className, align = 'right' }: { className?:
 			{open && (
 				<div
 					role="dialog"
-					aria-label="Avvisi watchlist"
+					aria-label="Avvisi"
 					className={cn(
 						'animate-pop-in absolute top-[calc(100%+10px)] z-50 w-[380px] max-md:fixed max-md:top-[max(76px,calc(env(safe-area-inset-top)+64px))] max-md:inset-x-3 max-md:w-auto p-3 bg-card border border-line rounded-[22px] shadow-popover text-fg',
 						align === 'right' ? 'right-0' : 'left-0'

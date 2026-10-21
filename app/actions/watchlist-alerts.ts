@@ -1,8 +1,8 @@
 'use server';
 
-import { fetchSnapshot } from '@/lib/watchlist-alerts-server';
+import { fetchLatestEpisode, fetchSnapshot } from '@/lib/watchlist-alerts-server';
 import { availabilityKey } from '@/lib/availability';
-import type { AlertSubject, SnapshotResult } from '@/lib/watchlist-alerts';
+import type { AiredEpisode, AlertSubject, SnapshotResult } from '@/lib/watchlist-alerts';
 
 const SNAPSHOT_BATCH_LIMIT = 40;
 
@@ -24,4 +24,24 @@ export async function fetchAvailabilitySnapshots(subjects: AlertSubject[]): Prom
 	);
 
 	return Object.fromEntries(entries);
+}
+
+export interface LatestEpisodeResult {
+	episode: AiredEpisode | null;
+	provider: string | null;
+}
+
+/** Ultimo episodio andato in onda delle serie seguite, per gli avvisi degli ospiti. */
+export async function fetchLatestEpisodes(showIds: number[]): Promise<Record<number, LatestEpisodeResult>> {
+	if (!Array.isArray(showIds)) return {};
+
+	const ids = [...new Set(showIds.map(Number).filter((id) => Number.isInteger(id) && id > 0))].slice(0, SNAPSHOT_BATCH_LIMIT);
+	const entries = await Promise.all(
+		ids.map(async (id) => {
+			const latest = await fetchLatestEpisode(id);
+			return latest ? ([id, { episode: latest.episode, provider: latest.provider }] as const) : null;
+		})
+	);
+
+	return Object.fromEntries(entries.filter((e) => e !== null));
 }

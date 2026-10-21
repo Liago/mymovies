@@ -71,12 +71,13 @@ Interfaccia "Nativa" (ispirata ad Apple TV / Letterboxd) in tema **chiaro e scur
 - Profilo con Watchlist, Preferiti, Liste e Voti; impostazioni per tema, lingua dei contenuti, feed RSS e logout
 - Notizie dai feed RSS dell'utente
 
-### 🔔 Avvisi di disponibilità della watchlist
+### 🔔 Avvisi: disponibilità della watchlist e nuovi episodi
 - Campanella (header desktop e Profilo su mobile, con pallino sulla tab Profilo) con gli avvisi quando un titolo in watchlist arriva **in streaming**, **a noleggio** o **in vendita** in Italia (dati JustWatch via TMDB)
+- Avvisi quando esce un **nuovo episodio** di una serie seguita nel Tracker (dall'ultimo episodio andato in onda su TMDB, con il servizio dove vederlo); la prima rilevazione fa da base, la prima puntata di una serie in arrivo conta come novità, più episodi usciti insieme diventano un solo avviso e gli episodi già segnati come visti non vengono notificati
 - Avvisi "intelligenti": la prima rilevazione fa da base (nessun avviso per ciò che era già disponibile), si notificano solo le categorie appena diventate disponibili e i nuovi servizi di streaming, senza doppioni quando un provider sparisce e ricompare; più novità sullo stesso titolo confluiscono in un solo avviso non letto
-- Controllo all'apertura dell'app, al ritorno in primo piano e ogni ora (ogni titolo al massimo ogni 6 ore), più un cron Vercel giornaliero (`/api/cron/watchlist-alerts`) per tutti gli utenti
+- Controllo all'apertura dell'app, al ritorno in primo piano e ogni ora (ogni titolo al massimo ogni 6 ore, ogni serie seguita ogni 3 ore), più un cron Vercel giornaliero (`/api/cron/watchlist-alerts`) per tutti gli utenti
 - Notifiche di sistema opzionali sul dispositivo (Notification API + `public/sw.js`)
-- Ospiti: tutto resta in `localStorage`; utenti collegati: tabelle `watchlist_availability` e `watchlist_alerts` (`migrations/add_watchlist_alerts.sql`)
+- Ospiti: tutto resta in `localStorage`; utenti collegati: tabelle `watchlist_availability`, `tracked_show_airing` e `watchlist_alerts` (`migrations/add_watchlist_alerts.sql`)
 
 ---
 

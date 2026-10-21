@@ -4,14 +4,19 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { useMounted } from '@/hooks/useMounted';
 import { useAuth } from './AuthContext';
 import { useWatchlist } from './WatchlistContext';
-import { fetchAvailabilitySnapshots } from '@/app/actions/watchlist-alerts';
+import { useTracker } from './TrackerContext';
+import { fetchAvailabilitySnapshots, fetchLatestEpisodes } from '@/app/actions/watchlist-alerts';
 import { availabilityKey } from '@/lib/availability';
 import {
 	ALERT_CHECK_INTERVAL_MS,
+	EPISODE_CHECK_INTERVAL_MS,
 	describeAlert,
 	diffAvailability,
+	diffEpisodes,
 	mergeChanges,
+	mergeEpisodes,
 	type AvailabilitySnapshot,
+	type EpisodeRef,
 	type NotifiedProviders,
 	type WatchlistAlert,
 } from '@/lib/watchlist-alerts';
@@ -38,6 +43,7 @@ const LAST_CHECK_KEY = 'cinescope:alerts-last-check';
 const SYSTEM_PREF_KEY = 'cinescope:alerts-system';
 const GUEST_ALERTS_KEY = 'cine_watchlist_alerts';
 const GUEST_STATES_KEY = 'cine_watchlist_availability';
+const GUEST_AIRING_KEY = 'cine_tracker_airing';
 const GUEST_ALERTS_LIMIT = 50;
 /** Ogni quanto l'app avvia un controllo mentre è aperta (il server limita comunque per titolo). */
 const CLIENT_CHECK_INTERVAL_MS = 60 * 60 * 1000;
@@ -45,6 +51,12 @@ const CLIENT_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 interface GuestState {
 	snapshot: AvailabilitySnapshot;
 	notified: NotifiedProviders;
+	checkedAt: number;
+}
+
+interface GuestAiringState {
+	/** null = serie controllata ma senza episodi usciti. */
+	last: EpisodeRef | null;
 	checkedAt: number;
 }
 
@@ -92,17 +104,24 @@ async function showSystemNotification(alert: WatchlistAlert) {
 export function WatchlistAlertsProvider({ children }: { children: React.ReactNode }) {
 	const { user, isLoading: authLoading } = useAuth();
 	const { watchlist, isLoading: watchlistLoading } = useWatchlist();
+	const { watchedShows, watchedEpisodes, isLoading: trackerLoading } = useTracker();
 	const [alerts, setAlerts] = useState<WatchlistAlert[]>([]);
 	const [isChecking, setIsChecking] = useState(false);
 	const [permission, setPermission] = useState<SystemNotificationsState>('unsupported');
 	const [systemPref, setSystemPref] = useState(false);
 	const checking = useRef(false);
 	const watchlistRef = useRef(watchlist);
-	watchlistRef.current = watchlist;
+	const trackerRef = useRef({ watchedShows, watchedEpisodes });
+	useEffect(() => {
+		watchlistRef.current = watchlist;
+		trackerRef.current = { watchedShows, watchedEpisodes };
+	}, [watchlist, watchedShows, watchedEpisodes]);
 
 	const systemNotificationsEnabled = systemPref && permission === 'granted';
 	const notifyRef = useRef(systemNotificationsEnabled);
-	notifyRef.current = systemNotificationsEnabled;
+	useEffect(() => {
+		notifyRef.current = systemNotificationsEnabled;
+	}, [systemNotificationsEnabled]);
 
 	useEffect(() => {
 		setPermission(currentPermission());
@@ -117,8 +136,8 @@ export function WatchlistAlertsProvider({ children }: { children: React.ReactNod
 		fresh.forEach(showSystemNotification);
 	}, []);
 
-	// Controllo per gli ospiti: fotografie e avvisi restano su questo dispositivo
-	const checkGuest = useCallback(async () => {
+	// Ospiti: disponibilità della watchlist, fotografie salvate su questo dispositivo
+	const checkGuestAvailability = useCallback(async (stored: WatchlistAlert[]): Promise<WatchlistAlert[]> => {
 		const items = watchlistRef.current;
 		const states = readStorage<Record<string, GuestState>>(GUEST_STATES_KEY, {});
 		const now = Date.now();
@@ -135,11 +154,10 @@ export function WatchlistAlertsProvider({ children }: { children: React.ReactNod
 
 		if (!due.length) {
 			writeStorage(GUEST_STATES_KEY, states);
-			return;
+			return [];
 		}
 
 		const results = await fetchAvailabilitySnapshots(due.map((i) => ({ id: i.id, type: i.media_type })));
-		const stored = readStorage<WatchlistAlert[]>(GUEST_ALERTS_KEY, []);
 		const fresh: WatchlistAlert[] = [];
 
 		for (const item of due) {
@@ -151,11 +169,15 @@ export function WatchlistAlertsProvider({ children }: { children: React.ReactNod
 			states[key] = { snapshot: result.snapshot, notified, checkedAt: now };
 			if (!change) continue;
 
-			const unreadIndex = stored.findIndex((a) => !a.read && a.mediaId === item.id && a.mediaType === item.media_type);
+			const unreadIndex = stored.findIndex(
+				(a) => !a.read && a.source === 'availability' && a.mediaId === item.id && a.mediaType === item.media_type
+			);
 			const unread = unreadIndex >= 0 ? stored.splice(unreadIndex, 1)[0] : null;
 			const merged = unread ? mergeChanges(unread, change) : change;
 			fresh.push({
 				id: unread?.id ?? `${key}:${now}`,
+				source: 'availability',
+				episode: null,
 				mediaId: item.id,
 				mediaType: item.media_type,
 				title: item.title,
@@ -168,13 +190,80 @@ export function WatchlistAlertsProvider({ children }: { children: React.ReactNod
 		}
 
 		writeStorage(GUEST_STATES_KEY, states);
-		if (fresh.length) {
-			const next = [...fresh, ...stored].slice(0, GUEST_ALERTS_LIMIT);
-			writeStorage(GUEST_ALERTS_KEY, next);
-			setAlerts(next);
-			announce(fresh);
+		return fresh;
+	}, []);
+
+	// Ospiti: nuovi episodi delle serie seguite nel Tracker
+	const checkGuestEpisodes = useCallback(async (stored: WatchlistAlert[]): Promise<WatchlistAlert[]> => {
+		const { watchedShows: shows, watchedEpisodes: watched } = trackerRef.current;
+		const states = readStorage<Record<string, GuestAiringState>>(GUEST_AIRING_KEY, {});
+		const now = Date.now();
+
+		for (const id of Object.keys(states)) if (!shows.has(Number(id))) delete states[id];
+
+		const due = [...shows.values()]
+			.filter((show) => {
+				const state = states[show.id];
+				return !state || now - state.checkedAt >= EPISODE_CHECK_INTERVAL_MS;
+			})
+			.slice(0, 40);
+
+		if (!due.length) {
+			writeStorage(GUEST_AIRING_KEY, states);
+			return [];
 		}
-	}, [announce]);
+
+		const results = await fetchLatestEpisodes(due.map((s) => s.id));
+		const fresh: WatchlistAlert[] = [];
+
+		for (const show of due) {
+			const result = results[show.id];
+			if (!result) continue; // TMDB non ha risposto: si riprova al prossimo giro
+			const state = states[show.id];
+			const latest = result.episode;
+			states[show.id] = { last: latest ? { season: latest.season, episode: latest.episode } : null, checkedAt: now };
+
+			// Serie già controllata ma ancora senza episodi: la prima puntata conta come novità
+			const previous = state ? state.last ?? { season: 0, episode: 0 } : null;
+			const diff = diffEpisodes(previous, latest);
+			if (!diff || !latest || watched.has(`${show.id}:${latest.season}:${latest.episode}`)) continue;
+
+			const info = { ...latest, newCount: diff.newCount, provider: result.provider };
+			const unreadIndex = stored.findIndex((a) => !a.read && a.source === 'episode' && a.mediaId === show.id);
+			const unread = unreadIndex >= 0 ? stored.splice(unreadIndex, 1)[0] : null;
+			fresh.push({
+				id: unread?.id ?? `episode:${show.id}:${now}`,
+				source: 'episode',
+				mediaId: show.id,
+				mediaType: 'tv',
+				title: show.name,
+				poster: show.poster,
+				link: null,
+				createdAt: new Date(now).toISOString(),
+				read: false,
+				kinds: [],
+				providers: {},
+				episode: unread?.episode ? mergeEpisodes(unread.episode, info) : info,
+			});
+		}
+
+		writeStorage(GUEST_AIRING_KEY, states);
+		return fresh;
+	}, []);
+
+	const checkGuest = useCallback(async () => {
+		const stored = readStorage<WatchlistAlert[]>(GUEST_ALERTS_KEY, []);
+		// `stored` viene modificato: gli avvisi aggiornati ne escono e tornano in testa
+		const episodes = await checkGuestEpisodes(stored);
+		const availability = await checkGuestAvailability(stored);
+		const fresh = [...episodes, ...availability];
+		if (!fresh.length) return;
+
+		const next = [...fresh, ...stored].slice(0, GUEST_ALERTS_LIMIT);
+		writeStorage(GUEST_ALERTS_KEY, next);
+		setAlerts(next);
+		announce(fresh);
+	}, [announce, checkGuestAvailability, checkGuestEpisodes]);
 
 	const runCheck = useCallback(async () => {
 		if (checking.current) return;
@@ -215,7 +304,7 @@ export function WatchlistAlertsProvider({ children }: { children: React.ReactNod
 
 	// Controllo all'apertura, quando l'app torna in primo piano e una volta all'ora
 	useEffect(() => {
-		if (authLoading || watchlistLoading) return;
+		if (authLoading || watchlistLoading || trackerLoading) return;
 
 		const maybeCheck = () => {
 			if (document.visibilityState !== 'visible') return;
@@ -231,20 +320,20 @@ export function WatchlistAlertsProvider({ children }: { children: React.ReactNod
 			clearInterval(interval);
 			document.removeEventListener('visibilitychange', maybeCheck);
 		};
-	}, [authLoading, watchlistLoading, runCheck]);
+	}, [authLoading, watchlistLoading, trackerLoading, runCheck]);
 
-	// Un nuovo titolo in watchlist riceve subito la sua fotografia di base
-	const watchlistSize = watchlist.length;
+	// Un nuovo titolo in watchlist o una nuova serie seguita ricevono subito la loro base
+	const followedSize = watchlist.length + watchedShows.size;
 	const previousSize = useRef<number | null>(null);
 	useEffect(() => {
-		if (watchlistLoading) return;
-		if (previousSize.current !== null && watchlistSize > previousSize.current) {
+		if (watchlistLoading || trackerLoading) return;
+		if (previousSize.current !== null && followedSize > previousSize.current) {
 			const timer = setTimeout(runCheck, 1500);
-			previousSize.current = watchlistSize;
+			previousSize.current = followedSize;
 			return () => clearTimeout(timer);
 		}
-		previousSize.current = watchlistSize;
-	}, [watchlistSize, watchlistLoading, runCheck]);
+		previousSize.current = followedSize;
+	}, [followedSize, watchlistLoading, trackerLoading, runCheck]);
 
 	const updateGuestAlerts = useCallback((update: (prev: WatchlistAlert[]) => WatchlistAlert[]) => {
 		setAlerts((prev) => {

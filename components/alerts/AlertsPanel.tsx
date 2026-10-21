@@ -35,6 +35,11 @@ function AlertRow({ alert, onOpen }: { alert: WatchlistAlert; onOpen: (alert: Wa
 				</span>
 				<span className="text-[12px] font-semibold text-fg2 leading-snug">{describeAlert(alert)}</span>
 				<span className="flex items-center gap-1.5 flex-wrap">
+					{alert.source === 'episode' && (
+						<span className="h-5 px-2 rounded-full bg-bg2 text-[10px] font-bold text-fg2 flex items-center">
+							{alert.episode && alert.episode.newCount > 1 ? 'Nuovi episodi' : 'Nuovo episodio'}
+						</span>
+					)}
 					{alert.kinds.map((kind) => (
 						<span key={kind} className="h-5 px-2 rounded-full bg-bg2 text-[10px] font-bold text-fg2 flex items-center">
 							{KIND_LABEL[kind]}
@@ -58,7 +63,7 @@ function AlertRow({ alert, onOpen }: { alert: WatchlistAlert; onOpen: (alert: Wa
 	);
 }
 
-/** Elenco degli avvisi di disponibilità della watchlist, con azioni e preferenza delle notifiche di sistema. */
+/** Elenco degli avvisi (disponibilità della watchlist e nuovi episodi), con azioni e preferenza delle notifiche di sistema. */
 export default function AlertsPanel({ onNavigate, className }: { onNavigate?: () => void; className?: string }) {
 	const {
 		alerts,
@@ -84,9 +89,9 @@ export default function AlertsPanel({ onNavigate, className }: { onNavigate?: ()
 		<div className={cn('flex flex-col gap-3', className)}>
 			<div className="flex items-center gap-2">
 				<div className="flex-1 min-w-0 flex flex-col">
-					<span className="text-[16px] font-extrabold">Disponibilità watchlist</span>
+					<span className="text-[16px] font-extrabold">Avvisi</span>
 					<span className="text-[12px] font-semibold text-fg3">
-						{unreadCount ? `${unreadCount} novità da vedere` : 'Streaming, noleggio e acquisto'}
+						{unreadCount ? `${unreadCount} novità da vedere` : 'Watchlist e serie seguite'}
 					</span>
 				</div>
 				<button type="button" onClick={() => checkNow()} disabled={isChecking} className={iconButton} aria-label="Controlla ora" title="Controlla ora">
@@ -108,7 +113,7 @@ export default function AlertsPanel({ onNavigate, className }: { onNavigate?: ()
 				</div>
 			) : (
 				<p className="m-0 py-6 text-center text-[13px] font-semibold text-fg3 text-balance">
-					Ti avviseremo quando un titolo della tua watchlist arriva in streaming, a noleggio o in vendita.
+					Ti avviseremo quando un titolo della tua watchlist arriva in streaming, a noleggio o in vendita e quando esce un nuovo episodio di una serie che segui.
 				</p>
 			)}
 
