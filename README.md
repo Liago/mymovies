@@ -71,6 +71,13 @@ Interfaccia "Nativa" (ispirata ad Apple TV / Letterboxd) in tema **chiaro e scur
 - Profilo con Watchlist, Preferiti, Liste e Voti; impostazioni per tema, lingua dei contenuti, feed RSS e logout
 - Notizie dai feed RSS dell'utente
 
+### 🔔 Avvisi di disponibilità della watchlist
+- Campanella (header desktop e Profilo su mobile, con pallino sulla tab Profilo) con gli avvisi quando un titolo in watchlist arriva **in streaming**, **a noleggio** o **in vendita** in Italia (dati JustWatch via TMDB)
+- Avvisi "intelligenti": la prima rilevazione fa da base (nessun avviso per ciò che era già disponibile), si notificano solo le categorie appena diventate disponibili e i nuovi servizi di streaming, senza doppioni quando un provider sparisce e ricompare; più novità sullo stesso titolo confluiscono in un solo avviso non letto
+- Controllo all'apertura dell'app, al ritorno in primo piano e ogni ora (ogni titolo al massimo ogni 6 ore), più un cron Vercel giornaliero (`/api/cron/watchlist-alerts`) per tutti gli utenti
+- Notifiche di sistema opzionali sul dispositivo (Notification API + `public/sw.js`)
+- Ospiti: tutto resta in `localStorage`; utenti collegati: tabelle `watchlist_availability` e `watchlist_alerts` (`migrations/add_watchlist_alerts.sql`)
+
 ---
 
 ## 🛠 Stack Tecnologico
@@ -195,6 +202,9 @@ TMDB_API_KEY=your_tmdb_api_key_here
 
 # OMDb API - Open Movie Database  
 OMDB_API_KEY=your_omdb_api_key_here
+
+# Cron Vercel per gli avvisi di disponibilità della watchlist
+CRON_SECRET=your_random_cron_secret_here
 ```
 
 ### Come Ottenere le API Key

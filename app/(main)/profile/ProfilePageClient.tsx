@@ -12,6 +12,7 @@ import { useTracker } from '@/context/TrackerContext';
 import MovieCard from '@/components/MovieCard';
 import CreateListButton from '@/components/CreateListButton';
 import SettingsMenu from '@/components/profile/SettingsMenu';
+import AlertsBell from '@/components/alerts/AlertsBell';
 import UserAvatar from '@/components/UserAvatar';
 import PageShell from '@/components/ui/PageShell';
 import Segmented from '@/components/ui/Segmented';
@@ -150,7 +151,8 @@ export default function ProfilePageClient({ initialTab }: { initialTab: ProfileT
 						</button>
 					</span>
 				)}
-				<span className="md:hidden">
+				<span className="md:hidden ml-auto flex items-center gap-2">
+					<AlertsBell className="w-11 h-11 rounded-full bg-bg2 flex items-center justify-center transition-opacity hover:opacity-80" />
 					<SettingsMenu compact />
 				</span>
 				<span className="hidden md:block">

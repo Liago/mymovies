@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MOBILE_TABS } from '@/lib/navigation';
 import { cn } from '@/lib/cn';
+import { useWatchlistAlerts } from '@/context/WatchlistAlertsContext';
 
 /** Tab bar in vetro, fissa in basso sotto i 768px. */
 export default function MobileTabBar() {
 	const pathname = usePathname() || '/';
+	const { unreadCount } = useWatchlistAlerts();
 
 	return (
 		<nav
@@ -26,7 +28,12 @@ export default function MobileTabBar() {
 							active ? 'text-acc' : 'text-fg3'
 						)}
 					>
-						<Icon size={20} />
+						<span className="relative">
+							<Icon size={20} />
+							{href === '/profile' && unreadCount > 0 && (
+								<span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-acc ring-2 ring-bg" aria-label="Nuovi avvisi watchlist" />
+							)}
+						</span>
 						<span className="text-[10px] font-bold">{label}</span>
 					</Link>
 				);

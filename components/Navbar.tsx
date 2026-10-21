@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import SearchOverlay from './SearchOverlay';
 import ThemeToggle from './ThemeToggle';
 import UserAvatar from './UserAvatar';
+import AlertsBell from './alerts/AlertsBell';
 import { useAuth } from '@/context/AuthContext';
 import { EXPLORE_ITEMS, isHeroPage } from '@/lib/navigation';
 import { cn } from '@/lib/cn';
@@ -153,6 +154,7 @@ export default function Navbar() {
 					>
 						<Search size={18} />
 					</button>
+					<AlertsBell className={roundButton} />
 					<ThemeToggle className={roundButton} />
 					{!hasMounted || isLoading ? (
 						<span className="w-[42px] h-[42px] rounded-full bg-ph1 animate-pulse" />

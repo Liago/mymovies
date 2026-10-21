@@ -12,6 +12,7 @@ import { HistoryProvider } from "@/context/HistoryContext";
 import { TrackerProvider } from "@/context/TrackerContext";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { WatchlistProvider } from "@/context/WatchlistContext";
+import { WatchlistAlertsProvider } from "@/context/WatchlistAlertsContext";
 import { RatingsProvider } from "@/context/RatingsContext";
 import { ListsProvider } from "@/context/ListsContext";
 import { RSSProvider } from "@/context/RSSContext";
@@ -57,6 +58,7 @@ export default function RootLayout({
 								<TrackerProvider>
 									<FavoritesProvider>
 										<WatchlistProvider>
+											<WatchlistAlertsProvider>
 											<ListsProvider>
 												<RatingsProvider>
 													<RSSProvider>
@@ -68,6 +70,7 @@ export default function RootLayout({
 													</RSSProvider>
 												</RatingsProvider>
 											</ListsProvider>
+											</WatchlistAlertsProvider>
 										</WatchlistProvider>
 									</FavoritesProvider>
 								</TrackerProvider>
