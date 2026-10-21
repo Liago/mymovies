@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/server';
+import { fetchAllRows } from '@/lib/supabase/fetch-all';
+
+interface TrackedShowRow {
+	show_id: number;
+	name: string;
+	poster_path: string | null;
+	last_updated: string;
+}
+
+interface WatchedEpisodeRow {
+	show_id: number;
+	season_number: number;
+	episode_number: number;
+}
 
 async function getAuthenticatedTmdbId() {
 	const supabase = await createClient();
@@ -29,22 +43,24 @@ export async function GET() {
 
 		const supabase = createAdminClient();
 
-		const [showsResult, episodesResult] = await Promise.all([
-			supabase.from('tracked_shows').select('*').eq('user_id', tmdbId).order('last_updated', { ascending: false }),
-			supabase.from('watched_episodes').select('*').eq('user_id', tmdbId)
+		// Paginazione: oltre 1000 righe Supabase tronca la risposta
+		const [shows, episodes] = await Promise.all([
+			fetchAllRows<TrackedShowRow>((from, to) =>
+				supabase.from('tracked_shows').select('*').eq('user_id', tmdbId).order('last_updated', { ascending: false }).order('id').range(from, to)
+			),
+			fetchAllRows<WatchedEpisodeRow>((from, to) =>
+				supabase.from('watched_episodes').select('show_id, season_number, episode_number').eq('user_id', tmdbId).order('id').range(from, to)
+			)
 		]);
 
-		if (showsResult.error) throw showsResult.error;
-		if (episodesResult.error) throw episodesResult.error;
-
-		const watchedShows = (showsResult.data || []).map((s: any) => ({
+		const watchedShows = shows.map((s) => ({
 			id: s.show_id,
 			name: s.name,
 			poster: s.poster_path,
 			lastUpdated: new Date(s.last_updated).getTime()
 		}));
 
-		const watchedEpisodes = (episodesResult.data || []).map((e: any) =>
+		const watchedEpisodes = episodes.map((e) =>
 			`${e.show_id}:${e.season_number}:${e.episode_number}`
 		);
 

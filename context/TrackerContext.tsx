@@ -31,6 +31,13 @@ interface TrackerContextType {
 const TrackerContext = createContext<TrackerContextType | undefined>(undefined);
 
 const EMPTY_EPISODES = new Set<EpisodeKey>();
+
+/** Come `fetch`, ma considera un errore anche le risposte HTTP non 2xx (es. 401, 500). */
+async function send(url: string, init?: RequestInit) {
+	const response = await fetch(url, init);
+	if (!response.ok) throw new Error(`${init?.method ?? 'GET'} ${url} failed: ${response.status}`);
+	return response;
+}
 const EMPTY_SHOWS = new Map<number, ShowMetadata>();
 
 export function TrackerProvider({ children }: { children: React.ReactNode }) {
@@ -144,7 +151,7 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 
 		if (user) {
 			try {
-				await fetch('/api/tracker', {
+				await send('/api/tracker', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ showId: tvId, name: showMeta.name, poster: showMeta.poster })
@@ -173,7 +180,7 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 
 		if (user) {
 			try {
-				await fetch(`/api/tracker?showId=${tvId}`, { method: 'DELETE' });
+				await send(`/api/tracker?showId=${tvId}`, { method: 'DELETE' });
 			} catch (error) {
 				console.error('Error untracking show:', error);
 				// Revert on error
@@ -219,7 +226,7 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 
 		if (user) {
 			try {
-				await fetch('/api/tracker/episodes', {
+				await send('/api/tracker/episodes', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
@@ -264,12 +271,15 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 	}, [watchedShows]);
 
 	const markSeasonWatched = useCallback(async (tvId: number, seasonNumber: number, episodes: { episodeNumber: number }[], showMeta?: { name: string, poster: string | null }) => {
+		// Solo gli episodi non ancora visti, per poterli annullare in caso di errore
+		const added = episodes
+			.map(ep => `${tvId}:${seasonNumber}:${ep.episodeNumber}`)
+			.filter(key => !watchedEpisodes.has(key));
+
 		// Optimistic update
 		setWatchedEpisodes(prev => {
 			const newSet = new Set(prev);
-			episodes.forEach(ep => {
-				newSet.add(`${tvId}:${seasonNumber}:${ep.episodeNumber}`);
-			});
+			added.forEach(key => newSet.add(key));
 			return newSet;
 		});
 
@@ -288,7 +298,7 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 
 		if (user) {
 			try {
-				await fetch('/api/tracker/episodes', {
+				await send('/api/tracker/episodes', {
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
@@ -300,31 +310,45 @@ export function TrackerProvider({ children }: { children: React.ReactNode }) {
 				});
 			} catch (error) {
 				console.error('Error marking season as watched:', error);
+				// Revert on error: gli episodi non sono stati salvati
+				setWatchedEpisodes(prev => {
+					const newSet = new Set(prev);
+					added.forEach(key => newSet.delete(key));
+					return newSet;
+				});
 			}
 		}
-	}, [user]);
+	}, [user, watchedEpisodes]);
 
 	const markSeasonUnwatched = useCallback(async (tvId: number, seasonNumber: number, episodes: { episodeNumber: number }[]) => {
+		const removed = episodes
+			.map(ep => `${tvId}:${seasonNumber}:${ep.episodeNumber}`)
+			.filter(key => watchedEpisodes.has(key));
+
 		// Optimistic update
 		setWatchedEpisodes(prev => {
 			const newSet = new Set(prev);
-			episodes.forEach(ep => {
-				newSet.delete(`${tvId}:${seasonNumber}:${ep.episodeNumber}`);
-			});
+			removed.forEach(key => newSet.delete(key));
 			return newSet;
 		});
 
 		if (user) {
 			try {
 				const episodeNums = episodes.map(e => e.episodeNumber).join(',');
-				await fetch(`/api/tracker/episodes?showId=${tvId}&season=${seasonNumber}&episodes=${episodeNums}`, {
+				await send(`/api/tracker/episodes?showId=${tvId}&season=${seasonNumber}&episodes=${episodeNums}`, {
 					method: 'DELETE'
 				});
 			} catch (error) {
 				console.error('Error unmarking season:', error);
+				// Revert on error
+				setWatchedEpisodes(prev => {
+					const newSet = new Set(prev);
+					removed.forEach(key => newSet.add(key));
+					return newSet;
+				});
 			}
 		}
-	}, [user]);
+	}, [user, watchedEpisodes]);
 
 	return (
 		<TrackerContext.Provider value={{

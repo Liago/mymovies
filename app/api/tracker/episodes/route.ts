@@ -144,19 +144,16 @@ export async function DELETE(request: NextRequest) {
 			return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
 		}
 
-		const episodes = episodesParam.split(',').map(Number);
+		const episodes = episodesParam.split(',').map(Number).filter(Number.isInteger);
 		const supabase = createAdminClient();
 
-		for (const ep of episodes) {
-			const { error } = await supabase.from('watched_episodes').delete().match({
-				user_id: tmdbId,
-				show_id: parseInt(showId),
-				season_number: parseInt(season),
-				episode_number: ep
-			});
+		const { error } = await supabase
+			.from('watched_episodes')
+			.delete()
+			.match({ user_id: tmdbId, show_id: parseInt(showId), season_number: parseInt(season) })
+			.in('episode_number', episodes);
 
-			if (error) throw error;
-		}
+		if (error) throw error;
 
 		return NextResponse.json({ success: true });
 	} catch (error) {
