@@ -4,6 +4,7 @@ import { Figtree } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import MobileTabBar from "@/components/MobileTabBar";
+import NavigationTracker from "@/components/NavigationTracker";
 import ThemeProvider from "@/components/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
@@ -49,6 +50,7 @@ export default function RootLayout({
 		<html lang="it" className={figtree.variable} suppressHydrationWarning>
 			<body className="antialiased bg-bg text-fg">
 				<ThemeProvider>
+					<NavigationTracker />
 					<LanguageProvider>
 						<AuthProvider>
 							<HistoryProvider>

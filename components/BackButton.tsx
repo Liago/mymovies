@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { canGoBackInApp, markInAppBack } from '@/lib/in-app-history';
 
 interface BackButtonProps {
 	fallbackHref?: string;
@@ -16,8 +17,9 @@ export default function BackButton({ fallbackHref = '/', label = 'Indietro', var
 	const router = useRouter();
 
 	const handleBack = () => {
-		// Torna indietro solo se si arriva da una pagina del sito (non da una nuova scheda)
-		if (typeof window !== 'undefined' && document.referrer && document.referrer.includes(window.location.origin)) {
+		// Torna indietro solo se la pagina precedente è dell'app (non una nuova scheda o un sito esterno)
+		if (canGoBackInApp()) {
+			markInAppBack();
 			router.back();
 		} else {
 			router.push(fallbackHref);
