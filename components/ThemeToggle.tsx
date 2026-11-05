@@ -1,6 +1,6 @@
 'use client';
 
-import { Moon, Sun } from 'lucide-react';
+import { Monitor, Moon, Sun, type LucideIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useMounted } from '@/hooks/useMounted';
 
@@ -8,22 +8,47 @@ interface ThemeToggleProps {
 	className?: string;
 }
 
-/** Pulsante sole/luna: alterna tra tema chiaro e scuro. */
+type ThemeMode = 'light' | 'dark' | 'system';
+
+interface ThemeModeInfo {
+	icon: LucideIcon;
+	label: string;
+	next: ThemeMode;
+}
+
+/** Ciclo: Chiaro → Scuro → Sistema → Chiaro. */
+const MODES: Record<ThemeMode, ThemeModeInfo> = {
+	light: { icon: Sun, label: 'Tema chiaro', next: 'dark' },
+	dark: { icon: Moon, label: 'Tema scuro', next: 'system' },
+	system: { icon: Monitor, label: 'Tema di sistema', next: 'light' },
+};
+
+const isThemeMode = (value: string | undefined): value is ThemeMode =>
+	value === 'light' || value === 'dark' || value === 'system';
+
+/**
+ * Pulsante tema a tre stati: chiaro, scuro e sistema (segue
+ * `prefers-color-scheme` e si aggiorna in automatico quando cambia l'OS).
+ */
 export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
-	const { resolvedTheme, setTheme } = useTheme();
+	const { theme, resolvedTheme, setTheme } = useTheme();
 	const mounted = useMounted();
 
-	const isDark = mounted ? resolvedTheme === 'dark' : true;
+	// Prima dell'idratazione il tema non è noto: si mostra "sistema" (il default).
+	const current: ThemeMode = mounted && isThemeMode(theme) ? theme : 'system';
+	const { icon: Icon, label, next } = MODES[current];
+	const nextLabel = MODES[next].label.toLowerCase();
+	const detail = current === 'system' && mounted && resolvedTheme ? ` (ora ${resolvedTheme === 'dark' ? 'scuro' : 'chiaro'})` : '';
 
 	return (
 		<button
 			type="button"
-			onClick={() => setTheme(isDark ? 'light' : 'dark')}
+			onClick={() => setTheme(next)}
 			className={className}
-			aria-label={isDark ? 'Passa al tema chiaro' : 'Passa al tema scuro'}
-			title={isDark ? 'Tema chiaro' : 'Tema scuro'}
+			aria-label={`${label}${detail}. Passa al ${nextLabel}`}
+			title={`${label}${detail}`}
 		>
-			{isDark ? <Sun size={18} /> : <Moon size={18} />}
+			<Icon size={18} />
 		</button>
 	);
 }

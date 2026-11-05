@@ -6,6 +6,7 @@ import { Check, History, LogIn, LogOut, Monitor, Moon, Rss, Settings, Sun } from
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useMounted } from '@/hooks/useMounted';
 import { cn } from '@/lib/cn';
 
 /**
@@ -16,6 +17,9 @@ export default function SettingsMenu({ compact = false }: { compact?: boolean })
 	const [open, setOpen] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
 	const { theme, setTheme } = useTheme();
+	const mounted = useMounted();
+	// Prima dell'idratazione `theme` è undefined: vale il default "system".
+	const currentTheme = mounted ? (theme ?? 'system') : 'system';
 	const { language, setLanguage } = useLanguage();
 	const { isLoggedIn, login, logout } = useAuth();
 
@@ -65,14 +69,14 @@ export default function SettingsMenu({ compact = false }: { compact?: boolean })
 					<div className="flex flex-col gap-1.5">
 						<span className="px-1 text-[12px] font-bold text-fg3">Tema</span>
 						<div className="flex gap-0.5 p-1 rounded-full bg-bg2">
-							<button type="button" className={option(theme === 'light')} onClick={() => setTheme('light')}>
+							<button type="button" className={option(currentTheme === 'light')} onClick={() => setTheme('light')}>
 								<Sun size={14} /> Chiaro
 							</button>
-							<button type="button" className={option(theme === 'dark')} onClick={() => setTheme('dark')}>
+							<button type="button" className={option(currentTheme === 'dark')} onClick={() => setTheme('dark')}>
 								<Moon size={14} /> Scuro
 							</button>
-							<button type="button" className={option(theme === 'system' || !theme)} onClick={() => setTheme('system')}>
-								<Monitor size={14} /> Auto
+							<button type="button" className={option(currentTheme === 'system')} onClick={() => setTheme('system')}>
+								<Monitor size={14} /> Sistema
 							</button>
 						</div>
 					</div>
