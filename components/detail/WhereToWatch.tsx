@@ -1,10 +1,13 @@
 import { ArrowUpRight } from 'lucide-react';
 import type { WatchProvider, WatchProviderData } from '@/lib/tmdb';
 import { STREAMING_SERVICES } from '@/lib/services';
+import { providerHref } from '@/lib/watch-links';
 
 interface WhereToWatchProps {
 	providers: WatchProviderData | null;
 	title: string;
+	/** Titolo del film/serie, usato per la ricerca sulla piattaforma se manca il deep link. */
+	mediaTitle?: string;
 	/** Contenuto extra prima del footer (es. "Il tuo voto"). */
 	children?: React.ReactNode;
 }
@@ -26,7 +29,7 @@ function dedupe(rows: Row[]): Row[] {
 }
 
 /** Pannello "Dove guardarlo": Streaming / Noleggio / Acquisto (JustWatch). */
-export default function WhereToWatch({ providers, title, children }: WhereToWatchProps) {
+export default function WhereToWatch({ providers, title, mediaTitle, children }: WhereToWatchProps) {
 	const groups = [
 		{
 			label: 'Streaming',
@@ -51,6 +54,7 @@ export default function WhereToWatch({ providers, title, children }: WhereToWatc
 					<div key={group.label} className="flex flex-col gap-2">
 						<span className="text-[12px] font-bold text-fg3">{group.label}</span>
 						{group.rows.slice(0, 5).map(({ provider, note }) => {
+							const href = providerHref(provider, providers, mediaTitle);
 							const content = (
 								<>
 									{provider.logo_path ? (
@@ -65,12 +69,19 @@ export default function WhereToWatch({ providers, title, children }: WhereToWatc
 									)}
 									<span className="flex-1 min-w-0 text-[14px] font-bold truncate">{shortName(provider)}</span>
 									<span className="text-[13px] font-semibold text-fg2 whitespace-nowrap">{note}</span>
-									{providers?.link && <ArrowUpRight size={15} className="text-fg3 shrink-0" />}
+									{href && <ArrowUpRight size={15} className="text-fg3 shrink-0" />}
 								</>
 							);
 							const cls = 'flex items-center gap-3 p-2 rounded-[12px] bg-bg2 transition-opacity';
-							return providers?.link ? (
-								<a key={provider.provider_id} href={providers.link} target="_blank" rel="noopener noreferrer" className={`${cls} hover:opacity-80`}>
+							return href ? (
+								<a
+									key={provider.provider_id}
+									href={href}
+									target="_blank"
+									rel="noopener noreferrer"
+									title={`Apri su ${shortName(provider)}`}
+									className={`${cls} hover:opacity-80`}
+								>
 									{content}
 								</a>
 							) : (
@@ -90,8 +101,16 @@ export default function WhereToWatch({ providers, title, children }: WhereToWatc
 	);
 }
 
+export interface PrimaryStreaming {
+	name: string;
+	logo: string | null;
+	others: string[];
+	/** Link alla piattaforma (deep link, ricerca o pagina TMDB). */
+	href: string | null;
+}
+
 /** Primo servizio in abbonamento, per la card "Guarda su …" su mobile. */
-export function primaryStreaming(providers: WatchProviderData | null): { name: string; logo: string | null; others: string[] } | null {
+export function primaryStreaming(providers: WatchProviderData | null, mediaTitle?: string): PrimaryStreaming | null {
 	const list = [...(providers?.flatrate || []), ...(providers?.free || []), ...(providers?.ads || [])].sort(
 		(a, b) => a.display_priority - b.display_priority
 	);
@@ -101,5 +120,6 @@ export function primaryStreaming(providers: WatchProviderData | null): { name: s
 		name: names[0],
 		logo: list[0].logo_path ? `https://image.tmdb.org/t/p/w92${list[0].logo_path}` : null,
 		others: names.slice(1, 3),
+		href: providerHref(list[0], providers, mediaTitle),
 	};
 }

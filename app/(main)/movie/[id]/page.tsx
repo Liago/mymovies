@@ -18,6 +18,7 @@ import WhereToWatch, { primaryStreaming } from '@/components/detail/WhereToWatch
 import UserRating from '@/components/detail/UserRating';
 import ReviewList, { type Review } from '@/components/detail/ReviewList';
 import PosterGrid from '@/components/detail/PosterGrid';
+import { withDeepLinks } from '@/lib/tmdb-watch-links';
 import { countryName, formatRuntime, languageName, yearOf } from '@/lib/format';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -178,7 +179,7 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 			fetchSimilarMovies(movieId),
 			fetchMovieRecommendations(movieId),
 			getMovieReviews(movieId, 1, lang),
-			getMovieWatchProviders(movieId, lang)
+			getMovieWatchProviders(movieId, lang).then((d) => withDeepLinks(d, 'movie', movieId, lang))
 		]);
 	} else {
 		// Try TMDB first via IMDb ID
@@ -192,7 +193,7 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 				fetchSimilarMovies(movieId),
 				fetchMovieRecommendations(movieId),
 				getMovieReviews(movieId, 1, lang),
-				getMovieWatchProviders(movieId, lang)
+				getMovieWatchProviders(movieId, lang).then((d) => withDeepLinks(d, 'movie', movieId, lang))
 			]);
 		} else {
 			// Fallback to OMDB
@@ -209,7 +210,7 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 	const year = yearOf(view.releaseDate);
 	const runtime = formatRuntime(view.runtime);
 	const ratings = toRatingValues(view.rating);
-	const streaming = primaryStreaming(watchProviders);
+	const streaming = primaryStreaming(watchProviders, view.title);
 
 	// Consigliati + simili, senza duplicati
 	const seen = new Set<number>();
@@ -311,9 +312,9 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 								trailerUrl={trailerUrl}
 							/>
 						)}
-						{streaming && (
+						{streaming?.href && (
 							<a
-								href={watchProviders?.link || '#'}
+								href={streaming.href}
 								target="_blank"
 								rel="noopener noreferrer"
 								className="flex items-center gap-3 p-3 rounded-[16px] bg-card border border-line"
@@ -335,7 +336,7 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 					</>
 				}
 				aside={
-					<WhereToWatch providers={watchProviders} title="Dove guardarlo">
+					<WhereToWatch providers={watchProviders} title="Dove guardarlo" mediaTitle={view.title}>
 						{view.tmdbId && (
 							<UserRating mediaType="movie" mediaId={view.tmdbId} title={view.title} poster={view.poster} />
 						)}

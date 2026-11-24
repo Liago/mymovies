@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Check, CircleCheck, Heart, ListPlus, Play, Plus } from 'lucide-react';
 import TrailerModal from '../TrailerModal';
 import ListManagerModal from '../ListManagerModal';
+import ShareButton from './ShareButton';
 import { useAuth } from '@/context/AuthContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { useWatchlist } from '@/context/WatchlistContext';
@@ -27,7 +28,7 @@ const mobileRound = (active: boolean) =>
 
 /**
  * Azioni delle schede: Trailer · Watchlist · Preferito · Lista per i film,
- * Trailer · Nel tracker · ♥ per le serie. Stesso comportamento di prima
+ * Trailer · Nel tracker · ♥ per le serie, più Condividi. Stesso comportamento di prima
  * (Supabase o localStorage per gli ospiti), nuovo stile.
  */
 export default function HeroActions({ mediaType, mediaId, title, poster, trailerUrl, variant }: HeroActionsProps) {
@@ -100,6 +101,7 @@ export default function HeroActions({ mediaType, mediaId, title, poster, trailer
 				<button type="button" onClick={toggleFavorite} className={mobileRound(favorite)} aria-pressed={favorite} aria-label="Preferito">
 					<Heart size={19} className={favorite ? 'fill-current' : ''} />
 				</button>
+				<ShareButton title={title} mediaType={mediaType} className={mobileRound(false)} iconSize={19} />
 				{modals}
 			</div>
 		);
@@ -166,6 +168,13 @@ export default function HeroActions({ mediaType, mediaId, title, poster, trailer
 					</button>
 				</>
 			)}
+			<ShareButton
+				title={title}
+				mediaType={mediaType}
+				placement="up"
+				className={cn(heroBtn, mediaType === 'tv' ? 'w-[50px] justify-center' : 'px-[18px]', onImage(false))}
+				label={mediaType === 'movie' ? 'Condividi' : undefined}
+			/>
 			{modals}
 		</>
 	);

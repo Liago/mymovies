@@ -974,6 +974,8 @@ export interface WatchProvider {
 	provider_id: number;
 	provider_name: string;
 	display_priority: number;
+	/** Link diretto al titolo sulla piattaforma (vedi lib/tmdb-watch-links). */
+	deep_link?: string | null;
 }
 
 export interface WatchProviderData {

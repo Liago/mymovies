@@ -21,6 +21,7 @@ import NextEpisodeBox from '@/components/detail/NextEpisodeBox';
 import { buildAiredSeasons } from '@/lib/progress';
 import { formatDate, tvStatusLabel, yearOf } from '@/lib/format';
 import { isReturningStatus } from '@/lib/tv-status';
+import { withDeepLinks } from '@/lib/tmdb-watch-links';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
 	const { id } = await params;
@@ -49,7 +50,7 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 		fetchSimilarTV(tvId),
 		fetchTVRecommendations(tvId),
 		getTVReviews(tvId, 1, lang),
-		getTVWatchProviders(tvId, lang)
+		getTVWatchProviders(tvId, lang).then((d) => withDeepLinks(d, 'tv', tvId, lang))
 	]);
 
 	if (!tvShow) {
@@ -60,7 +61,7 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 	const year = yearOf(tvShow.releaseDate);
 	const returning = isReturningStatus(tvShow.status);
 	const seasonsLabel = tvShow.seasons ? `${tvShow.seasons} ${tvShow.seasons === 1 ? 'stagione' : 'stagioni'}` : null;
-	const streaming = primaryStreaming(watchProviders);
+	const streaming = primaryStreaming(watchProviders, tvShow.title);
 	const status = tvStatusLabel(tvShow.status);
 	const airedSeasons = buildAiredSeasons(tvShow.seasonsList, tvShow.lastEpisodeToAir);
 
@@ -190,7 +191,7 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 								upcoming={tvShow.nextEpisodeToAir}
 							/>
 						</div>
-						<WhereToWatch providers={watchProviders} title="Dove guardarla">
+						<WhereToWatch providers={watchProviders} title="Dove guardarla" mediaTitle={tvShow.title}>
 							<UserRating mediaType="tv" mediaId={tvId} title={meta.title} poster={meta.poster} />
 						</WhereToWatch>
 					</>
