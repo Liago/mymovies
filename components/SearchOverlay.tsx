@@ -55,7 +55,7 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 	return createPortal(
 		<>
 			<div
-				className="fixed inset-0 z-[200] flex justify-center items-start pt-[90px] px-4 bg-black/40 backdrop-blur-[8px] animate-fade-in"
+				className="fixed inset-0 z-[200] flex justify-center items-start pt-[calc(env(safe-area-inset-top)+90px)] px-4 bg-black/40 backdrop-blur-[8px] animate-fade-in"
 				onClick={onClose}
 				role="dialog"
 				aria-modal="true"

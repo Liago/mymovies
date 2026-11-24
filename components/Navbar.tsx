@@ -82,7 +82,7 @@ export default function Navbar() {
 
 	return (
 		<>
-			<header className="hidden md:grid absolute top-0 inset-x-0 z-50 px-8 py-[18px] grid-cols-[1fr_auto_1fr] items-center gap-4">
+			<header className="hidden md:grid absolute top-0 inset-x-0 z-50 px-8 pt-[calc(env(safe-area-inset-top)+18px)] pb-[18px] grid-cols-[1fr_auto_1fr] items-center gap-4">
 				<Link
 					href="/"
 					className={cn(

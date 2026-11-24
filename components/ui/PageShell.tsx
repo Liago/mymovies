@@ -20,7 +20,7 @@ export default function PageShell({ width = 'wide', className, children }: PageS
 	return (
 		<main
 			className={cn(
-				'mx-auto w-full px-4 md:px-8 pt-[calc(env(safe-area-inset-top)+24px)] md:pt-[100px] pb-36 md:pb-[120px] flex flex-col gap-[14px] md:gap-6',
+				'mx-auto w-full px-4 md:px-8 pt-[calc(env(safe-area-inset-top)+24px)] md:pt-[calc(env(safe-area-inset-top)+100px)] pb-36 md:pb-[120px] flex flex-col gap-[14px] md:gap-6',
 				widths[width],
 				className
 			)}

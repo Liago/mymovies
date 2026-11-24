@@ -67,7 +67,7 @@ export default function CreateListButton({ variant = 'card', className }: Create
 			{isOpen && mounted &&
 				createPortal(
 					<div
-						className="fixed inset-0 z-[200] flex items-start justify-center pt-[90px] px-4 bg-black/40 backdrop-blur-[8px] animate-fade-in"
+						className="fixed inset-0 z-[200] flex items-start justify-center pt-[calc(env(safe-area-inset-top)+90px)] px-4 bg-black/40 backdrop-blur-[8px] animate-fade-in"
 						onClick={() => setIsOpen(false)}
 						role="dialog"
 						aria-modal="true"

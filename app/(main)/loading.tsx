@@ -1,7 +1,7 @@
 /** Skeleton generico delle pagine: titolo e griglia con i colori placeholder. */
 export default function Loading() {
 	return (
-		<main className="mx-auto w-full max-w-[1480px] px-4 md:px-8 pt-[calc(env(safe-area-inset-top)+24px)] md:pt-[100px] pb-36 flex flex-col gap-6" aria-busy="true">
+		<main className="mx-auto w-full max-w-[1480px] px-4 md:px-8 pt-[calc(env(safe-area-inset-top)+24px)] md:pt-[calc(env(safe-area-inset-top)+100px)] pb-36 flex flex-col gap-6" aria-busy="true">
 			<div className="flex flex-col gap-3">
 				<span className="hidden md:block h-3 w-24 rounded bg-ph1" />
 				<span className="h-8 md:h-12 w-56 md:w-96 rounded-xl bg-ph1" />
