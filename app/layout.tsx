@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import MobileTabBar from "@/components/MobileTabBar";
 import NavigationTracker from "@/components/NavigationTracker";
 import ThemeProvider from "@/components/ThemeProvider";
+import StatusBarScrim from "@/components/StatusBarScrim";
 import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { HistoryProvider } from "@/context/HistoryContext";
@@ -52,6 +53,7 @@ export default function RootLayout({
 			<body className="antialiased bg-bg text-fg">
 				<ThemeProvider>
 					<NavigationTracker />
+					<StatusBarScrim />
 					<LanguageProvider>
 						<AuthProvider>
 							<HistoryProvider>

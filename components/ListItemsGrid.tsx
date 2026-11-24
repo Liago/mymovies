@@ -1,7 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { List } from 'lucide-react';
+import { useLists } from '@/context/ListsContext';
 import { useTracker } from '@/context/TrackerContext';
 import { useLanguage } from '@/context/LanguageContext';
 import {
@@ -12,8 +14,10 @@ import {
 	isUpcoming,
 	type SeriesFilterMode,
 } from '@/lib/tv-status';
-import ListItemCard from './ListItemCard';
+import MovieCard from './MovieCard';
+import TVCardWithProgress from './TVCardWithProgress';
 import SeriesStatusFilter from './SeriesStatusFilter';
+import RemovableGrid from './library/RemovableGrid';
 
 interface ListItem {
 	id: number;
@@ -34,10 +38,40 @@ interface ListItemsGridProps {
 	items: ListItem[];
 }
 
+const itemKey = (item: ListItem): string => `${item.media_type}-${item.id}`;
+const itemTitle = (item: ListItem): string => item.title;
+
+function renderItem(item: ListItem): React.ReactNode {
+	return item.media_type === 'tv' ? (
+		<TVCardWithProgress
+			id={item.id}
+			title={item.title}
+			poster={item.poster}
+			rating={item.rating}
+			year={item.year}
+			totalEpisodes={item.totalEpisodes}
+			firstAirDate={item.firstAirDate}
+		/>
+	) : (
+		<MovieCard id={item.id} title={item.title} poster={item.poster} rating={item.rating} year={item.year} type="movie" />
+	);
+}
+
 export default function ListItemsGrid({ listId, items }: ListItemsGridProps) {
 	const { getWatchedCount } = useTracker();
 	const { t } = useLanguage();
+	const { removeFromList } = useLists();
+	const router = useRouter();
 	const [mode, setMode] = useState<SeriesFilterMode>('all');
+
+	const handleRemove = useCallback(
+		async (toRemove: ListItem[]): Promise<void> => {
+			await Promise.all(toRemove.map((item) => removeFromList(listId, item.id, item.media_type)));
+			// Aggiorna conteggio e contenuto renderizzati dal server
+			router.refresh();
+		},
+		[listId, removeFromList, router]
+	);
 
 	const isEnded = (item: ListItem) =>
 		item.media_type === 'tv' && isEndedToFinish(item.status, getWatchedCount(item.id), item.totalEpisodes);
@@ -91,31 +125,22 @@ export default function ListItemsGrid({ listId, items }: ListItemsGridProps) {
 				<SeriesStatusFilter mode={mode} onChange={setMode} counts={counts} />
 			</div>
 
-			{visibleItems.length === 0 ? (
-				<div className="flex flex-col items-center text-center gap-3 py-14">
-					<span className="w-16 h-16 rounded-full bg-bg2 flex items-center justify-center text-fg3">
-						<List size={28} />
-					</span>
-					<p className="m-0 text-[14px] font-semibold text-fg3">{emptyText}</p>
-				</div>
-			) : (
-				<div className="grid grid-cols-3 md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-x-2.5 gap-y-3.5 md:gap-x-[18px] md:gap-y-[22px]">
-					{visibleItems.map((item) => (
-						<ListItemCard
-							key={`${item.media_type}-${item.id}`}
-							listId={listId}
-							id={item.id}
-							title={item.title}
-							poster={item.poster}
-							rating={item.rating}
-							year={item.year}
-							type={item.media_type}
-							totalEpisodes={item.totalEpisodes}
-							firstAirDate={item.firstAirDate}
-						/>
-					))}
-				</div>
-			)}
+			<RemovableGrid
+				items={visibleItems}
+				getKey={itemKey}
+				getTitle={itemTitle}
+				renderItem={renderItem}
+				onRemove={handleRemove}
+				fromLabel="dalla lista"
+				empty={
+					<div className="flex flex-col items-center text-center gap-3 py-14">
+						<span className="w-16 h-16 rounded-full bg-bg2 flex items-center justify-center text-fg3">
+							<List size={28} />
+						</span>
+						<p className="m-0 text-[14px] font-semibold text-fg3">{mode === 'all' ? 'Questa lista è vuota' : emptyText}</p>
+					</div>
+				}
+			/>
 		</div>
 	);
 }
