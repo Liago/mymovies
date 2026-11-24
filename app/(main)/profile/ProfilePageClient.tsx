@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronRight, LogIn, User as UserIcon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -11,6 +11,7 @@ import { useRatings } from '@/context/RatingsContext';
 import { useTracker } from '@/context/TrackerContext';
 import MovieCard from '@/components/MovieCard';
 import CreateListButton from '@/components/CreateListButton';
+import RemovableGrid, { POSTER_GRID_CLASS } from '@/components/library/RemovableGrid';
 import SettingsMenu from '@/components/profile/SettingsMenu';
 import AlertsBell from '@/components/alerts/AlertsBell';
 import UserAvatar from '@/components/UserAvatar';
@@ -29,31 +30,71 @@ interface GridItem {
 	rating?: number;
 }
 
-function PosterGridSection({ items, loading, empty, showVote = false }: { items: GridItem[]; loading: boolean; empty: string; showVote?: boolean }) {
+const gridKey = (item: GridItem): string => `${item.media_type}-${item.id}`;
+const gridTitle = (item: GridItem): string => item.title;
+
+interface PosterGridSectionProps {
+	items: GridItem[];
+	loading: boolean;
+	empty: string;
+	showVote?: boolean;
+	/** Abilita selezione e rimozione (watchlist, preferiti). */
+	onRemove?: (items: GridItem[]) => Promise<void>;
+	/** Complemento per i testi di rimozione, es. "dalla watchlist". */
+	fromLabel?: string;
+}
+
+function PosterGridSection({ items, loading, empty, showVote = false, onRemove, fromLabel = '' }: PosterGridSectionProps) {
+	// Più recenti per primi
+	const ordered = useMemo(() => [...items].reverse(), [items]);
+
+	const renderItem = useCallback(
+		(item: GridItem): React.ReactNode => (
+			<MovieCard
+				id={item.id}
+				title={item.title}
+				poster={tmdbImage(item.poster)}
+				type={item.media_type}
+				badge={showVote && item.rating ? `★ ${item.rating}` : undefined}
+				subtitle={null}
+				compact
+			/>
+		),
+		[showVote]
+	);
+
 	if (loading) {
 		return (
-			<div className="grid grid-cols-3 md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-x-2.5 gap-y-3.5 md:gap-x-[18px] md:gap-y-[22px]">
+			<div className={POSTER_GRID_CLASS}>
 				{Array.from({ length: 6 }).map((_, i) => (
 					<div key={i} className="aspect-[2/3] rounded-[12px] md:rounded-[14px] placeholder-stripes" />
 				))}
 			</div>
 		);
 	}
-	if (!items.length) return <p className="m-0 py-10 text-center text-[14px] font-semibold text-fg3">{empty}</p>;
+
+	const emptyState = <p className="m-0 py-10 text-center text-[14px] font-semibold text-fg3">{empty}</p>;
+
+	if (onRemove) {
+		return (
+			<RemovableGrid
+				items={ordered}
+				getKey={gridKey}
+				getTitle={gridTitle}
+				renderItem={renderItem}
+				onRemove={onRemove}
+				fromLabel={fromLabel}
+				empty={emptyState}
+			/>
+		);
+	}
+
+	if (!ordered.length) return emptyState;
 
 	return (
-		<div className="grid grid-cols-3 md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-x-2.5 gap-y-3.5 md:gap-x-[18px] md:gap-y-[22px]">
-			{[...items].reverse().map((item) => (
-				<MovieCard
-					key={`${item.media_type}-${item.id}`}
-					id={item.id}
-					title={item.title}
-					poster={tmdbImage(item.poster)}
-					type={item.media_type}
-					badge={showVote && item.rating ? `★ ${item.rating}` : undefined}
-					subtitle={null}
-					compact
-				/>
+		<div className={POSTER_GRID_CLASS}>
+			{ordered.map((item) => (
+				<div key={gridKey(item)}>{renderItem(item)}</div>
 			))}
 		</div>
 	);
@@ -93,12 +134,26 @@ function ListCard({ list }: { list: UserList }) {
 /** Profilo + libreria: statistiche e tab Watchlist · Preferiti · Liste · Voti. */
 export default function ProfilePageClient({ initialTab }: { initialTab: ProfileTab }) {
 	const { user, isLoggedIn, hasMounted, login } = useAuth();
-	const { favorites, isLoading: favoritesLoading } = useFavorites();
-	const { watchlist, isLoading: watchlistLoading } = useWatchlist();
+	const { favorites, removeFavorite, isLoading: favoritesLoading } = useFavorites();
+	const { watchlist, removeFromWatchlist, isLoading: watchlistLoading } = useWatchlist();
 	const { lists, isLoading: listsLoading } = useLists();
 	const { ratings, isLoading: ratingsLoading } = useRatings();
 	const { watchedShows } = useTracker();
 	const [tab, setTab] = useState<ProfileTab>(initialTab);
+
+	const removeWatchlistItems = useCallback(
+		async (items: GridItem[]): Promise<void> => {
+			await Promise.all(items.map((item) => removeFromWatchlist(item.id, item.media_type)));
+		},
+		[removeFromWatchlist]
+	);
+
+	const removeFavoriteItems = useCallback(
+		async (items: GridItem[]): Promise<void> => {
+			await Promise.all(items.map((item) => removeFavorite(item.id, item.media_type)));
+		},
+		[removeFavorite]
+	);
 
 	const pick = (next: ProfileTab) => {
 		setTab(next);
@@ -174,10 +229,22 @@ export default function ProfilePageClient({ initialTab }: { initialTab: ProfileT
 			/>
 
 			{tab === 'watchlist' && (
-				<PosterGridSection items={watchlist} loading={watchlistLoading} empty="La watchlist è vuota: aggiungi film e serie da vedere più tardi." />
+				<PosterGridSection
+					items={watchlist}
+					loading={watchlistLoading}
+					empty="La watchlist è vuota: aggiungi film e serie da vedere più tardi."
+					onRemove={removeWatchlistItems}
+					fromLabel="dalla watchlist"
+				/>
 			)}
 			{tab === 'preferiti' && (
-				<PosterGridSection items={favorites} loading={favoritesLoading} empty="Non hai ancora preferiti." />
+				<PosterGridSection
+					items={favorites}
+					loading={favoritesLoading}
+					empty="Non hai ancora preferiti."
+					onRemove={removeFavoriteItems}
+					fromLabel="dai preferiti"
+				/>
 			)}
 			{tab === 'voti' && (
 				<PosterGridSection items={ratings} loading={ratingsLoading} empty="Non hai ancora votato nessun titolo." showVote />
