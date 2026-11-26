@@ -12,6 +12,9 @@ import { useAuth } from '@/context/AuthContext';
 import { EXPLORE_ITEMS, isHeroPage } from '@/lib/navigation';
 import { cn } from '@/lib/cn';
 
+/** Oltre questa soglia di scroll l'header assume lo sfondo in vetro. */
+const SCROLL_THRESHOLD = 12;
+
 const roundButton =
 	'w-[42px] h-[42px] rounded-full border border-line glass text-fg flex items-center justify-center transition-opacity duration-150 hover:opacity-80';
 
@@ -19,6 +22,11 @@ const roundButton =
  * Header desktop: logo, pill di navigazione in vetro con il popover "Esplora",
  * ricerca (anche con ⌘K), tema e avatar. Sotto i 768px è sostituito dalla
  * tab bar mobile.
+ *
+ * L'header è `fixed`: resta sempre visibile durante lo scroll e, superata una
+ * piccola soglia, mostra uno sfondo in vetro sfocato (effetto glass) con un
+ * bordo inferiore, così logo, menu e azioni restano leggibili sopra qualsiasi
+ * contenuto (issue #59).
  */
 export default function Navbar() {
 	const pathname = usePathname() || '/';
@@ -39,7 +47,16 @@ export default function Navbar() {
 			}),
 		[routeKey]
 	);
+	const [isScrolled, setIsScrolled] = useState<boolean>(false);
 	const onHero = isHeroPage(pathname);
+
+	// Rileva lo scroll per attivare lo sfondo in vetro dell'header
+	useEffect(() => {
+		const update = (): void => setIsScrolled(window.scrollY > SCROLL_THRESHOLD);
+		update();
+		window.addEventListener('scroll', update, { passive: true });
+		return () => window.removeEventListener('scroll', update);
+	}, [pathname]);
 	const catalogType = pathname.startsWith('/catalogo') ? (searchParams?.get('type') === 'tv' ? 'tv' : 'movie') : null;
 
 	const mainNav = [
@@ -82,12 +99,27 @@ export default function Navbar() {
 
 	return (
 		<>
-			<header className="hidden md:grid absolute top-0 inset-x-0 z-50 px-8 pt-[calc(env(safe-area-inset-top)+18px)] pb-[18px] grid-cols-[1fr_auto_1fr] items-center gap-4">
+			<header
+				className={cn(
+					'hidden md:grid fixed top-0 inset-x-0 z-50 px-8 grid-cols-[1fr_auto_1fr] items-center gap-4 transition-[padding] duration-200',
+					isScrolled
+						? 'pt-[calc(env(safe-area-inset-top)+10px)] pb-[10px]'
+						: 'pt-[calc(env(safe-area-inset-top)+18px)] pb-[18px]'
+				)}
+			>
+				{/* Sfondo in vetro: layer separato per non creare un contesto di backdrop-filter sui figli */}
+				<div
+					aria-hidden="true"
+					className={cn(
+						'absolute inset-0 -z-10 glass border-b border-line pointer-events-none transition-opacity duration-200',
+						isScrolled ? 'opacity-100' : 'opacity-0'
+					)}
+				/>
 				<Link
 					href="/"
 					className={cn(
 						'justify-self-start flex items-center gap-1.5 text-[22px] font-extrabold tracking-[-0.03em] transition-opacity hover:opacity-80',
-						onHero ? 'text-white' : 'text-fg'
+						onHero && !isScrolled ? 'text-white' : 'text-fg'
 					)}
 				>
 					cinescope
