@@ -1,5 +1,7 @@
 import { getTVDetailTMDb, getTVTrailerTMDb, getTVReviews, getTVWatchProviders } from '@/lib/tmdb';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import { fetchSimilarTV, fetchTVRecommendations } from '@/app/actions';
 import { cookies } from 'next/headers';
 import type { Metadata } from 'next';
@@ -109,7 +111,6 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 							{ label: 'Stato', value: status },
 						]}
 					/>
-					{tvShow.awards && <AwardsSection awards={tvShow.awards} variant="card" />}
 				</>
 			),
 		},
@@ -120,19 +121,35 @@ export default async function TVDetail({ params }: { params: Promise<{ id: strin
 			key: 'cast',
 			label: 'Cast',
 			content: (
-				<div className="grid grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-6">
-					{tvShow.actors.map((actor: { id: number; name: string; character?: string; profilePath?: string | null }, i: number) => (
-						<PersonCard
-							key={`${actor.id}-${i}`}
-							personId={actor.id}
-							name={actor.name}
-							role={actor.character || ''}
-							profilePath={actor.profilePath}
-							size={104}
-						/>
-					))}
+				<div className="flex flex-col gap-5">
+					<div className="grid grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-6">
+						{tvShow.actors.map((actor: { id: number; name: string; character?: string; profilePath?: string | null }, i: number) => (
+							<PersonCard
+								key={`${actor.id}-${i}`}
+								personId={actor.id}
+								name={actor.name}
+								role={actor.character || ''}
+								profilePath={actor.profilePath}
+								size={104}
+							/>
+						))}
+					</div>
+					<Link
+						href={`/tv/${tvId}/crew`}
+						className="self-start flex items-center gap-1 h-10 px-4 rounded-full bg-bg2 text-[14px] font-bold transition-opacity hover:opacity-80"
+					>
+						Cast e troupe completi
+						<ChevronRight size={16} className="text-fg3" />
+					</Link>
 				</div>
 			),
+		});
+	}
+	if (tvShow.awards) {
+		tabs.push({
+			key: 'awards',
+			label: 'Premi',
+			content: <AwardsSection awards={tvShow.awards} mediaType="tv" imdbId={tvShow.imdbId} tmdbId={tvId} title={tvShow.title} />,
 		});
 	}
 	if (reviews.results.length) {
