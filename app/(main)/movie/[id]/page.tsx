@@ -1,7 +1,8 @@
 import { getMovieDetail, type MovieData } from '@/lib/omdb';
 import { getMovieDetailTMDb, getMovieTrailerTMDb, getMovieTrailer, getMovieReviews, getMovieDetailByImdbId, getMovieWatchProviders, type WatchProviderData } from '@/lib/tmdb';
 import { notFound } from 'next/navigation';
-import { ArrowUpRight } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowUpRight, ChevronRight } from 'lucide-react';
 import { fetchSimilarMovies, fetchMovieRecommendations } from '@/app/actions';
 import { cookies } from 'next/headers';
 import { Metadata } from 'next';
@@ -237,7 +238,18 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 			/>
 			{view.actors.length > 0 && (
 				<div>
-					<h3 className="m-0 mb-3.5 text-[18px] md:text-[20px] font-bold">Cast principale</h3>
+					<div className="flex items-center justify-between gap-3 mb-3.5">
+						<h3 className="m-0 text-[18px] md:text-[20px] font-bold">Cast principale</h3>
+						{view.tmdbId && (
+							<Link
+								href={`/movie/${view.tmdbId}/crew`}
+								className="flex items-center gap-0.5 text-[13px] md:text-[14px] font-bold text-acc transition-opacity hover:opacity-80"
+							>
+								Cast e troupe completi
+								<ChevronRight size={16} />
+							</Link>
+						)}
+					</div>
 					<div className="grid grid-cols-3 md:grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-4">
 						{view.actors.slice(0, 12).map((actor, i) => (
 							<PersonCard
@@ -260,7 +272,7 @@ export default async function MovieDetail({ params }: { params: Promise<{ id: st
 		tabs.push({
 			key: 'awards',
 			label: 'Premi',
-			content: <AwardsSection awards={view.awards} imdbId={view.imdbId} tmdbId={view.tmdbId} lang={lang} />,
+			content: <AwardsSection awards={view.awards} mediaType="movie" imdbId={view.imdbId} tmdbId={view.tmdbId} title={view.title} />,
 		});
 	}
 	if (view.tmdbId) {
